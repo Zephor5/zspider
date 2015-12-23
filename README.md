@@ -2,14 +2,11 @@
 a distributed spider system
 
 ## Components
-- **dispatcher**
-
+- **dispatcher**  
 _dispatch center :_ auto detect to work.
-- **crawler**
-
+- **crawler**  
 _crawler daemon :_ to process the crawl task
-- **web**
-
+- **web**  
 _a web site :_ to manage this system.
 
 ## Resource Dependencis
