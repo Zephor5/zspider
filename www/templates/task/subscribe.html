@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block main_content %}
+<div class="breadcrumbs" id="breadcrumbs">
+    <script type="text/javascript">
+        try{ace.settings.check('breadcrumbs' , 'fixed')}catch(e){}
+    </script>
+    <ul class="breadcrumb">
+        <li>
+            <i class="ace-icon fa fa-home home-icon"></i>
+            <a href="#">Home</a>
+        </li>
+        <li>
+            <a href="/task/list">任务管理</a>
+        </li>
+        <li class="active">添加订阅</li>
+    </ul><!-- /.breadcrumb -->
+</div>
+<div class="page-content">
+{% include 'ace-settings.html' %}
+    <div class="page-header">
+        <h1>
+            任务管理
+            <small>
+                <i class="ace-icon fa fa-angle-double-right"></i>
+                添加订阅
+            </small>
+        </h1>
+    </div><!-- /.page-header -->
+    <div class="row">
+        <div class="col-xs-12">
+            <h3 class="row header smaller lighter blue" style="margin-left:0"><span class="col-xs-12">{% if task %}任务：{{ task }} 变更{% else %}新增{% endif %}订阅</span></h3>
+            <form class="form-horizontal" role="form" method="POST">
+                <input name="task_id" type="hidden" value="{{ task.id }}">
+                {% for field in form %}
+                {% if field.type == 'CSRFTokenField' %}{{ field }}{% else %}
+                <div class="form-group{% if field.errors %} has-error{% endif %}">{{ field.label(class_='col-sm-3 control-label no-padding-right') }}<div class="col-xs-12 col-sm-8">{{ field(class='col-sm-9') }}{% if field.description %}<span class="help-button" data-rel="popover" data-trigger="hover" data-placement="left" data-content="{{ field.description }}" title="" data-original-title="{{ field.label.text }}">?</span>{% endif %}</div>{% if field.errors %}<div class="help-block col-xs-12 col-sm-reset inline">{{ field.errors[0] }}</div>{% endif %}</div>{% endif %}
+                {% endfor %}
+                <div class="clearfix form-actions">
+                    <div class="col-md-offset-3 col-md-9">
+                        <button class="btn btn-info" type="submit">
+                            <i class="ace-icon fa fa-check bigger-110"></i>
+                            Submit
+                        </button>
+                        <button class="btn" type="reset">
+                            <i class="ace-icon fa fa-undo bigger-110"></i>
+                            Reset
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block page_script %}
+<script>
+$('[data-rel=popover]').popover({container:'body'});
+</script>
+{% endblock %}

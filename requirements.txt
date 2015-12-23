@@ -1,0 +1,16 @@
+# dispatcher
+twisted
+apscheduler
+
+# crawl_daemon
+scrapy
+python-memcached
+
+# web
+
+# all
+pika
+flask-mongoengine
+
+# optional
+netifaces

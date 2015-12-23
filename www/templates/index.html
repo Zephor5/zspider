@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block main_content %}
+<div class="breadcrumbs" id="breadcrumbs">
+    <script type="text/javascript">
+        try{ace.settings.check('breadcrumbs' , 'fixed')}catch(e){}
+    </script>
+    <ul class="breadcrumb">
+        <li>
+            <i class="ace-icon fa fa-home home-icon"></i>
+            <a href="#">Home</a>
+        </li>
+        <li class="active">Dashboard</li>
+    </ul><!-- /.breadcrumb -->
+</div>
+<div class="page-content">
+{% include 'ace-settings.html' %}
+    <div class="page-header">
+        <h1>
+            Home
+            <small>
+                <i class="ace-icon fa fa-angle-double-right"></i>
+                Dashboard
+            </small>
+        </h1>
+    </div><!-- /.page-header -->
+    <div class="row">
+        <div class="col-md-offset-2 col-md-10">
+            <h3>调度中心状态</h3>
+            {% if states %}
+            <dl class="dl-horizontal">{% for ip, v in states.iteritems() %}
+                <dt>{{ ip }}</dt>
+                <dd>当前状态：<strong>{{ state_dict[v.status] }}</strong>&emsp;&emsp;&emsp;最后更新：{{ format_timestamp(v.refresh) }}</dd>
+            {% endfor %}</dl>{% else %}
+            {{ err }}
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% block page_style %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/jquery-ui.min.css') }}">
+<style>
+.page-wrap{
+    text-align: right;
+}
+#doc-detail dt{
+    width: 80px;
+}
+#doc-detail dd{
+    margin-left: 100px;
+}
+</style>
+{% endblock %}
+{% block main_content %}
+<div class="breadcrumbs" id="breadcrumbs">
+    <script type="text/javascript">
+        try{ace.settings.check('breadcrumbs' , 'fixed')}catch(e){}
+    </script>
+    <ul class="breadcrumb">
+        <li>
+            <i class="ace-icon fa fa-home home-icon"></i>
+            <a href="#">Home</a>
+        </li>
+        <li>
+            <a href="/task/list">任务管理</a>
+        </li>
+        <li class="active">数据记录</li>
+    </ul><!-- /.breadcrumb -->
+</div>
+<div class="page-content">
+{% include 'ace-settings.html' %}
+    <div class="page-header">
+        <h1>
+            任务管理
+            <small>
+                <i class="ace-icon fa fa-angle-double-right"></i>
+                数据记录
+            </small>
+        </h1>
+    </div><!-- /.page-header -->
+    <div class="row">
+        <div class="col-md-12">
+            <div id="q_form" class="row">
+                <div class="col-md-3 input-group">
+                    <input placeholder="Enter task_id to search" class="form-control" name="task_id" value="{{ task_id if task_id else '' }}"><span class="input-group-addon">
+                        <i class="ace-icon fa fa-search"></i>
+                    </span>
+                </div>
+            </div>
+            <div class="col-md-12 hr hr8"></div>
+            <table class="table table-striped table-hover">
+                <thead><tr>
+                    <th>标题</th>
+                    <th>任务名称</th>
+                    <th>状态</th>
+                    <th>来源时间</th>
+                    <th>入库时间</th>
+                </tr></thead>
+                <tbody>{% for doc in docs.items %}
+                    <tr data-id="{{ doc.id }}">
+                        <td><a target="_blank" href="{{ doc.url }}">{{ doc.title }}</a></td>
+                        <td>{{ doc.task.name }}</td>
+                        <td><a href="{{ url_for('log_list', part='crawler', url=doc.url) }}">{{ statuses[doc.status] }}</a></td>
+                        <td>{{ doc.src_time }}</td>
+                        <td>{{ doc.save_time }}</td>
+                    </tr>
+                {% endfor %}</tbody>
+            </table>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-offset-3 col-md-8 page-wrap">
+            <ul class="pagination">
+            {% if docs.has_prev %}
+                <li class="prev"><a href="{{ url_for('task_doc', page=docs.prev_num, task_id=task_id) }}"><i class="fa fa-angle-left"></i></a></li>
+                {% else %}
+                <li class="prev disabled"><a><i class="fa fa-angle-left"></i></a></li>
+            {% endif %}
+            {% for page in docs.iter_pages() %}
+                {% if page %}
+                    {% if page != docs.page %}
+                        <li><a href="{{ url_for('task_doc', page=page, task_id=task_id) }}">{{ page }}</a></li>
+                    {% else %}
+                        <li class="active"><a>{{ page }}</a></li>
+                    {% endif %}
+                {% else %}
+                    <li><a>…</a></li>
+                {% endif %}
+            {% endfor %}
+            {% if docs.has_next %}
+                <li class="next"><a href="{{ url_for('task_doc', page=docs.next_num, task_id=task_id) }}"><i class="fa fa-angle-right"></i></a></li>
+                {% else %}
+                <li class="next disabled"><a><i class="fa fa-angle-right"></i></a></li>
+            {% endif %}
+            </ul>
+        </div>
+    </div>
+    <div id="doc-detail" class="hide">
+        <dl class="dl-horizontal">
+        </dl>
+    </div>
+</div>
+{% endblock %}
+{% block page_script %}
+<script src="{{ url_for('static', filename='js/jquery-ui.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/jquery.ui.touch-punch.min.js') }}"></script>
+<script>
+$(function(){
+    //override dialog's title function to allow for HTML titles
+    $.widget("ui.dialog", $.extend({}, $.ui.dialog.prototype, {
+        _title: function(title) {
+            var $title = this.options.title || '&nbsp;'
+            if( ("title_html" in this.options) && this.options.title_html == true )
+                title.html($title);
+            else title.text($title);
+        }
+    }));
+    $('tbody tr').click(function(e){
+        var doc_id = $(this).attr('data-id');
+        if(e.target.tagName === 'A') return;
+        $.get('/task/doc/' + doc_id, function(doc){
+            console.log(doc);
+            var d = $("#doc-detail"), dls, key, tmp, params = {
+                modal: true,
+                title: "<div class='widget-header widget-header-small'><h4 class='smaller'><i class='ace-icon fa fa-envelope-o'></i> 数据详情</h4></div>",
+                title_html: true,
+                width: '80%',
+                buttons: [
+                    {
+                        text: "OK",
+                        class : "btn btn-primary btn-xs",
+                        click: function() {
+                            $(this).dialog("close");
+                        }
+                    }
+                ]
+            };
+            dls = [];
+            for(key in doc){
+                tmp = doc[key];
+                if(typeof tmp === 'string'){
+                    tmp = tmp.replace(/</g, '&lt;');
+                    tmp = tmp.replace(/>/g, '&gt;');
+                }
+                dls.push('<dt>' + key + ':</dt><dd><pre>' + tmp + '</pre></dd>');
+            }
+            d.children('dl').html(dls.join(''));
+            d.removeClass('hide').dialog(params);
+        });
+    });
+});
+</script>
+{% endblock %}

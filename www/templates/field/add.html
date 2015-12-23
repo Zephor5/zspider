@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block main_content %}
+<div class="breadcrumbs" id="breadcrumbs">
+    <script type="text/javascript">
+        try{ace.settings.check('breadcrumbs' , 'fixed')}catch(e){}
+    </script>
+    <ul class="breadcrumb">
+        <li>
+            <i class="ace-icon fa fa-home home-icon"></i>
+            <a href="#">Admin</a>
+        </li>
+        <li>
+            <a href="/admin/field/list">字段管理</a>
+        </li>
+        <li class="active">{% if is_add %}添加用户{% else %}编辑用户{%endif%}</li>
+    </ul><!-- /.breadcrumb -->
+</div>
+<div class="page-content">
+{% include 'ace-settings.html' %}
+    <div class="page-header">
+        <h1>
+            用户管理
+            <small>
+                <i class="ace-icon fa fa-angle-double-right"></i>
+                {% if is_add %}添加用户{% else %}编辑用户{%endif%}
+            </small>
+        </h1>
+    </div><!-- /.page-header -->
+    <div class="row">
+        <div class="col-xs-12">
+            <form class="form-horizontal" role="form" method="POST">
+                {% for field in form %}
+                {% if field.type == 'CSRFTokenField' %}{{ field }}{% else %}
+                <div class="form-group{% if field.errors %} has-error{% endif %}">{{ field.label(class_='col-sm-3 control-label no-padding-right') }}<div class="col-xs-12 col-sm-3">{{ field() }}{% if field.description %}<span class="help-button" data-rel="popover" data-trigger="hover" data-placement="left" data-content="{{ field.description }}" title="" data-original-title="{{ field.label.text }}">?</span>{% endif %}</div>{% if field.errors %}<div class="help-block col-xs-12 col-sm-reset inline">{{ field.errors[0] }}</div>{% endif %}</div>{% endif %}
+                {% endfor %}
+                <div class="clearfix form-actions">
+                    <div class="col-md-offset-3 col-md-9">
+                        <button class="btn btn-info" type="submit">
+                            <i class="ace-icon fa fa-check bigger-110"></i>
+                            Submit
+                        </button>
+
+                        &nbsp; &nbsp; &nbsp;
+                        <button class="btn" type="reset">
+                            <i class="ace-icon fa fa-undo bigger-110"></i>
+                            Reset
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div><!-- /.page-content -->
+{% endblock %}
+{% block page_script %}
+<script>
+//$('[data-rel=tooltip]').tooltip({container:'body'});
+$('[data-rel=popover]').popover({container:'body'});
+</script>
+{% endblock %}
