@@ -13,6 +13,6 @@ _a web site :_ to manage this system.
 rabbitmq, mongodb, memcached
 
 ## Notice
-this project is under development, there are serveral resources to prepare and configure to use this.
+This project doesn't actively develop now.  
+But it's ready for production use. There are several resources to be prepared and configured to use.  
 
-To be write then...
