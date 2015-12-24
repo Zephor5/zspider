@@ -26,6 +26,7 @@ def is_login():
 def login():
     username = flask.request.form.get('username')
     user = None
+    # noinspection PyBroadException
     try:
         user = User.objects.get(username=username)
     except:

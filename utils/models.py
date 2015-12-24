@@ -29,8 +29,7 @@ if not PARSER_CONF_FORM_REF:
 
 
 class User(BaseDocument):
-    username = engine.StringField(required=True, max_length=20, unique=True,
-                                  verbose_name=u'用户名', help_text=u'员工邮箱前缀')
+    username = engine.StringField(required=True, max_length=20, unique=True, verbose_name=u'用户名')
     role = engine.StringField(required=True, default='user',
                               choices=(('user', u'普通用户'), ('admin', u'管理员')),
                               verbose_name=u'角色')
@@ -70,6 +69,6 @@ class ArticleField(BaseDocument):
         return '%s.%s' % (self.task, self.name)
 
 
-UserForm = model_form(User)
+UserForm = model_form(User, exclude=('password',))
 TaskForm = model_form(Task, exclude=('is_active', 'creator', 'mender', 'ctime', 'mtime'))
 ArticleFieldForm = model_form(ArticleField, exclude=('task',))
