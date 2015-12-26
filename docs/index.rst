@@ -3,23 +3,25 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Contents:
-
+.. _index:
 .. toctree::
    :maxdepth: 2
+.. br:: html
+   <br />
 
+=======
 ZSPIDER
 =======
 a distributed spider system
 
 Components
 ----------
-- **dispatcher**  
-_dispatch center :_ auto detect to work.
-- **crawler**  
-_crawler daemon :_ to process the crawl task
-- **web**  
-_a web site :_ to manage this system.
+- **dispatcher**
+|    *dispatch center :* auto detect to work.
+- **crawler**
+| *crawler daemon :* to process the crawl task
+- **web**
+| *a web site :* to manage this system.
 
 Resource Dependencis
 --------------------
