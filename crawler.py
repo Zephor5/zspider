@@ -8,6 +8,7 @@ from scrapy.settings import Settings
 from scrapy.utils.log import log_scrapy_info
 from scrapy.utils.ossignal import install_shutdown_handlers
 from twisted.internet import defer
+from twisted.internet.error import ConnectionDone
 
 from conf import AMQP_PARAM, EXCHANGE_PARAMS, TASK_Q_PARAMS, TASK_BIND_PARAMS
 from utils.mypika import PooledConn
@@ -30,6 +31,7 @@ class CrawlerDaemon(CrawlerProcess):
         install_shutdown_handlers(self._signal_shutdown)
         log_scrapy_info(self.settings)
 
+        self.__task_queue = None
         self._pconn = PooledConn(AMQP_PARAM)
         self._set_up()
 
@@ -40,6 +42,9 @@ class CrawlerDaemon(CrawlerProcess):
 
     @defer.inlineCallbacks
     def _on_conn(self, conn):
+        # in case the connection is lost; mostly closed by the mq server
+        conn.ready.addCallback(self.__clear)
+        conn.ready.addCallback(self._set_up)
         self._conn = conn
         channel = self._channel = yield conn.channel()
         # do some setup
@@ -56,7 +61,10 @@ class CrawlerDaemon(CrawlerProcess):
 
     @staticmethod
     def _on_err(err):
-        logger.error(err)
+        if err.type is ConnectionDone:
+            logger.info(err)
+        else:
+            logger.error(err)
 
     @defer.inlineCallbacks
     def _on_get(self):
@@ -82,6 +90,10 @@ class CrawlerDaemon(CrawlerProcess):
             logger.error(repr(e))
         if len(self._active) > 1:
             return self.join()
+
+    def __clear(self, _=None):
+        if self.__task_queue is not None:
+            self.__task_queue.close(ConnectionDone('done'))
 
     def crawl(self, spider_name, *args, **kwargs):
         crawler = self._create_crawler(spider_name)
