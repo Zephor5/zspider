@@ -62,7 +62,7 @@ class CrawlerDaemon(CrawlerProcess):
     @staticmethod
     def _on_err(err):
         if err.type is ConnectionDone:
-            logger.info(err)
+            logger.info("connection lost when waiting, handled..")
         else:
             logger.error(err)
 
