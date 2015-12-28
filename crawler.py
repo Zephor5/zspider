@@ -43,7 +43,7 @@ class CrawlerDaemon(CrawlerProcess):
     @defer.inlineCallbacks
     def _on_conn(self, conn):
         # in case the connection is lost; mostly closed by the mq server
-        conn.ready.addCallback(self.__clear)
+        conn.ready.addErrback(self.__clear)
         conn.ready.addCallback(self._set_up)
         self._conn = conn
         channel = self._channel = yield conn.channel()
