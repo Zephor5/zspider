@@ -3,11 +3,14 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-.. _index:
 .. toctree::
-   :maxdepth: 2
-.. br:: html
-   <br />
+   :maxdepth: 1
+   :numbered:
+   :hidden:
+
+    desgin <desgin.rst>
+    internal_message <internal_message.rst>
+    item_info <item_info.rst>
 
 =======
 ZSPIDER
@@ -17,11 +20,11 @@ a distributed spider system
 Components
 ----------
 - **dispatcher**
-|    *dispatch center :* auto detect to work.
+   *dispatch center :* auto detect to work.
 - **crawler**
-| *crawler daemon :* to process the crawl task
+   *crawler daemon :* to process the crawl task
 - **web**
-| *a web site :* to manage this system.
+   *a web site :* to manage this system.
 
 Resource Dependencis
 --------------------
@@ -33,8 +36,10 @@ This project doesn't actively develop now.
 But it's ready for production use. There are several resources to be prepared and configured to use.  
 
 Indices and tables
-==================
+------------------
 
-* :ref:`desgin`
+* :doc:`item_info`
+* :doc:`desgin`
+* :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
