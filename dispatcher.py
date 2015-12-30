@@ -2,6 +2,8 @@
 import json
 import logging
 import time
+import datetime
+import tzlocal
 import random
 
 from twisted.web.resource import Resource
@@ -242,24 +244,37 @@ class HeartBeat(object):
 
 
 class Send(object):
-    def __init__(self, msg):
-        self.msg = msg
+    def __init__(self, msg, rand=False):
+        self.task_id = msg['id']
         self.msgs = json.dumps(msg)
         self._doing = False
-        self.__channel_d = None
-        self.__timeout_check = None
+        self._rand = rand
+        self._max = None
 
     def __call__(self):
         if self._doing:
-            logger.warn('last doing, skip this', extra={'task_id': self.msg.get('id')})
+            logger.warn('last doing, skip this', extra={'task_id': self.task_id})
         else:
             self._doing = True
             d = pooled_conn.acquire(channel=True)
             d.addCallbacks(self._on_send, self._on_err_conn)
             d.addBoth(pooled_conn.release)
             d.addErrback(self._on_err)
-            self.__timeout_check = reactor.callLater(2, self._on_check)
-            logger.info('dispatch %s' % self.msgs, extra={'task_id': self.msg.get('id')})
+            if self._rand:
+                self._rand_reschedule()
+            logger.info('dispatch %s' % self.msgs, extra={'task_id': self.task_id})
+
+    def _rand_reschedule(self):
+        _now = datetime.datetime.now(tzlocal.get_localzone())
+        if self._max is None:
+            job = scheduler.get_job(self.task_id)
+            r = job.next_run_time - _now
+            r = round(r.total_seconds()) * 2
+            self._max = r - 60 if r > 60 else 0
+        next_sec = (random.random() * self._max) + 60
+        job = scheduler.add_job(self, id=self.task_id, misfire_grace_time=20, replace_existing=True,
+                                run_date=_now + datetime.timedelta(seconds=next_sec))
+        logger.info('random schedule next run time, at %s' % job.next_run_time, extra={'task_id': self.task_id})
 
     def _on_err_conn(self, err):
         logger.error(err)
@@ -268,23 +283,20 @@ class Send(object):
     def _on_err(self, err):
         logger.error(err)
         self._doing = False
-        self.__channel_d = None
-
-    def _on_check(self):
-        self.__timeout_check = None
-        if self.__channel_d:
-            self.__channel_d.cancel()
 
     @defer.inlineCallbacks
     def _on_send(self, channel):
         logger.debug('get channel id:%s' % id(channel))
-
-        yield channel.basic_publish(EXCHANGE_PARAMS['exchange'],
-                                    TASK_BIND_PARAMS['routing_key'],
-                                    self.msgs)
-        self.__timeout_check.cancel()
-        self._doing = False
-        defer.returnValue(channel)
+        # noinspection PyBroadException
+        try:
+            yield channel.basic_publish(EXCHANGE_PARAMS['exchange'],
+                                        TASK_BIND_PARAMS['routing_key'],
+                                        self.msgs)
+        except:
+            logger.exception('send gets error', extra={'task_id': self.task_id})
+        finally:
+            self._doing = False
+            defer.returnValue(channel)
 
 
 def load_tasks(task_id=None):
@@ -307,7 +319,8 @@ def load_tasks(task_id=None):
         trigger_kwargs = dict(zip(trigger_keys, task.cron.split(' ')))
         trigger_kwargs['second'] = str(random.random() * 60).split('.')[0]
         try:
-            job = scheduler.add_job(Send(msg), id=msg['id'], trigger="cron", misfire_grace_time=20,
+            job = scheduler.add_job(Send(msg, rand=msg['spider'] == 'wechat'), id=msg['id'], trigger="cron",
+                                    misfire_grace_time=20,
                                     replace_existing=True,
                                     **trigger_kwargs)
         except ValueError:
