@@ -72,14 +72,14 @@
         <div class="col-md-offset-3 col-md-8 page-wrap">
             <ul class="pagination">
             {% if logs.has_prev %}
-                <li class="prev"><a href="{{ url_for('log_list', part=part, page=logs.prev_num, ip=ip, level=level) }}"><i class="fa fa-angle-left"></i></a></li>
+                <li class="prev"><a href="{{ url_for('log_list', part=part, page=logs.prev_num, ip=ip, level=level, task_id=task_id) }}"><i class="fa fa-angle-left"></i></a></li>
                 {% else %}
                 <li class="prev disabled"><a><i class="fa fa-angle-left"></i></a></li>
             {% endif %}
             {% for page in logs.iter_pages() %}
                 {% if page %}
                     {% if page != logs.page %}
-                        <li><a href="{{ url_for('log_list', part=part, page=page, ip=ip, level=level) }}">{{ page }}</a></li>
+                        <li><a href="{{ url_for('log_list', part=part, page=page, ip=ip, level=level, task_id=task_id) }}">{{ page }}</a></li>
                     {% else %}
                         <li class="active"><a>{{ page }}</a></li>
                     {% endif %}
@@ -88,7 +88,7 @@
                 {% endif %}
             {% endfor %}
             {% if logs.has_next %}
-                <li class="next"><a href="{{ url_for('log_list', part=part, page=logs.next_num, ip=ip, level=level) }}"><i class="fa fa-angle-right"></i></a></li>
+                <li class="next"><a href="{{ url_for('log_list', part=part, page=logs.next_num, ip=ip, level=level, task_id=task_id) }}"><i class="fa fa-angle-right"></i></a></li>
                 {% else %}
                 <li class="next disabled"><a><i class="fa fa-angle-right"></i></a></li>
             {% endif %}
