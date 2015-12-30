@@ -151,6 +151,12 @@ class PooledConn(object):
         if d is None:
             d = conn.channel()
             d.addCallback(lambda ch: p.update({_id: ch}) or setattr(ch, 'pool_id_', _id) or ch)
+
+        def _h_err(ch):
+            conn.ready.addErrback(lambda _, _ch: _ch.close(), ch)
+            return ch
+
+        d.addCallback(_h_err)
         return d
 
     def acquire(self, channel=False):
