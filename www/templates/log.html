@@ -55,7 +55,7 @@
                 <div class="col-md-1">
                     <select name="level">{% for level_ in levels %}<option{% if level_ == level %} selected="selected"{% endif %} value="{{ level_ }}">{{ levels[level_] }}</option>{% endfor %}</select>
                 </div>
-                {% if task_id %}<input name="task_id" type="hidden" value="{{ task_id }}">{% endif %}
+                <div class="col-md-2"><input class="form-control" name="task_id" value="{{ task_id or '' }}"></div>
                 <div class="col-md-4 input-group"><input placeholder="Enter url to search" class="form-control" name="url" type="url" value="{{ url if url else '' }}"><span class="input-group-addon">
                     <i class="ace-icon fa fa-search"></i>
                 </span></div>
