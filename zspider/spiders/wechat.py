@@ -14,7 +14,7 @@ class WeChatSpider(BaseSpider):
     """
 
     # in case antispider sougou
-    custom_settings = {'CONCURRENT_REQUESTS_PER_DOMAIN': 2}
+    custom_settings = {'CONCURRENT_REQUESTS_PER_DOMAIN': 1}
 
     name = 'wechat'
 
@@ -45,5 +45,11 @@ class WeChatSpider(BaseSpider):
 
     def parse_index(self, response):
         logger.info('parse index', extra=self._extra)
-        for r in self._parse_index(response):
+        for r in self._parse_index(response, self.parse_content):
             yield r
+
+    def parse_content(self, response):
+        f = response.xpath('//form[@name="authform"]')
+        if not f:
+            return self._parse_article(response)
+        logger.warn('antispider', extra=self._extra)
