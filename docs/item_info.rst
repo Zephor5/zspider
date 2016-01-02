@@ -1,3 +1,8 @@
+.. toctree::
+   :maxdepth: 1
+   :numbered:
+   :hidden:
+
 ==============
 item structure
 ==============

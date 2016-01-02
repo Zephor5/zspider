@@ -32,14 +32,20 @@ rabbitmq, mongodb, memcached
 
 Notice
 ------
-This project doesn't actively develop now.  
-But it's ready for production use. There are several resources to be prepared and configured to use.  
+  Docs are writing, but not that quick.
+
+  This is ready for use. There are several resources to be prepared and configured to use.  
+
+  Mind those source file containing ``conf`` in the filename. mainly: ``conf.py``, ``crawl_conf.py``, ``dispatcher_conf.py``, ``web_conf.py``
+
+  The web user isn't finish yet. see ``www/handlers/__init__.py``
 
 Indices and tables
 ------------------
 
-* :doc:`item_info`
 * :doc:`desgin`
+* :doc:`internal_message`
+* :doc:`item_info`
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
