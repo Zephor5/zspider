@@ -9,9 +9,9 @@ from scrapy.utils.log import log_scrapy_info
 from scrapy.utils.ossignal import install_shutdown_handlers
 from twisted.internet import defer
 from twisted.internet.error import ConnectionDone
+from pooled_pika import PooledConn
 
 from conf import AMQP_PARAM, EXCHANGE_PARAMS, TASK_Q_PARAMS, TASK_BIND_PARAMS
-from utils.mypika import PooledConn
 
 __author__ = 'zephor'
 

@@ -12,13 +12,3 @@ def iter_sub_classes(module, o):
             if inspect.isclass(obj) and issubclass(obj, o)\
                     and obj.__module__ == module.__name__:
                 yield obj
-
-
-def main():
-    import mypika
-    for o in iter_sub_classes(mypika, object):
-        print o
-
-
-if __name__ == '__main__':
-    main()

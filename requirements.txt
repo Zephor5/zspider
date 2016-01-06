@@ -1,5 +1,4 @@
 # dispatcher
-twisted
 apscheduler
 
 # crawl_daemon
@@ -9,8 +8,9 @@ python-memcached
 # web
 
 # all
-pika
+pooled-pika
 flask-mongoengine
 
 # optional
 netifaces
+

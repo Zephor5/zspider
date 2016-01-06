@@ -11,10 +11,10 @@ from twisted.internet import reactor, defer
 from twisted.internet.error import ReactorNotRunning
 from apscheduler.schedulers.twisted import TwistedScheduler
 from apscheduler.jobstores.base import JobLookupError
+from pooled_pika import PooledConn
 
 from conf import AMQP_PARAM, TASK_Q_PARAMS, TASK_BIND_PARAMS
 from dispatcher_conf import *
-from utils.mypika import PooledConn
 from utils.errors import DeferredTimeout
 from utils.models import Task
 
