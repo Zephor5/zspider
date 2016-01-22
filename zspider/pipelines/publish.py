@@ -54,7 +54,7 @@ class PubPipeLine(object):
 
     def process_item(self, item, spider):
         d = defer.Deferred()
-        extra = self._extra
+        extra = dict(self._extra)
         extra.update({'url': item.get('url', '')})
         if self._pub:
             _doc = dict(item)
