@@ -38,6 +38,9 @@ DEFAULT_LOGGING = {
         'pika': {
             'level': 'ERROR'
         },
+        'pooled_pika': {
+            'level': 'ERROR'
+        },
         'apscheduler': {
             'level': 'ERROR'
         },
