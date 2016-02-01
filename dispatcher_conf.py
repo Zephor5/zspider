@@ -3,10 +3,12 @@ from conf import INNER_IP, EXCHANGE_PARAMS
 
 __author__ = 'zephor'
 
-__all__ = ['UID', 'MANAGE_PORT', 'MANAGE_KEY', 'STATE_WAITING', 'STATE_PENDING', 'STATE_DISPATCH', 'STATE_DICT',
-           'EXCHANGE_PARAMS', 'BEAT_Q_PARAMS', 'BEAT_BIND_PARAMS', 'BEAT_INTERVAL']
+__all__ = ['UID', 'DISPATCHER_KEY', 'MANAGE_PORT', 'MANAGE_KEY', 'STATE_WAITING', 'STATE_PENDING', 'STATE_DISPATCH',
+           'STATE_DICT', 'EXCHANGE_PARAMS', 'BEAT_INTERVAL']
 
 UID = INNER_IP
+
+DISPATCHER_KEY = '_zspider_cluster'
 
 MANAGE_PORT = 43722
 
@@ -22,9 +24,5 @@ STATE_DICT = {
     STATE_PENDING: 'pending',
     STATE_DISPATCH: 'dispatch'
 }
-
-BEAT_Q_PARAMS = dict(queue='beat', durable=True, auto_delete=False, exclusive=False)
-
-BEAT_BIND_PARAMS = dict(exchange=EXCHANGE_PARAMS['exchange'], queue=BEAT_Q_PARAMS['queue'], routing_key='spider.beat')
 
 BEAT_INTERVAL = 5

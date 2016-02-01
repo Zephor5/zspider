@@ -8,7 +8,7 @@
 #     http://doc.scrapy.org/en/latest/topics/settings.html
 #     http://scrapy.readthedocs.org/en/latest/topics/downloader-middleware.html
 #     http://scrapy.readthedocs.org/en/latest/topics/spider-middleware.html
-from conf import DEBUG
+from conf import DEBUG, MC_SERVERS
 
 BOT_NAME = 'ZSPIDER'
 
@@ -16,7 +16,7 @@ SPIDER_MODULES = ['zspider.spiders']
 
 DUPEFILTER_DEBUG = DEBUG
 DUPEFILTER_CLASS = 'zspider.dupefilters.MemcachedDupeFilter'
-DUPEFILTER_SERVERS = 'memcache for debug use' if DEBUG else 'memcache for production use'
+DUPEFILTER_SERVERS = MC_SERVERS
 
 CONCURRENT_ITEMS = 5
 # Crawl responsibly by identifying yourself (and your website) on the user-agent

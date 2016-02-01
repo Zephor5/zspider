@@ -52,21 +52,3 @@ class HeartBeatTest(TestCase):
 
         d = dispatcher.startup(hb)
         return d
-
-    def test_hb(self):
-        d_ = defer.Deferred()
-
-        def patch(_=None):
-            return self.patch_hb.start()
-
-        def done(hb):
-            def __():
-                d_.callback(None)
-                self.patch_hb.stop()
-
-            hb.side_effect = __
-
-        d = dispatcher.startup()
-        d.addCallback(patch)
-        d.addCallback(done)
-        return d_

@@ -31,7 +31,7 @@
                 <dt>{{ ip }}</dt>
                 <dd>当前状态：<strong>{{ state_dict[v.status] }}</strong>&emsp;&emsp;&emsp;最后更新：{{ format_timestamp(v.refresh) }}</dd>
             {% endfor %}</dl>{% else %}
-            {{ err }}
+            无调度中心运行{{ err }}
             {% endif %}
         </div>
     </div>

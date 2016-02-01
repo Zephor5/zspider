@@ -5,6 +5,8 @@ import time
 import datetime
 import tzlocal
 import random
+import threading
+import memcache
 
 from twisted.web.resource import Resource
 from twisted.internet import reactor, defer
@@ -13,9 +15,8 @@ from apscheduler.schedulers.twisted import TwistedScheduler
 from apscheduler.jobstores.base import JobLookupError
 from pooled_pika import PooledConn
 
-from conf import AMQP_PARAM, TASK_Q_PARAMS, TASK_BIND_PARAMS
+from conf import MC_SERVERS, AMQP_PARAM, TASK_Q_PARAMS, TASK_BIND_PARAMS
 from dispatcher_conf import *
-from utils.errors import DeferredTimeout
 from utils.models import Task
 
 __author__ = 'zephor'
@@ -49,7 +50,7 @@ def _stop_dispatch():
         _state_ = STATE_WAITING
 
 
-class HeartBeat(object):
+class HeartBeat(threading.Thread):
     """
     a lazy heartbeat for zspider
     relying on rabbitmq
@@ -57,95 +58,22 @@ class HeartBeat(object):
 
     __expire = 5 * BEAT_INTERVAL
 
-    def __init__(self, uid=None, loop=None):
-        self._uid = UID if uid is None else uid
-        self._loop = reactor if loop is None else loop
+    def __init__(self):
+        super(HeartBeat, self).__init__()
+        self._key = DISPATCHER_KEY
+        self._mc = memcache.Client(MC_SERVERS, socket_timeout=1, cache_cas=True)
+        self._expire = BEAT_INTERVAL * 2
 
-        self._rmsg = None
-        self._msg = None
-
-        self.__timeout_check = None
-        self.__conn = None
-        self.__channel = None
-        self.__res_d = None
-
-        self.beat()
-
-    def __del__(self):
-        self._loop.callLater(BEAT_INTERVAL, HeartBeat)
-        logger.debug('one beat done')
-
-    @defer.inlineCallbacks
-    def _on_get(self, conn):
-        logger.debug('get conn id:%s' % id(conn))
-
-        self.__conn = conn
-
-        channel = yield conn.channel()
-
-        self.__channel = channel
-
-        queue_object, consumer_tag = yield channel.basic_consume(queue=BEAT_Q_PARAMS['queue'], no_ack=False)
-
-        self.__res_d = queue_object
-        ch, method, properties, body = yield queue_object.get()
-        logger.debug('get res, ch:%s, method:%s, properties:%s, body:%s' % (ch, method, properties, body))
-        self._rmsg = body
-        self.__timeout_check.cancel()
-        yield ch.basic_ack(delivery_tag=method.delivery_tag)
-
-    def _on_check(self):
-        """
-        check the heartbeat message and determine what to do next
-        """
-        del self.__timeout_check  # forbid ref cycle
-        if not self._rmsg:
-            if self.__res_d:
-                # setup
-                self.__res_d.close(DeferredTimeout('fetch timeout'))
-            logger.warn('no rmsg get, current state is %s' % _state_)
-
-    def _on_err_conn(self, err):
-        """ this is not the finally error handler
-        :return err  but set deal
-        """
-        logger.fatal(err)
-        if hasattr(self, '__timeout_check'):
-            self.__timeout_check.cancel()
-        _stop_dispatch()
-        err.deal__ = True
-        return err
-
-    @staticmethod
-    def _on_err(err):
-        if hasattr(err, 'deal__') and err.deal__:
-            return err
-        if isinstance(err.value, DeferredTimeout):
-            logger.info('setup heartbeat')
-            return
-        logger.error(err)
-        _stop_dispatch()
-        err.deal__ = True
-        return err
-        # do some clean up on err occurred
-
-    @staticmethod
-    def _clear_err(err):
-        if hasattr(err, 'deal__') and err.deal__:
-            return
-        _stop_dispatch()
-        logger.error(err)
-
-    def _on_beat(self):
-        logger.debug('rmsg: %s' % self._rmsg)
+    def _on_beat(self, rmsg):
+        logger.debug('rmsg: %s' % rmsg)
         # mine = {'status': _state_, 'refresh': time.time()}
-        msg = json.loads(self._rmsg) if self._rmsg else {}
+        msg = json.loads(rmsg) if rmsg else {}
         _msg = {}
         main_nodes = {}
         pending_nodes = {}
 
-        if self._uid in msg:
-            _msg = msg.pop(self._uid)
+        if UID in msg:
+            _msg = msg.pop(UID)
 
         for uid in msg.keys():
             _s = msg[uid].get('status')
@@ -182,11 +110,11 @@ class HeartBeat(object):
                     else:
                         self.__on_keep(main_nodes)
 
-        message = {self._uid: {'status': _state_, 'refresh': time.time()}}
+        message = {UID: {'status': _state_, 'refresh': time.time()}}
         message.update(msg)
         message.update(main_nodes)
         message.update(pending_nodes)
-        return message
+        return json.dumps(message)
 
     @classmethod
     def __check_state(cls, nodes):
@@ -224,23 +152,27 @@ class HeartBeat(object):
     def __on_keep(self, out_dates=None):
         self.__reset_others(out_dates)
 
-    @defer.inlineCallbacks
-    def _send(self, msg):
-        yield self.__channel.basic_publish(EXCHANGE_PARAMS['exchange'],
-                                           BEAT_BIND_PARAMS['routing_key'], json.dumps(msg))
-        self.__channel.close()
-        defer.returnValue(self.__conn)
-
-    def beat(self):
-        d = pooled_conn.acquire()
-        d.addCallbacks(self._on_get, self._on_err_conn)
-        d.addErrback(self._on_err)
-        d.addCallback(lambda _: self._on_beat())
-        d.addCallback(self._send)
-        d.addBoth(pooled_conn.release)  # release what acquired anyway
-        d.addErrback(self._on_err)
-        d.addErrback(self._clear_err)
-        self.__timeout_check = self._loop.callLater(2, self._on_check)
+    def run(self):
+        reties = 0
+        while 1:
+            rmsg = self._mc.gets(self._key)
+            msg = self._on_beat(rmsg)
+            if rmsg:
+                if self._mc.cas(self._key, msg, self._expire):
+                    reties = 0
+                    time.sleep(BEAT_INTERVAL)
+                else:
+                    reties += 1
+            else:
+                if self._mc.add(self._key, msg, self._expire):
+                    reties = 0
+                    time.sleep(BEAT_INTERVAL)
+                else:
+                    reties += 1
+            if reties > 3:
+                logger.error('retries too much, may net error')
+                _stop_dispatch()
+                break
 
 
 class Send(object):
@@ -393,15 +325,13 @@ class TaskManage(Resource):
         return json.dumps(res)
 
 
-def startup(main_job=HeartBeat):
+def startup(main_job):
     assert callable(main_job), 'main_job must be callable'
 
     @defer.inlineCallbacks
     def _set_up(channel):
         # do some setup
         yield channel.exchange_declare(**EXCHANGE_PARAMS)
-        yield channel.queue_declare(**BEAT_Q_PARAMS)
-        yield channel.queue_bind(**BEAT_BIND_PARAMS)
         yield channel.queue_declare(**TASK_Q_PARAMS)
         yield channel.queue_bind(**TASK_BIND_PARAMS)
         defer.returnValue(channel)
@@ -429,7 +359,9 @@ def startup(main_job=HeartBeat):
 
 
 def main():
-    reactor.callLater(0, startup)
+    main_job = HeartBeat()
+    main_job.setDaemon(True)
+    reactor.callLater(0, startup, main_job.start)
 
     # dispatcher http manage api
     from twisted.web.server import Site

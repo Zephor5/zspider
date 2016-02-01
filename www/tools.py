@@ -12,13 +12,10 @@ def validate_forms(forms):
 
 
 def get_internal_msg():
-    import pika
-    from conf import AMQP_PARAM
-    from dispatcher_conf import BEAT_Q_PARAMS
+    import memcache
+    from conf import MC_SERVERS
+    from dispatcher_conf import DISPATCHER_KEY
 
-    mq = pika.BlockingConnection(AMQP_PARAM)
-    channel = mq.channel()
-    _method, _p, _body = channel.basic_get(BEAT_Q_PARAMS['queue'])
-    channel.basic_reject(_method.delivery_tag)
-    channel.close()
-    return json.loads(_body)
+    mc = memcache.Client(MC_SERVERS)
+    msg = mc.get(DISPATCHER_KEY)
+    return json.loads(msg if msg else '{}')
