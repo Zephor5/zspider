@@ -29,14 +29,16 @@ def log_list(part):
     level = int(args.get('level', 0))
     task_id = args.get('task_id')
     url = args.get('url')
-    q_params = {'level__gte': level}
+    q_params = {}
+    if level > 0:
+        q_params.update({'level__gte': level})
     if task_id:
         q_params.update({'task_id': task_id})
     if url:
         q_params.update({'url': url})
     # limit distinct to save time
-    ips = cls.objects(**q_params).order_by('-time', '-msecs').limit(1000).aggregate({"$group": {"_id": "$ip"}})
-    ips = [_r['_id'] for _r in ips]
+    ips = cls.objects(**q_params).only('ip').order_by('-time', '-msecs').limit(1000)
+    ips = set([_r['ip'] for _r in ips])
     if len(ips) == 0:
         abort(404)
     if ip != 'no':
