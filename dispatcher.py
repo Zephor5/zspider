@@ -52,8 +52,8 @@ def _stop_dispatch():
 
 class HeartBeat(threading.Thread):
     """
-    a lazy heartbeat for zspider
-    relying on rabbitmq
+    heartbeat for dispatcher
+    relying on memcache
     """
 
     __expire = 5 * BEAT_INTERVAL
@@ -172,7 +172,7 @@ class HeartBeat(threading.Thread):
             if reties > 3:
                 logger.error('retries too much, may net error')
                 _stop_dispatch()
-                break
+                time.sleep(self.__expire + 1)
 
 
 class Send(object):
