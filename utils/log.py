@@ -8,7 +8,7 @@ from datetime import datetime
 from Queue import Queue, Empty
 from threading import Thread
 from utils import engine
-from utils.fields_models import IpField
+from utils.fields_models import IpField, FBaseQuerySet
 from conf import INNER_IP, LOG_DATEFORMAT
 
 __author__ = 'zephor'
@@ -24,6 +24,7 @@ LEVELS[logging.FATAL] = 'FATL'
 
 class BaseLog(engine.DynamicDocument):
     meta = {'abstract': True,
+            'queryset_class': FBaseQuerySet,
             'index_background': True,
             'indexes': [
                 '#ip',  # hashed index

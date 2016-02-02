@@ -1,7 +1,9 @@
 # coding=utf-8
 import re
 from wtforms import fields, ValidationError
+from flask.ext.mongoengine import BaseQuerySet
 from . import engine
+from .pagination import FPagination
 
 __author__ = 'zephor'
 
@@ -106,6 +108,11 @@ class IpField(BaseValidateField):
     def __init__(self, **kwargs):
         kwargs.setdefault('regex', r'^((\d|[1-9]\d|1\d{2}|2[0-4]\d|25[0-5])\.){3}(\d|[1-9]\d|1\d{2}|2[0-4]\d|25[0-5])$')
         super(IpField, self).__init__(**kwargs)
+
+
+class FBaseQuerySet(BaseQuerySet):
+    def paginate(self, page, per_page, error_out=True):
+        return FPagination(self, page, per_page)
 
 
 class BaseDocument(engine.Document):
