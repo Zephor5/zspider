@@ -34,7 +34,9 @@ def log_list(part):
         q_params.update({'task_id': task_id})
     if url:
         q_params.update({'url': url})
-    ips = cls.objects(**q_params).distinct('ip')
+    # limit distinct to save time
+    ips = cls.objects(**q_params).order_by('-time', '-msecs').limit(1000).aggregate({"$group": {"_id": "$ip"}})
+    ips = [_r['_id'] for _r in ips]
     if len(ips) == 0:
         abort(404)
     if ip != 'no':
