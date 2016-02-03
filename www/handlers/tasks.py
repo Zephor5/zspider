@@ -345,6 +345,7 @@ def _get_dispatcher():
     for ip, v in msg.iteritems():
         if v['status'] == STATE_DISPATCH:
             if v['refresh'] > _t:
+                _t = v['refresh']
                 dispatcher = ip
     return dispatcher
 
