@@ -205,7 +205,6 @@
             if(!confirm('确定要更改状态么？')) return;
             var _self = $(this), task_id = _self.parents('tr').attr('data-id');
             $.post('/task/toggle/' + task_id, function(res){
-                console.log(res);
                 if(!res['status']){
                     alert(res['data']);
                     return;
@@ -220,7 +219,6 @@
             var task_id = $(this).parents('tr').attr('data-id'),
                 task_name = $(this).parents('tr').eq(0).children().eq(1).text();
             $.get('/task/q/subscribe/' + task_id, function(res){
-                console.log(res);
                 var d = $("#subscribe-message"), tmp, params = {
                     modal: true,
                     title: "<div class='widget-header widget-header-small'><h4 class='smaller'><i class='ace-icon fa fa-envelope-o'></i> 订阅</h4></div>",
@@ -228,12 +226,28 @@
                     buttons: [
                         {
                             text: "OK",
-                            class : "btn btn-primary btn-xs",
+                            class: "btn btn-primary btn-xs",
                             click: function() {
                                 $(this).dialog("close");
                             }
                         }
                     ]
+                },
+                d_button = {
+                    text: "删除",
+                    class: "btn btn-purple btn-xs",
+                    click: function(){
+                        var _t = this;
+                        $.post('/task/d/subscribe/' + task_id, function(_r){
+                            $(_t).dialog('close');
+                            if(_r['status']){
+                                alert('订阅已删除');
+                            }
+                            else{
+                                alert('订阅删除失败\n' + _r['data']);
+                            }
+                        });
+                    }
                 };
                 d.children('h4').html(task_name);
                 if(res['status']){
@@ -242,6 +256,7 @@
                     tmp.eq(0).html(res['data']['cids']);
                     tmp.eq(1).html(res['data']['model_id']);
                     d.children('dl').show();
+                    params['buttons'].splice(0, 0, d_button);
                 }
                 else{
                     d.children('dl').hide();

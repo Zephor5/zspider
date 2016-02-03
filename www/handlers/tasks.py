@@ -272,6 +272,20 @@ def task_q_subscribe(task_id):
     return jsonify(res)
 
 
+@app.route('/task/d/subscribe/<task_id>', methods=['POST'])
+def task_d_subscribe(task_id):
+    res = {
+        'status': True,
+        'data': ''
+    }
+    try:
+        PubSubscribe.objects(id=task_id).delete()
+    except Exception as e:
+        res['status'] = False
+        res['data'] = unicode(e)
+    return jsonify(res)
+
+
 @app.route('/task/toggle/<task_id>', methods=['POST'])
 @acquire_admin
 def task_toggle(task_id):
