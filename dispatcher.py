@@ -72,6 +72,8 @@ class HeartBeat(threading.Thread):
         main_nodes = {}
         pending_nodes = {}
 
+        self.__clear_expire(msg)
+
         if UID in msg:
             _msg = msg.pop(UID)
 
@@ -85,30 +87,20 @@ class HeartBeat(threading.Thread):
         _len = len(main_nodes)
         if _len == 0:
             if _state_ == STATE_WAITING:
-                if self.__check_state(pending_nodes):
+                if pending_nodes:
                     # any node is pending already
                     self.__on_keep()
                 else:
                     self.__on_pending()
-            elif _state_ == STATE_PENDING and _msg['status'] == STATE_PENDING:
+            elif _state_ == STATE_PENDING and _msg.get('status') == STATE_PENDING:
                 self.__on_dispatch()
             else:
                 self.__on_keep()
         else:
-            if self.__check_state(main_nodes):
-                if _state_ != STATE_WAITING:
-                    self.__on_waiting()
-                else:
-                    self.__on_keep()
+            if _state_ != STATE_WAITING:
+                self.__on_waiting()
             else:
-                if _state_ == STATE_WAITING:
-                    self.__on_pending(main_nodes)
-                else:
-                    logger.error('unexpected state:%s' % locals())
-                    if _state_ == STATE_PENDING:
-                        self.__on_dispatch(main_nodes)
-                    else:
-                        self.__on_keep(main_nodes)
+                self.__on_keep()
 
         message = {UID: {'status': _state_, 'refresh': time.time()}}
         message.update(msg)
@@ -117,40 +109,29 @@ class HeartBeat(threading.Thread):
         return json.dumps(message)
 
     @classmethod
-    def __check_state(cls, nodes):
+    def __clear_expire(cls, nodes):
         """
-        check other nodes, clear out dates
+        clear out dates
         :param nodes:
-        :return: (bool) True if someone alive
         """
-        status = False
         for uid in nodes.keys():
-            if time.time() - nodes[uid]['refresh'] < cls.__expire:
-                status = True
-            else:
+            if time.time() - nodes[uid]['refresh'] > cls.__expire:
                 nodes.pop(uid)
-        return status
 
     @staticmethod
-    def __reset_others(out_dates):
-        if out_dates:
-            for uid in out_dates:
-                out_dates[uid]['status'] = STATE_WAITING
-
-    def __on_waiting(self, out_dates=None):
-        self.__reset_others(out_dates)
+    def __on_waiting():
         _stop_dispatch()
 
-    def __on_pending(self, out_dates=None):
-        self.__reset_others(out_dates)
+    @staticmethod
+    def __on_pending():
         _prepare_to_dispatch()
 
-    def __on_dispatch(self, out_dates=None):
-        self.__reset_others(out_dates)
+    @staticmethod
+    def __on_dispatch():
         _start_dispatch()
 
-    def __on_keep(self, out_dates=None):
-        self.__reset_others(out_dates)
+    def __on_keep(self):
+        pass
 
     def run(self):
         reties = 0
