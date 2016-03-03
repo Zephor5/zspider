@@ -45,6 +45,7 @@ class LogCrawler(BaseLog):
     meta = {'max_size': 5 * 2 ** 30,
             'max_documents': 10000000,
             'indexes': [
+                'task_id',
                 '#url',
                 '$task_name'
             ]}
