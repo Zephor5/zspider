@@ -173,6 +173,7 @@ class Send(object):
             d.addCallbacks(self._on_send, self._on_err_conn)
             d.addBoth(pooled_conn.release)
             d.addErrback(self._on_err)
+            d.addBoth(self._reset_state)
             if self._rand:
                 self._rand_reschedule()
             logger.info('dispatch %s' % self.msgs, extra={'task_id': self.task_id})
@@ -189,27 +190,30 @@ class Send(object):
                                 run_date=_now + datetime.timedelta(seconds=next_sec))
         logger.info('random schedule next run time, at %s' % job.next_run_time, extra={'task_id': self.task_id})
 
-    def _on_err_conn(self, err):
+    @staticmethod
+    def _on_err_conn(err):
         logger.error(err)
+
+    @staticmethod
+    def _on_err(err):
+        logger.error(err)
+
+    def _reset_state(self, _=None):
+        logger.info('reset state', extra={'task_id': self.task_id})
         self._doing = False
 
-    def _on_err(self, err):
-        logger.error(err)
-        self._doing = False
-
-    @defer.inlineCallbacks
     def _on_send(self, channel):
         logger.debug('get channel id:%s' % id(channel))
         # noinspection PyBroadException
         try:
-            yield channel.basic_publish(EXCHANGE_PARAMS['exchange'],
-                                        TASK_BIND_PARAMS['routing_key'],
-                                        self.msgs)
+            channel.basic_publish(EXCHANGE_PARAMS['exchange'],
+                                  TASK_BIND_PARAMS['routing_key'],
+                                  self.msgs)
         except:
             logger.exception('send gets error', extra={'task_id': self.task_id})
         finally:
             self._doing = False
-            defer.returnValue(channel)
+            return channel
 
 
 def load_tasks(task_id=None):
