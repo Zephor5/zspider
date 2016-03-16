@@ -59,6 +59,7 @@ class ArticleField(BaseDocument):
     name = engine.StringField(required=True, max_length=32, verbose_name=u'字段名称')
     xpath = XPathField(verbose_name=u'新闻字段xpath')
     re = RegExpField(verbose_name=u'字段解析正则')
+    specify = engine.StringField(max_length=64, verbose_name=u'指定值')
     # boundaries =
 
     @staticmethod

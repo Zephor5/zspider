@@ -59,6 +59,9 @@ class BaseNewsParser(BaseParser):
     def _parse_article_field(self, response):
         new = {'url': response.url}
         for field_conf in self._article_fields:
+            if field_conf.specify:
+                new[field_conf.name] = field_conf.specify
+                continue
             val = response
             if field_conf.xpath:
                 val = response.xpath(field_conf.xpath)
