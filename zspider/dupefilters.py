@@ -22,6 +22,8 @@ class MemcachedDupeFilter(BaseDupeFilter):
         return cls(servers)
 
     def request_seen(self, request):
+        if 'dupefilter' not in request.meta:
+            return False
         fp = request_fingerprint(request)
         if self.mc.get(fp):
             return True
