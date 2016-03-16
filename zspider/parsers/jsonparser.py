@@ -11,6 +11,7 @@ class TaskConfJSONParser(fm.BaseTaskConf):
     pre_boundary = engine.StringField(verbose_name=u'前边界')
     suf_boundary = engine.StringField(verbose_name=u'后边界')
     json_struct = engine.StringField(required=True, regex='^([\[\]\w\d-]+?->)*[\[\]\w\d-]+$', verbose_name=u'索引结构',
+                                     max_length=128,
                                      help_text=u'例如内容{"items":[{"url":"http://example"}]}，'
                                                u'则结构为：items->[]->url或items->[0]->url')
 
