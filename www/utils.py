@@ -2,8 +2,13 @@
 import functools
 
 from flask import session, abort, request
+from crawler import TestCrawler
 
 __author__ = 'zephor'
+
+
+test_crawler = TestCrawler()
+test_crawler.settings.set('ITEM_PIPELINES', {'zspider.pipelines.TestResultPipeLine': 100})
 
 
 def acquire_admin(f):

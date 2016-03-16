@@ -83,7 +83,7 @@
                             <i class="ace-icon fa fa-minus bigger-110"></i>
                             测试新闻
                         </button>
-                        <button class="btn btn-info" type="submit">
+                        <button id="normal_submit" class="btn btn-info" type="submit">
                             <i class="ace-icon fa fa-check bigger-110"></i>
                             保存
                         </button>
@@ -112,7 +112,8 @@ $(function(){
     var _html = '<div class="hr hr8 dotted"></div>{% for field in article_field_forms.0 %}{% if field.type != 'CSRFTokenField' %}<div class="form-group">{{ field.label(class_='col-sm-3 control-label no-padding-right') }}<div class="col-xs-12 col-sm-5">{{ field(id=field.name+'_'+fields_len|string, class='col-sm-9', value='') }}{% if field.description %}<span class="help-button" data-rel="popover" data-trigger="hover" data-placement="left" data-content="{{ field.description }}" title="" data-original-title="{{ field.label.text }}">?</span>{% endif %}</div></div>{% endif %}{% endfor %}',
         ele_len = $(_html).length,
         task_form = $('#task_form'),
-        fields_len = $('#fields_len');
+        fields_len = $('#fields_len')
+        ourl = window.location.href;
 
 
     function get_field_html(num){
@@ -151,19 +152,22 @@ $(function(){
         });
     });
     $('#force-save').click(function(){
-        task_form.prop('action', '/task/add');
+        task_form.prop('action', '/task/add').prop('target', '_self');
     });
     $('#force-save-start').click(function(){
-        task_form.prop('action', '/task/add?active=1');
+        task_form.prop('action', '/task/add?active=1').prop('target', '_self');
     });
     $('#test-index').click(function(){
-        task_form.prop('action', '/task/test/index');
+        task_form.prop('action', '/task/test/index').prop('target', '_blank');
     });
     $('#test-article').click(function(){
-        task_form.prop('action', '/task/test/article');
+        task_form.prop('action', '/task/test/article').prop('target', '_blank');
+    });
+    $('#normal_submit').click(function(){
+        task_form.prop('action', ourl+'?active=1').prop('target', '_self');
     });
     $('#submit_start').click(function(){
-        task_form.prop('action', window.location.href+'?active=1');
+        task_form.prop('action', ourl+'?active=1').prop('target', '_self');
     });
 });
 </script>

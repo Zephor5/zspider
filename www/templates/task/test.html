@@ -1,0 +1,12 @@
+{% if done -%}
+{% if target == 'index' %}
+{% for r in res %}{{ r.url }}<br>{% endfor %}
+{% else %}
+{% if res %}{% for field in res.0 %}<div>{{ field }} : <pre>{{ res.0[field] }}</pre></div>{% endfor %}{% endif %}
+{% endif %}
+{% else %}
+{% if form.error %}{{ form.error }}{% endif %}
+{% for field in form %}{% if field.errors %}{{ field.errors[0] }}{% endif %}{% endfor %}
+{% for field in conf_form %}{% if field.errors %}{{ field.errors[0] }}{% endif %}{% endfor %}
+{% for article_field_form in article_field_forms %}{% if article_field_form.error %}{{ article_field_form.error }}{% endif %}{% for field in article_field_form %}{% if field.errors %}{{ field.errors[0] }}{% endif %}{% endfor %}{% endfor %}
+{%- endif %}

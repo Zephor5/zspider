@@ -1,4 +1,5 @@
 # coding=utf-8
+import Queue
 import logging
 import json
 import scrapy
@@ -18,6 +19,57 @@ __author__ = 'zephor'
 
 logger = logging.getLogger('crawler')
 scrapy.optional_features.discard('boto')
+
+
+class TestCrawler(CrawlerProcess):
+
+    def __init__(self):
+        import crawl_conf as p_settings
+
+        settings = Settings()
+        settings.setmodule(p_settings)
+        super(CrawlerProcess, self).__init__(settings)
+        self.task_q = defer.DeferredQueue()
+        self.res_q = Queue.Queue()
+        self.task_q.get().addCallback(self.crawl)
+
+    def crawl(self, kwargs):
+        spider_name = kwargs.pop('spider_name', '')
+        crawler = self._create_crawler(spider_name)
+
+        self.crawlers.add(crawler)
+        d = crawler.crawl(**kwargs)
+        self._active.add(d)
+
+        def _done(_):
+            self.crawlers.discard(crawler)
+            self._active.discard(d)
+            try:
+                result = crawler.spider.test_result
+                del crawler.spider.test_result
+            except AttributeError:
+                result = None    # spider may be None in case Failure
+            self.res_q.put(result)
+            return _
+
+        d.addBoth(_done)
+        d.addErrback(lambda _: logger.error(_))
+        d.addCallback(lambda _: self.task_q.get().addCallback(self.crawl))
+        return d
+
+
+def debug(_=None):
+    """
+    for debug use
+    """
+    import objgraph
+
+    # with open('logs/test', 'w') as f:
+    #     objs = objgraph.get_leaking_objects()
+    #     for o in objs:
+    #         f.write('%s\n' % o.encode('utf-8') if isinstance(o, unicode) else str(o))
+    leak_ref = objgraph.by_type('Newspaper')
+    objgraph.show_backrefs(leak_ref, max_depth=10, filename='my_leak.png')
 
 
 class CrawlerDaemon(CrawlerProcess):
@@ -84,7 +136,8 @@ class CrawlerDaemon(CrawlerProcess):
         try:
             msg = json.loads(body)
             self.settings.set('COOKIES_ENABLED', msg['is_login'], 'spider')
-            d = self.crawl(msg['spider'], task_id=msg['id'], task_name=msg['name'], parser=msg['parser'])
+            d = self.crawl(msg['spider'], parser=msg['parser'], task_id=msg['id'], task_name=msg['name'])
+            # d.addCallback(lambda som: reactor.callLater(2, debug))
             d.addErrback(lambda err: logger.error(err))
         except Exception as e:
             logger.error(repr(e))

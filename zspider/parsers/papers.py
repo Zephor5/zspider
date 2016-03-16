@@ -32,8 +32,8 @@ class Newspaper(BaseNewsParser):
 
     CONF = TaskConfNewspaper
 
-    def __init__(self, task_id, task_name):
-        super(self.__class__, self).__init__(task_id, task_name)
+    def __init__(self, task_id, task_name, task_conf=None, article_fields=None):
+        super(self.__class__, self).__init__(task_id, task_name, task_conf, article_fields)
         self.pages = OrderedDict()
 
     @property

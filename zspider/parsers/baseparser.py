@@ -14,9 +14,9 @@ class BaseNewsParser(BaseParser):
 
     INNER_TEXT = 'text()[normalize-space()]|*//text()[normalize-space()]'
 
-    def __init__(self, task_id, name):
+    def __init__(self, task_id, name, task_conf=None, article_fields=None):
         super(BaseNewsParser, self).__init__(name)
-        self._get_conf(task_id)
+        self._get_conf(task_id, task_conf, article_fields)
         self.date = datetime.date.today()
         self._setup()
 
@@ -26,9 +26,12 @@ class BaseNewsParser(BaseParser):
     def __unicode__(self):
         return u'%s解析器' % self.name
 
-    def _get_conf(self, task_id):
+    def _get_conf(self, task_id, task_conf, article_fields):
         # main conf init
-        conf = self.CONF.objects.get(id=task_id)
+        if task_id.startswith('test'):
+            conf = task_conf
+        else:
+            conf = self.CONF.objects.get(id=task_id)
         try:
             self.login_data = conf.login_data
             if conf.to_login:
@@ -38,8 +41,11 @@ class BaseNewsParser(BaseParser):
         self._conf = conf
 
         # article_fields
-        from utils.models import ArticleField
-        self._article_fields = ArticleField.objects(task=task_id)
+        if task_id.startswith('test'):
+            self._article_fields = article_fields
+        else:
+            from utils.models import ArticleField
+            self._article_fields = ArticleField.objects(task=task_id)
 
     def _setup(self):
         date = self.date

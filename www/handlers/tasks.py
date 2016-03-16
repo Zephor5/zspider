@@ -1,11 +1,12 @@
 # coding=utf-8
 import json
+import logging
 import urllib2
 from datetime import datetime
 from flask import request, session, render_template, url_for, redirect, abort, flash, get_flashed_messages, jsonify
 from werkzeug.exceptions import NotFound
 
-from www.utils import acquire_admin
+from www.utils import acquire_admin, test_crawler
 from www.tools import validate_forms, get_internal_msg
 from utils.models import Task, TaskForm, PARSER_CONF_FORM_REF, User, ArticleField, ArticleFieldForm
 from zspider.models import PubSubscribe, PubSubscribeForm
@@ -13,6 +14,8 @@ from dispatcher_conf import MANAGE_KEY, MANAGE_PORT, STATE_DISPATCH
 from . import app
 
 __author__ = 'zephor'
+
+logger = logging.getLogger(__name__)
 
 
 @app.route('/task/list')
@@ -45,7 +48,6 @@ def task_list():
 @app.route('/task/add', methods=['GET', 'POST'])
 @acquire_admin
 def task_add():
-
     task_form = TaskForm(request.form)
 
     # conf part #
@@ -124,7 +126,6 @@ def task_add():
 @app.route('/task/edit/<task_id>', methods=['GET', 'POST'])
 @acquire_admin
 def task_edit(task_id):
-
     task = Task.objects.get_or_404(id=task_id)
 
     task_form = TaskForm(request.form, obj=task)
@@ -234,6 +235,69 @@ def task_edit(task_id):
     return render_template('task/add.html', **context)
 
 
+@app.route('/task/test/<target>', methods=['GET', 'POST'])
+def task_test(target):
+    if target not in ('index', 'article'):
+        abort(404)
+    task_form = TaskForm(request.form)
+    # conf part #
+    parser = task_form.parser.data
+    if parser not in PARSER_CONF_FORM_REF:
+        parser = task_form.parser.choices[0][0]
+
+    conf_form = PARSER_CONF_FORM_REF.get(parser)
+    if conf_form is None:
+        abort(404)
+
+    conf_form = conf_form(request.form, csrf_enabled=False)
+    # end part #
+
+    # article fields #
+    fields_len = 0
+    article_field_forms = []
+    if target == 'article':
+        fields_len = int(request.form.get('fields_len', 0))
+        for i in xrange(0, fields_len):
+            article_field_forms.append(
+                ArticleFieldForm(csrf_enabled=False,
+                                 name=request.form.get('name_%s' % i),
+                                 xpath=request.form.get('xpath_%s' % i),
+                                 re=request.form.get('re_%s' % i))
+            )
+    # article fields #
+    done = False
+    res = []
+    if request.method == 'POST' and \
+            validate_forms([task_form, conf_form]) and \
+            validate_forms(article_field_forms) and _verify_fields(article_field_forms):
+        task = task_form.save(commit=False)
+        conf = conf_form.save(commit=False)
+        afs = []
+        if target == 'article':
+            for article_field_form in article_field_forms:
+                afs.append(article_field_form.save(commit=False))
+        from twisted.internet import reactor
+        test_crawler.settings.set('COOKIES_ENABLED', task.is_login)
+        reactor.callFromThread(test_crawler.task_q.put,
+                               dict(spider_name=task.spider, parser=task.parser, task_id='test_%s' % target,
+                                    task_name=task.name,
+                                    task_conf=conf,
+                                    article_fields=afs))
+        res = test_crawler.res_q.get()
+        done = True
+
+    context = {
+        'form': task_form,
+        'conf_form': conf_form,
+        'article_field_forms': article_field_forms,
+        'done': done,
+        'target': target,
+        'res': res
+    }
+
+    return render_template('task/test.html', **context)
+
+
 @app.route('/task/subscribe', methods=['GET', 'POST'])
 @acquire_admin
 def task_subscribe():
@@ -289,7 +353,6 @@ def task_d_subscribe(task_id):
 @app.route('/task/toggle/<task_id>', methods=['POST'])
 @acquire_admin
 def task_toggle(task_id):
-
     res = {
         'status': False,
         'data': ''

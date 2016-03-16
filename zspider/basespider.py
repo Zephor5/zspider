@@ -9,12 +9,12 @@ logger = logging.getLogger(__name__)
 
 class BaseSpider(Spider):
 
-    def __init__(self, task_id, task_name, parser, *args, **kwargs):
+    def __init__(self, parser, task_id, task_name, *args, **kwargs):
         super(BaseSpider, self).__init__(*args, **kwargs)
         self.task_id = task_id
         from zspider.parsers import get_parser
 
-        self.parser = get_parser(task_id, task_name, parser)
+        self.parser = get_parser(parser, task_id, task_name, **kwargs)
         self._extra = {'task_id': task_id, 'task_name': task_name}
         logger.info(u'task {0} start with parser:{1}'.format(task_name, parser), extra=self._extra)
 
@@ -27,12 +27,18 @@ class BaseSpider(Spider):
             else:
                 _meta = {}
             url = response.urljoin(url)
+            if self.task_id == 'test_index':
+                yield {"url": url}
+                continue
             _extra_url['url'] = url
             logger.info('begin to crawl', extra=_extra_url)
             request = Request(url, callback)
             request.meta.update(_meta)
-            request.meta['dupefilter'] = None   # mark 去重
+            if self.task_id != 'test_article':
+                request.meta['dupefilter'] = None   # mark 去重
             yield request
+            if self.task_id == 'test_article':
+                break
 
     def _parse_article(self, response):
         self._extra_url['url'] = response.url
