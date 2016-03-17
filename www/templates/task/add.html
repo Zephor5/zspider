@@ -112,7 +112,7 @@ $(function(){
     var _html = '<div class="hr hr8 dotted"></div>{% for field in article_field_forms.0 %}{% if field.type != 'CSRFTokenField' %}<div class="form-group">{{ field.label(class_='col-sm-3 control-label no-padding-right') }}<div class="col-xs-12 col-sm-5">{{ field(id=field.name+'_'+fields_len|string, class='col-sm-9', value='') }}{% if field.description %}<span class="help-button" data-rel="popover" data-trigger="hover" data-placement="left" data-content="{{ field.description }}" title="" data-original-title="{{ field.label.text }}">?</span>{% endif %}</div></div>{% endif %}{% endfor %}',
         ele_len = $(_html).length,
         task_form = $('#task_form'),
-        fields_len = $('#fields_len')
+        fields_len = $('#fields_len'),
         ourl = window.location.href;
 
 
