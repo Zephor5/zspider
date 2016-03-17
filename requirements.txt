@@ -8,7 +8,7 @@ python-memcached
 # web
 
 # all
-pooled-pika
+pooled-pika>=0.1.4
 flask-mongoengine
 
 # optional
