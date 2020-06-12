@@ -1,4 +1,0 @@
-{% for field in conf_form %}
-{% if field.type != 'CSRFTokenField' %}
-<div class="form-group{% if field.errors %} has-error{% endif %}">{{ field.label(class_='col-sm-3 control-label no-padding-right') }}<div class="col-xs-12 col-sm-5">{{ field(class='col-sm-9') }}{% if field.description %}<span class="help-button" data-rel="popover" data-trigger="hover" data-placement="left" data-content="{{ field.description }}" title="" data-original-title="{{ field.label.text }}">?</span>{% endif %}</div>{% if field.errors %}<div class="help-block col-xs-12 col-sm-reset inline">{{ field.errors[0] }}</div>{% endif %}</div>{% endif %}
-{% endfor %}

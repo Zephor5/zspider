@@ -1,19 +1,25 @@
 # coding=utf-8
 import json
 
-from utils import engine, fields_models as fm
-from .baseparser import BaseNewsParser
+from mongoengine import fields
 
-__author__ = 'zephor'
+from .baseparser import BaseNewsParser
+from zspider.utils import fields_models as fm
+
+__author__ = "zephor"
 
 
 class TaskConfJSONParser(fm.BaseTaskConf):
-    pre_boundary = engine.StringField(verbose_name=u'前边界')
-    suf_boundary = engine.StringField(verbose_name=u'后边界')
-    json_struct = engine.StringField(required=True, regex='^([\[\]\w\d-]+?->)*[\[\]\w\d-]+$', verbose_name=u'索引结构',
-                                     max_length=128,
-                                     help_text=u'例如内容{"items":[{"url":"http://example"}]}，'
-                                               u'则结构为：items->[]->url或items->[0]->url')
+    pre_boundary = fields.StringField(verbose_name=u"前边界")
+    suf_boundary = fields.StringField(verbose_name=u"后边界")
+    json_struct = fields.StringField(
+        required=True,
+        regex=r"^([\[\]\w\d-]+?->)*[\[\]\w\d-]+$",
+        verbose_name=u"索引结构",
+        max_length=128,
+        help_text=u'例如内容{"items":[{"url":"http://example"}]}，'
+        u"则结构为：items->[]->url或items->[0]->url",
+    )
 
 
 class JSONParser(BaseNewsParser):
@@ -32,14 +38,14 @@ class JSONParser(BaseNewsParser):
             s_i = s_i if s_i > -1 else None
         data = json.loads(body[p_i:s_i])
 
-        structs = self._conf.json_struct.split('->')
+        structs = self._conf.json_struct.split("->")
 
         lists = []
 
         def gen_lists(_data, _structs):
             while _structs:
                 _p = _structs.pop(0)
-                if _p.startswith('[') and _p.endswith(']'):
+                if _p.startswith("[") and _p.endswith("]"):
                     _p = _p[1:-1]
                     if _p:
                         _data = _data[int(_p)]
@@ -56,7 +62,7 @@ class JSONParser(BaseNewsParser):
             yield data
 
         while lists:
-            for i in xrange(len(lists)):
+            for i in range(len(lists)):
                 if i == 0:
                     _list, _, structs = lists.pop(-1)
                     for data in _list:
@@ -65,9 +71,9 @@ class JSONParser(BaseNewsParser):
                         yield data
                 else:
                     _list, j, structs = lists.pop(-1)
-                    if j+1 < len(_list):
-                        lists.append((_list, j+1, structs))
-                        gen_lists(_list[j+1], structs)
+                    if j + 1 < len(_list):
+                        lists.append((_list, j + 1, structs))
+                        gen_lists(_list[j + 1], structs)
                         break
 
     def parse_article(self, response):

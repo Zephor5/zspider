@@ -1,2 +1,6 @@
+-r requirements.txt
+objgraph==3.4.1
+pre-commit==2.5.1
+
 # dev
-objgraph
+sphinx==3.1.0

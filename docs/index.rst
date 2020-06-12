@@ -34,7 +34,7 @@ Notice
 ------
   Docs are writing, but not that quick.
 
-  This is ready for use. There are several resources to be prepared and configured to use.  
+  This is ready for use. There are several resources to be prepared and configured to use.
 
   Mind those source file containing ``conf`` in the filename. mainly: ``conf.py``, ``crawl_conf.py``, ``dispatcher_conf.py``, ``web_conf.py``
 

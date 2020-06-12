@@ -1,16 +1,17 @@
 # dispatcher
-apscheduler
+apscheduler==3.6.3
+flask-mongoengine==0.9.5
+mongoengine==0.20.0
 
-# crawl_daemon
-scrapy
-python-memcached
+# optional
+netifaces==0.10.9
 
 # web
 
 # all
-pooled-pika>=0.1.4
-flask-mongoengine
+pooled-pika==0.2.1
+python-memcached==1.59
 
-# optional
-netifaces
-
+# crawl_daemon
+scrapy==2.1.0
+selenium==3.141.0

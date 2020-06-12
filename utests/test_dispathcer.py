@@ -1,29 +1,36 @@
 # coding=utf-8
 import json
-import mock
 import time
+
 import dispatcher
-
-from twisted.internet import defer, reactor
+import mock
+from twisted.internet import defer
+from twisted.internet import reactor
 from twisted.trial.unittest import TestCase
-from dispatcher_conf import STATE_DISPATCH
 
-__author__ = 'zephor'
+from zspider.confs.dispatcher_conf import STATE_DISPATCH
+
+__author__ = "zephor"
 
 
 class HeartBeatTest(TestCase):
     @classmethod
     def setUpClass(cls):
         import init
+
         init.init()
 
     def setUp(self):
-        self.patch_pc = mock.patch('dispatcher.pooled_conn')
-        self.patch_hb = mock.patch('dispatcher.HeartBeat')
+        self.patch_pc = mock.patch("dispatcher.pooled_conn")
+        self.patch_hb = mock.patch("dispatcher.HeartBeat")
 
         fake_q = mock.Mock()
-        fake_q.get.return_value = mock.Mock(), mock.Mock(), None, json.dumps(
-            {"1.1.1.1": {"status": STATE_DISPATCH, "refresh": time.time()}})
+        fake_q.get.return_value = (
+            mock.Mock(),
+            mock.Mock(),
+            None,
+            json.dumps({"1.1.1.1": {"status": STATE_DISPATCH, "refresh": time.time()}}),
+        )
         fake_channel = mock.Mock()
         fake_channel.basic_consume.return_value = fake_q, None
         fake_conn = mock.Mock()

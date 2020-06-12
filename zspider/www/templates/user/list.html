@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block main_content %}
+<div class="breadcrumbs" id="breadcrumbs">
+    <script type="text/javascript">
+        try{ace.settings.check('breadcrumbs' , 'fixed')}catch(e){}
+    </script>
+    <ul class="breadcrumb">
+        <li>
+            <i class="ace-icon fa fa-home home-icon"></i>
+            <a href="#">系统后台</a>
+        </li>
+        <li>
+            <a href="/task/list">用户管理</a>
+        </li>
+        <li class="active">用户列表</li>
+    </ul><!-- /.breadcrumb -->
+</div>
+<div class="page-content">
+{% include 'ace-settings.html' %}
+    <div class="page-header">
+        <h1>
+            用户管理
+            <small>
+                <i class="ace-icon fa fa-angle-double-right"></i>
+                用户列表
+            </small>
+        </h1>
+    </div><!-- /.page-header -->
+    <div class="row">
+        <div class="col-xs-12">
+            <div class="row">{% for msg in flashes %}<div class="col-xs-12"><div class="alert alert-info">
+                <button type="button" class="close" data-dismiss="alert">
+                    <i class="ace-icon fa fa-times"></i>
+                </button>
+                {{ msg }}
+            </div></div>{% endfor %}</div>
+            <div class="row">
+                <div class="col-xs-12">
+                    <dl class="dl-horizontal">
+                        <dt>用户名</dt><dd>角色</dd>
+                        {% for user in users.items -%}
+                            <dt><a href="{{ url_for('admin.user_add', user_id=user.id) }}">{{ user.username }}</a></dt>
+                            <dd>{{ user.role }}</dd>
+                        {%- endfor %}
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-xs-3">用户总数：{{ count }}</div>
+        <div class="col-xs-9">
+            {% for page in users.iter_pages() %}
+                {% if page %}
+                    {% if page != users.page %}
+                        <a href="{{ url_for('admin.user_list', page=page) }}">{{ page }}</a>
+                    {% else %}
+                        <strong>{{ page }}</strong>
+                    {% endif %}
+                {% else %}
+                    <span>…</span>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
