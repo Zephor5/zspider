@@ -1,5 +1,5 @@
 # ZSPIDER | [![Documentation Status](https://readthedocs.org/projects/zspider/badge/?version=latest)](http://zspider.readthedocs.org/en/latest/?badge=latest)
-a distributed spider system, Python2.7 supported only by now.
+a distributed spider system in Python3
 
 ## Components
 - **dispatcher**
