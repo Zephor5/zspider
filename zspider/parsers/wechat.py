@@ -1,22 +1,29 @@
 # coding=utf-8
 import re
 
-from utils import engine, fields_models as fm
-from .baseparser import BaseNewsParser
+from mongoengine import fields
 
-__author__ = 'zephor'
+from .baseparser import BaseNewsParser
+from zspider.utils import fields_models as fm
+
+__author__ = "zephor"
 
 
 class TaskConfWechatParser(fm.BaseDocument):
-    front_url = engine.StringField(required=True, verbose_name=u'微信id', max_length=32)
-    url_re = fm.RegExpField(required=True, group_num=1, verbose_name=u'新闻条目正则',
-                            help_text=u'用以提取索引页内新闻url，可与xpath任选其一使用')
+    front_url = fields.StringField(required=True, verbose_name=u"微信id", max_length=32)
+    url_re = fm.RegExpField(
+        required=True,
+        group_num=1,
+        verbose_name=u"新闻条目正则",
+        help_text=u"用以提取索引页内新闻url，可与xpath任选其一使用",
+    )
 
 
 class WechatParser(BaseNewsParser):
     """
     微信抓站解析
     """
+
     CONF = TaskConfWechatParser
 
     def parse_index(self, response):

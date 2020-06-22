@@ -9,15 +9,21 @@ SPIDERS = None
 def _init():
     global SPIDERS
     from scrapy.spiderloader import SpiderLoader
-    from crawl_conf import SPIDER_MODULES
+    from zspider.confs.crawl_conf import SPIDER_MODULES
 
     class _Settings(object):
         @staticmethod
-        def getlist(key):
+        def getlist(_):
             return SPIDER_MODULES
 
+        @staticmethod
+        def getbool(_):
+            return True
+
     spider_loader = SpiderLoader(_Settings())
-    SPIDERS = [(name, spider_loader.load(name).__name__) for name in spider_loader.list()]
+    SPIDERS = [
+        (name, spider_loader.load(name).__name__) for name in spider_loader.list()
+    ]
 
 
 if not SPIDERS:

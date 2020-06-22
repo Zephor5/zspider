@@ -1,7 +1,7 @@
 # coding=utf-8
 import unittest
 
-__author__ = 'zephor'
+__author__ = "zephor"
 
 
 # noinspection PyUnresolvedReferences

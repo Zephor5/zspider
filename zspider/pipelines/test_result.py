@@ -1,10 +1,9 @@
 # coding=utf-8
 
-__author__ = 'zephor'
+__author__ = "zephor"
 
 
 class TestResultPipeLine(object):
-
     @classmethod
     def from_crawler(cls, crawler):
         crawler.spider.test_result = []

@@ -1,0 +1,9 @@
+log:
+  level: "info"
+
+image_prefix: ""
+
+projects:
+  zspider:
+    docker_compose_files:
+      - "docker-compose.yml"

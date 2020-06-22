@@ -1,0 +1,21 @@
+# This file is used to bring up a wishwms development container.
+version: "3.6"
+
+services:
+  zspider:
+    container_name: zspider
+    build:
+      # this context is relative to the location of current file
+      context: .
+      dockerfile: Dockerfile
+    user: ${BUILDUID:-1000}:${BUILDUID:-1000}
+    volumes:
+      - .:/home/app/zspider:delegated
+      - ./data/mongodb:/var/lib/mongodb:delegated
+      - ./logs/mongodb:/var/log/mongodb:delegated
+    shm_size: "2gb"
+    ports:
+      - "5000:5000"
+    environment:
+      - "DOCKER_USER=${USER:-app}"
+    hostname: "$USER"
