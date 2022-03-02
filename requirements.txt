@@ -13,5 +13,5 @@ pooled-pika==0.2.1
 python-memcached==1.59
 
 # crawl_daemon
-scrapy==2.1.0
+scrapy==2.6.0
 selenium==3.141.0
