@@ -1,7 +1,6 @@
 # coding=utf-8
 import os
 
-import six
 from pika import URLParameters
 
 from zspider.utils import ip
@@ -48,10 +47,8 @@ LOG_DATEFORMAT = "%Y-%m-%d %H:%M:%S"
 
 INNER_IP = ip.get_ip()
 
-MC_SERVERS = "127.0.0.1" if DEBUG else "memcache for production use"
-MC_SERVERS = (
-    MC_SERVERS.split(",") if isinstance(MC_SERVERS, six.string_types) else MC_SERVERS
-)
+MC_SERVERS = "127.0.0.1:11211" if DEBUG else "memcache for production use"
+MC_SERVERS = MC_SERVERS.split(",")
 
 if DEBUG:
     AMQP_PARAM = URLParameters("amqp://guest:guest@127.0.0.1")

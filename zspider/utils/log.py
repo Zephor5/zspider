@@ -93,7 +93,7 @@ class ThreadMongoHandler(logging.Handler):
 
         self.log_cls = log_model
 
-        log_model.ensure_index(
+        log_model.create_index(
             "#ip"
         )  # prevent bug: non-thread safe mongoengine collection creation
 
