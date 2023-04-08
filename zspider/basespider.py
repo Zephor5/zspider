@@ -40,6 +40,8 @@ class BaseSpider(Spider):
             request.meta.update(_meta)
             if self.task_id == "test_article":
                 request.dont_filter = True  # mark 去重
+            if not self.task_id.startswith("test_"):
+                request.meta["dupefilter"] = True
             yield request
             if self.task_id == "test_article":
                 break
@@ -56,5 +58,5 @@ class BaseSpider(Spider):
         # 推荐使用文件顶部定义logger形式
         return logging.getLogger("spider.{0}".format(self.name))
 
-    def parse(self, response):
+    def parse(self, response, **kwargs):
         raise NotImplementedError("parse")

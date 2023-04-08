@@ -58,7 +58,7 @@ TELNETCONSOLE_ENABLED = False
 # Enable or disable downloader middlewares
 # See http://scrapy.readthedocs.org/en/latest/topics/downloader-middleware.html
 DOWNLOADER_MIDDLEWARES = {
-    "zspider.middlewares.SeleniumMiddleware": 1,
+    # "zspider.middlewares.SeleniumMiddleware": 1,
     # 'zspider.middlewares.RandUAMiddleware': 400,
     "zspider.middlewares.RecordReqMiddleware": 650,  # 保证该中间件process_response在302跳转处理前面
     # 'zspider.middlewares.HttpProxyMiddleware': 740,  # scrapy httpproxy中间件为750
@@ -75,7 +75,7 @@ DOWNLOADER_MIDDLEWARES = {
 PUB_PORT = "http://pubserver.com"
 TRANS_PORT = "http://image.server.com/totranslate/images"
 ITEM_PIPELINES = {
-    # "zspider.pipelines.PubPipeLine": 300,
+    "zspider.pipelines.PubPipeLine": 300,
     "zspider.pipelines.CappedStorePipeLine": 999,
 }
 

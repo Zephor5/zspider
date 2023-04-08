@@ -19,7 +19,7 @@ class NewsSpider(BaseSpider):
         super(NewsSpider, self).__init__(*args, **kwargs)
         self.start_urls = (self.parser.front_url,)
 
-    def parse(self, response):
+    def parse(self, response, **kwargs):
         """索引解析"""
         if self.parser.need_login:
             self.parser.to_login()

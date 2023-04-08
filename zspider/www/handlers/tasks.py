@@ -80,7 +80,7 @@ def task_add():
     if conf_form is None:
         abort(404)
 
-    conf_form = conf_form(request.form, csrf_enabled=False)
+    conf_form = conf_form(request.form, meta={"csrf": False})
 
     if is_xhr():
         return render_template("task/form_conf.html", conf_form=conf_form)
@@ -92,7 +92,7 @@ def task_add():
     if fields_len == 0:
         for _f in ArticleField.base_names():
             fields_len += 1
-            article_field_forms.append(ArticleFieldForm(csrf_enabled=False, name=_f))
+            article_field_forms.append(ArticleFieldForm(name=_f, meta={"csrf": False}))
     else:
         _parse_field_forms(article_field_forms, fields_len)
     # article fields #
@@ -108,7 +108,7 @@ def task_add():
         task = task_form.save(commit=False)
         task.creator = user
         task.mender = user
-        task.is_active = request.args.get("active", type=bool)
+        task.is_active = bool(request.args.get("active", type=int))
         task.save()
 
         conf = conf_form.save(commit=False)
@@ -159,7 +159,7 @@ def task_edit(task_id):
     except NotFound:
         conf = None
 
-    conf_form = conf_form(request.form, obj=conf, csrf_enabled=False)
+    conf_form = conf_form(request.form, obj=conf, meta={"csrf": False})
 
     if is_xhr():
         return render_template("task/form_conf.html", conf_form=conf_form)
@@ -176,7 +176,7 @@ def task_edit(task_id):
             for article_field in article_fields:
                 fields_len += 1
                 article_field_forms.append(
-                    ArticleFieldForm(obj=article_field, csrf_enabled=False)
+                    ArticleFieldForm(obj=article_field, meta={"csrf": False})
                 )
     else:
         _parse_field_forms(article_field_forms, fields_len)
@@ -212,7 +212,7 @@ def _do_edit_task(task, parser, conf, task_form, conf_form, article_field_forms)
         PARSER_CONF_FORM_REF.get(_parser).model_class.objects(id=task.id).delete()
     task.mtime = datetime.now()
     task.mender = user
-    if request.args.get("active", type=bool):
+    if request.args.get("active", type=int):
         task.is_active = True
     task.save()
     if conf is None:
@@ -322,7 +322,7 @@ def _parse_field_forms(article_field_forms, fields_len):
                 specify=request.form.get("specify_%s" % i),
             )
         )
-        article_field_forms.append(ArticleFieldForm(form_data, csrf_enabled=False))
+        article_field_forms.append(ArticleFieldForm(form_data, meta={"csrf": False}))
 
 
 @app.route("/task/subscribe", methods=["GET", "POST"])

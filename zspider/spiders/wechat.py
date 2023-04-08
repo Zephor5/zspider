@@ -28,7 +28,7 @@ class WeChatSpider(BaseSpider):
         )
         self._extra.update({"wechat_id": self.wechat_id})
 
-    def parse(self, response):
+    def parse(self, response, **kwargs):
         err = None
         res = response.css(".results>div:first-of-type")
         if res:

@@ -16,7 +16,7 @@ def main():
     if not init.done:
         print("init fail")
         sys.exit(-1)
-    t = threading.Thread(target=test_crawler.start, args=(False,))
+    t = threading.Thread(target=test_crawler.start, args=(False, False))
     t.setDaemon(True)
     t.start()
     if len(sys.argv) == 2:

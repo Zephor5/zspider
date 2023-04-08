@@ -3,7 +3,7 @@ import logging
 
 import memcache
 from scrapy.dupefilters import BaseDupeFilter
-from scrapy.utils.request import request_fingerprint
+from zspider.utils.tools import req_fingerprint
 
 __author__ = "zephor"
 
@@ -23,7 +23,7 @@ class MemcachedDupeFilter(BaseDupeFilter):
         return cls(servers)
 
     def request_seen(self, request):
-        fp = request_fingerprint(request)
+        fp = req_fingerprint(request)
         if self.mc.get(fp):
             return True
         return False

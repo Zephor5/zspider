@@ -113,8 +113,9 @@ $(function(){
         ele_len = $(_html).length,
         task_form = $('#task_form'),
         fields_len = $('#fields_len'),
-        ourl = window.location.href;
-
+        ourl = window.location.href,
+        ps = ourl.split('?'),
+        url_arg_has = ps.length > 1 ? ps[1].includes('active=') : false;
 
     function get_field_html(num){
         var h = $(_html), _p;
@@ -155,7 +156,7 @@ $(function(){
         task_form.prop('action', '/task/add').prop('target', '_self');
     });
     $('#force-save-start').click(function(){
-        task_form.prop('action', '/task/add?active=1').prop('target', '_self');
+        task_form.prop('action', url_arg_has ? '/task/add' : '/task/add?active=1').prop('target', '_self');
     });
     $('#test-index').click(function(){
         task_form.prop('action', '/task/test/index').prop('target', '_blank');
@@ -164,10 +165,10 @@ $(function(){
         task_form.prop('action', '/task/test/article').prop('target', '_blank');
     });
     $('#normal_submit').click(function(){
-        task_form.prop('action', ourl+'?active=1').prop('target', '_self');
+        task_form.prop('action', ourl + (url_arg_has ? '' : '?active=0')).prop('target', '_self');
     });
     $('#submit_start').click(function(){
-        task_form.prop('action', ourl+'?active=1').prop('target', '_self');
+        task_form.prop('action', ourl + (url_arg_has ? '' : '?active=1')).prop('target', '_self');
     });
 });
 </script>

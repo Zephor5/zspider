@@ -29,6 +29,7 @@ class TestCrawler(CrawlerProcess):
         settings = Settings()
         settings.setmodule(p_settings)
         super(CrawlerProcess, self).__init__(settings)
+        self._initialized_reactor = False
         self.task_q = defer.DeferredQueue()
         self.res_q = Queue()
         self.task_q.get().addCallback(self.crawl)
@@ -81,6 +82,7 @@ class CrawlerDaemon(CrawlerProcess):
         super(CrawlerProcess, self).__init__(
             settings
         )  # 跳过CrawlerProcess的初始日志配置，由init.py处理
+        self._initialized_reactor = False
         install_shutdown_handlers(self._signal_shutdown)
         log_scrapy_info(self.settings)
 

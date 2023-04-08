@@ -8,7 +8,7 @@ __author__ = "zephor"
 
 
 class TaskConfIndexParser(fm.BaseTaskConf):
-    url_xpath = fm.XPathField(verbose_name=u"新闻条目xpath", help_text=u"用以提取索引页内新闻url")
+    url_xpath = fm.XPathField(max_length=128, verbose_name=u"新闻条目xpath", help_text=u"用以提取索引页内新闻url")
     url_re = fm.RegExpField(
         group_num=1, verbose_name=u"新闻条目正则", help_text=u"用以提取索引页内新闻url，可与xpath任选其一使用"
     )

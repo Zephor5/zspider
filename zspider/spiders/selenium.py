@@ -24,7 +24,7 @@ class SeleniumSpider(BaseSpider):
             request.meta["_selenium"] = True
             yield request
 
-    def parse(self, response):
+    def parse(self, response, **kwargs):
         """索引解析"""
         for r in self._parse_index(response):
             if not self.task_id.startswith("test_"):

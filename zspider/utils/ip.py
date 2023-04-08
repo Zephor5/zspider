@@ -54,7 +54,7 @@ def get_ip(inner=True):
             )
             _null.close()
             ip_list = [
-                re.sub(r"^.*?(\d+\.\d+\.\d+\.\d+).*$", r"\1", itm) for itm in ip_list
+                re.sub(rb"^.*?(\d+\.\d+\.\d+\.\d+).*$", r"\1", itm) for itm in ip_list
             ]
         except Exception:
             ip_list = []
