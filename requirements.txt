@@ -15,4 +15,4 @@ python-memcached==1.59
 # crawl_daemon
 pyopenssl==22.0.0
 scrapy~=2.8.0
-selenium==3.141.0
+selenium==4.8.3

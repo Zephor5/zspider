@@ -77,7 +77,7 @@ class PubPipeLine(object):
             d.callback(_doc)
         else:
             item["status"] = zsm.STATUS_NO
-            item["info"] = u"无发布订阅"
+            item["info"] = "无发布订阅"
             logger.info(json.dumps(item, indent=4), extra=extra)
             d.callback(item)
         return d
@@ -108,17 +108,17 @@ class PubPipeLine(object):
             except Exception as e:
                 # we skip this process when it's incorrect
                 logger.warning(
-                    u"get error :{0:s}, when eval :{1:s}".format(e, x), extra=extra
+                    "get error :{0:s}, when eval :{1:s}".format(e, x), extra=extra
                 )
                 _doc = __doc
             else:
                 if "trash" in _doc:
                     logger.info(
-                        u"skip item :{0:s} with filter :{1:s}".format(_doc["title"], x),
+                        "skip item :{0:s} with filter :{1:s}".format(_doc["title"], x),
                         extra=extra,
                     )
                     item["status"] = zsm.STATUS_PUB_SKIP
-                    item["info"] = u"发布过滤：%s" % x
+                    item["info"] = "发布过滤：%s" % x
                     raise _SkipDoc
         return _doc
 

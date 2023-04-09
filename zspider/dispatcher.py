@@ -282,7 +282,6 @@ class TaskManage(Resource):
     res = {"status": False, "data": ""}
 
     def render_GET(self, request):
-
         res = dict(self.res)
 
         request.setHeader("content-type", "application/json;charset=UTF-8")

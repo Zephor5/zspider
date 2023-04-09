@@ -9,11 +9,9 @@ __author__ = "zephor"
 
 
 class FPagination(object):
-
     MAX_PAGE = 20
 
     def __init__(self, iterable, page, per_page):
-
         if page < 1 or page > self.MAX_PAGE:
             abort(404)
 

@@ -35,5 +35,4 @@ if not PARSERS:
 
 
 def get_parser(parser, task_id, task_name, task_conf=None, article_fields=None):
-
     return PARSERS[parser](task_id, task_name, task_conf, article_fields)

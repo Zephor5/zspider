@@ -10,20 +10,19 @@ __author__ = "zephor"
 
 
 class TaskConfJSONParser(fm.BaseTaskConf):
-    pre_boundary = fields.StringField(verbose_name=u"前边界")
-    suf_boundary = fields.StringField(verbose_name=u"后边界")
+    pre_boundary = fields.StringField(verbose_name="前边界")
+    suf_boundary = fields.StringField(verbose_name="后边界")
     json_struct = fields.StringField(
         required=True,
         regex=r"^([\[\]\w\d-]+?->)*[\[\]\w\d-]+$",
-        verbose_name=u"索引结构",
+        verbose_name="索引结构",
         max_length=128,
-        help_text=u'例如内容{"items":[{"url":"http://example"}]}，'
-        u"则结构为：items->[]->url或items->[0]->url",
+        help_text='例如内容{"items":[{"url":"http://example"}]}，'
+        "则结构为：items->[]->url或items->[0]->url",
     )
 
 
 class JSONParser(BaseNewsParser):
-
     CONF = TaskConfJSONParser
 
     def parse_index(self, response):

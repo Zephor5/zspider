@@ -10,12 +10,12 @@ __author__ = "zephor"
 
 
 class TaskConfWechatParser(fm.BaseDocument):
-    front_url = fields.StringField(required=True, verbose_name=u"微信id", max_length=32)
+    front_url = fields.StringField(required=True, verbose_name="微信id", max_length=32)
     url_re = fm.RegExpField(
         required=True,
         group_num=1,
-        verbose_name=u"新闻条目正则",
-        help_text=u"用以提取索引页内新闻url，可与xpath任选其一使用",
+        verbose_name="新闻条目正则",
+        help_text="用以提取索引页内新闻url，可与xpath任选其一使用",
     )
 
 

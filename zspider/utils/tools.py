@@ -1,4 +1,5 @@
 import base64
+
 from scrapy.utils.request import fingerprint
 
 

@@ -130,7 +130,6 @@ class FBaseQuerySet(BaseQuerySet):
 
 
 class BaseDocument(engine.Document):
-
     meta = {"abstract": True}
 
     def save(self, **kwargs):
@@ -139,15 +138,14 @@ class BaseDocument(engine.Document):
 
 
 class BaseTaskConf(BaseDocument):
-
     meta = {"abstract": True}
 
     login_data = f.DictField(
-        verbose_name=u"登录数据", help_text=u"抓取网页登录数据dict，注意使用英文双引号，若无需登录则为空"
+        verbose_name="登录数据", help_text="抓取网页登录数据dict，注意使用英文双引号，若无需登录则为空"
     )
-    to_login = f.URLField(verbose_name=u"登录页", help_text=u"登陆页面，若无需登录则为空")
+    to_login = f.URLField(verbose_name="登录页", help_text="登陆页面，若无需登录则为空")
     front_url = f.URLField(
         required=True,
-        verbose_name=u"入口url",
-        help_text=u"索引列表页，支持一些python式预定义参数，如：%(year)s，包括:year,month,day",
+        verbose_name="入口url",
+        help_text="索引列表页，支持一些python式预定义参数，如：%(year)s，包括:year,month,day",
     )

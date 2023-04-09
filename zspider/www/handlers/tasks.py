@@ -102,7 +102,6 @@ def task_add():
         and validate_forms([task_form, conf_form] + article_field_forms)
         and _verify_fields(article_field_forms)
     ):
-
         user = User.objects.get(username=session["user"])
 
         task = task_form.save(commit=False)
@@ -120,7 +119,7 @@ def task_add():
             article_field.task = task
             article_field.save()
 
-        flash(u"任务：%s 添加成功" % task.name)
+        flash("任务：%s 添加成功" % task.name)
 
         _reload_task(task)
 
@@ -241,7 +240,7 @@ def _do_edit_task(task, parser, conf, task_form, conf_form, article_field_forms)
     for af in article_fields:
         # delete the rest
         af.delete()
-    flash(u"任务：%s 更新成功" % task.name)
+    flash("任务：%s 更新成功" % task.name)
     _reload_task(task)
     return redirect(url_for("task_list"))
 
@@ -342,7 +341,7 @@ def task_subscribe():
         else:
             sub_form.populate_obj(pub_sbs)
         pub_sbs.save()
-        flash(u"任务：%s 订阅%s成功" % (task.name, (u"更新", u"添加")[pub_sbs is None]))
+        flash("任务：%s 订阅%s成功" % (task.name, ("更新", "添加")[pub_sbs is None]))
         return redirect(url_for("task_list"))
     return render_template("task/subscribe.html", task=task, form=sub_form)
 
@@ -354,7 +353,7 @@ def task_q_subscribe(task_id):
         sub = PubSubscribe.objects.get_or_404(id=task_id)
     except NotFound:
         res["status"] = False
-        res["data"] = u"没找到订阅信息"
+        res["data"] = "没找到订阅信息"
     else:
         res["data"] = {"cids": sub.cids, "model_id": sub.model_id}
     return jsonify(res)
@@ -379,13 +378,13 @@ def task_toggle(task_id):
     try:
         task = Task.objects.get_or_404(id=task_id)
     except NotFound:
-        res["data"] = u"任务：%s 没找到" % task_id
+        res["data"] = "任务：%s 没找到" % task_id
         return jsonify(res)
 
     try:
         ip = _get_dispatcher()
     except Exception as e:
-        res["data"] = u"获取dispatcher地址失败，请联系管理员并保留如下原因：%s" % e
+        res["data"] = "获取dispatcher地址失败，请联系管理员并保留如下原因：%s" % e
         return jsonify(res)
 
     action = "/%s/{0:s}/{1:s}".format(task_id, MANAGE_KEY)
@@ -397,7 +396,7 @@ def task_toggle(task_id):
         task.is_active = True
         action %= "load"
     else:
-        res["data"] = u"必须先设置好任务定时才能启动任务"
+        res["data"] = "必须先设置好任务定时才能启动任务"
         return jsonify(res)
 
     task.save()
@@ -407,12 +406,12 @@ def task_toggle(task_id):
                 "http://{0:s}:{1:d}".format(ip, MANAGE_PORT) + quote(action)
             ).read()
         except URLError:
-            res["data"] = u"连接到dispatcher %s失败" % ip
+            res["data"] = "连接到dispatcher %s失败" % ip
         else:
             d_res = json.loads(d_res)
             res["data"] = d_res["data"]
     else:
-        res["data"] = u"找不到dispatcher"
+        res["data"] = "找不到dispatcher"
     res["status"] = True
     return jsonify(res)
 
@@ -425,12 +424,12 @@ def _verify_fields(article_field_forms):
         except ValueError:
             form.may_error = True
         if not (form.xpath.data or form.re.data):
-            form.error = u"字段解析方法至少设置一个"
+            form.error = "字段解析方法至少设置一个"
             return False
     if base:
         for form in article_field_forms:
             if hasattr(form, "may_error") and form.may_error:
-                form.error = u"缺少基本字段：%s" % base
+                form.error = "缺少基本字段：%s" % base
                 return False
     return True
 
@@ -456,7 +455,7 @@ def _reload_task(task):
                 "http://{0:s}:{1:d}".format(ip, MANAGE_PORT) + quote(action)
             ).read()
         except Exception:
-            flash(u"调度更新失败", category="warning")
+            flash("调度更新失败", category="warning")
         else:
             d_res = json.loads(d_res)
             flash(d_res["data"])

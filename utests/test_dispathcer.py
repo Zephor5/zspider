@@ -2,12 +2,12 @@
 import json
 import time
 
-import dispatcher
 import mock
 from twisted.internet import defer
 from twisted.internet import reactor
 from twisted.trial.unittest import TestCase
 
+from zspider import dispatcher
 from zspider.confs.dispatcher_conf import STATE_DISPATCH
 
 __author__ = "zephor"
@@ -16,7 +16,7 @@ __author__ = "zephor"
 class HeartBeatTest(TestCase):
     @classmethod
     def setUpClass(cls):
-        import init
+        from zspider import init
 
         init.init()
 

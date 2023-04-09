@@ -18,7 +18,7 @@ class BaseSpider(Spider):
         self.parser = get_parser(parser, task_id, task_name, **kwargs)
         self._extra = {"task_id": task_id, "task_name": task_name}
         logger.info(
-            u"task {0} start with parser:{1}".format(task_name, parser),
+            "task {0} start with parser:{1}".format(task_name, parser),
             extra=self._extra,
         )
 

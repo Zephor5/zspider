@@ -11,7 +11,6 @@ __author__ = "zephor"
 
 
 class TestFieldsModels(unittest.TestCase):
-
     # noinspection PyUnresolvedReferences
     @mock.patch.multiple(
         "mongoengine.document.Document",
@@ -67,7 +66,6 @@ class TestFieldsModels(unittest.TestCase):
 
 
 class TestPubSubscribe(unittest.TestCase):
-
     # noinspection PyUnresolvedReferences
     @mock.patch.multiple(
         "mongoengine.document.Document",
@@ -75,7 +73,6 @@ class TestPubSubscribe(unittest.TestCase):
         validate=mock.DEFAULT,
     )
     def test_type(self, _get_collection, validate):
-
         ps = PubSubscribe(cids="1")
         _conn = mock.Mock()
         _conn.save.return_value = "test"

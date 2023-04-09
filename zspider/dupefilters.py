@@ -3,6 +3,7 @@ import logging
 
 import memcache
 from scrapy.dupefilters import BaseDupeFilter
+
 from zspider.utils.tools import req_fingerprint
 
 __author__ = "zephor"

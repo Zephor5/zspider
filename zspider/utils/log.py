@@ -35,32 +35,32 @@ class BaseLog(engine.DynamicDocument):
         "indexes": ["#ip", ("-time", "-msecs")],  # hashed index
     }
 
-    ip = IpField(required=True, verbose_name=u"机器ip")
+    ip = IpField(required=True, verbose_name="机器ip")
     pid = fields.IntField(required=True)
-    pathname = fields.StringField(verbose_name=u"文件")
-    lineno = fields.IntField(required=True, verbose_name=u"行号")
+    pathname = fields.StringField(verbose_name="文件")
+    lineno = fields.IntField(required=True, verbose_name="行号")
     level = fields.IntField(default=logging.NOTSET, choices=LEVELS.keys())
-    msg = fields.StringField(verbose_name=u"信息")
-    time = fields.DateTimeField(required=True, verbose_name=u"时间")
+    msg = fields.StringField(verbose_name="信息")
+    time = fields.DateTimeField(required=True, verbose_name="时间")
     msecs = fields.FloatField(required=True)
 
 
 class LogCrawler(BaseLog):
     meta = {
-        "max_size": 5 * 2 ** 30,
+        "max_size": 5 * 2**30,
         "max_documents": 10000000,
         "indexes": ["task_id", "#url", "$task_name"],
     }
 
-    task_id = fields.ObjectIdField(verbose_name=u"任务ID")
-    task_name = fields.StringField(max_length=32, verbose_name=u"任务名称")
+    task_id = fields.ObjectIdField(verbose_name="任务ID")
+    task_name = fields.StringField(max_length=32, verbose_name="任务名称")
     url = fields.URLField()
 
 
 class LogDispatcher(BaseLog):
-    meta = {"max_size": 512 * 2 ** 20, "max_documents": 1000000}
+    meta = {"max_size": 512 * 2**20, "max_documents": 1000000}
 
-    task_id = fields.ObjectIdField(verbose_name=u"任务ID")
+    task_id = fields.ObjectIdField(verbose_name="任务ID")
 
 
 class ThreadMongoHandler(logging.Handler):

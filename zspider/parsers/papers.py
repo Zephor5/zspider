@@ -24,7 +24,7 @@ class TaskConfNewspaper(fm.BaseTaskConf):
         group_num=2,
         group_names=("page_no", "page_name"),
         verbose_name="版面名称号正则",
-        help_text=u"提取版面号及名称的正则，包含page_no、page_name俩子匹配",
+        help_text="提取版面号及名称的正则，包含page_no、page_name俩子匹配",
     )
     page_news_xpath = fm.XPathField(
         required=True, verbose_name="新闻a标签xpath", help_text="用以提取版面内新闻a标签"
@@ -56,9 +56,7 @@ class Newspaper(BaseNewsParser):
         page_name = re.search(self._conf.page_name_no_re, page_name).groupdict()
         page_no = page_name["page_no"]
         page_name = page_name["page_name"]
-        logger.debug(
-            u"parse paper page no:{0:s}, name:{1:s}".format(page_no, page_name)
-        )
+        logger.debug("parse paper page no:{0:s}, name:{1:s}".format(page_no, page_name))
         page_news = []
         i = 0
         for new in page.xpath(self._conf.page_news_xpath):

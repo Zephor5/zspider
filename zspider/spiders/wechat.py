@@ -42,9 +42,9 @@ class WeChatSpider(BaseSpider):
                 )
                 yield Request(url, self.parse_index)
             else:
-                err = u"没找到微信号链接"
+                err = "没找到微信号链接"
         else:
-            err = u"没找到微信号"
+            err = "没找到微信号"
         if err:
             logger.error(err, extra=self._extra)
 

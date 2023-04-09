@@ -12,7 +12,6 @@ logger = logging.getLogger(__name__)
 
 
 class NewsSpider(BaseSpider):
-
     name = "news"
 
     def __init__(self, *args, **kwargs):

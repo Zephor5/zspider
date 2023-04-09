@@ -11,7 +11,6 @@ logger = logging.getLogger(__name__)
 
 
 class SeleniumSpider(BaseSpider):
-
     name = "selenium"
 
     def __init__(self, *args, **kwargs):

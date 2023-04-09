@@ -18,7 +18,7 @@ with open("requirements.txt") as fp:
 def package_files(directories):
     paths = []
     for directory in directories:
-        for (path, _, filenames) in os.walk(directory):
+        for path, _, filenames in os.walk(directory):
             for filename in filenames:
                 paths.append(os.path.join("..", path, filename))
     return paths

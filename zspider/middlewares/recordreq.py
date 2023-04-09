@@ -3,6 +3,7 @@ import logging
 
 import memcache
 from scrapy.exceptions import IgnoreRequest
+
 from zspider.utils.tools import req_fingerprint
 
 __author__ = "zephor"

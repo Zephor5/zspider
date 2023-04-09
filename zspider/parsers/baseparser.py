@@ -23,7 +23,7 @@ class BaseNewsParser(BaseParser):
         return "%s解析器" % self.name
 
     def __unicode__(self):
-        return u"%s解析器" % self.name
+        return "%s解析器" % self.name
 
     def _get_conf(self, task_id, task_conf, article_fields):
         # main conf init
