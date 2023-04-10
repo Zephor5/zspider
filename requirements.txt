@@ -9,7 +9,7 @@ netifaces~=0.11.0
 # web
 
 # all
-pooled-pika==0.2.1
+pooled-pika~=0.3.0
 python-memcached==1.59
 
 # crawl_daemon

@@ -1,27 +1,39 @@
 # ZSPIDER | [![Documentation Status](https://readthedocs.org/projects/zspider/badge/?version=latest)](http://zspider.readthedocs.org/en/latest/?badge=latest)
-a distributed spider system in Python3
+一个分布式的定时抓站系统
+for [English README](README_EN.md)
 
-## Components
-- **dispatcher**
-_dispatch center :_ auto detect to work.
-- **crawler**
-_crawler daemon :_ to process the crawl task
-- **web**
-_a web site :_ to manage this system.
+## Python 版本要求
+- python3.7
+- python3.8
+- python3.9
 
-## Resource Dependencis
-rabbitmq, mongodb, memcached
+## 系统组件
+#### dispatcher
+_任务分配中心 :_ 可以在多个服务器上启动，它将自动检测一个工作，其余冷备.
+#### crawler
+_抓站工作组件 :_ 实际执行抓取任务
+#### web
+_web后台 :_ 系统管理web后台.
 
-## Notice
-Docs are writing, but not that quick.
+## 三方资源依赖
+- rabbitmq
+- mongodb
+- memcached
 
-This is ready for use. There are several resources to be prepared and configured to use.
+使用docker安装更快捷
 
-Mind those source file containing `conf` in the filename. mainly: `conf.py`, `crawl_conf.py`, `dispatcher_conf.py`, `web_conf.py`
+## 说明
+文档也许有时间会慢慢写
 
-The web user isn't finish yet. see `www/handlers/__init__.py`
+当前项目已经处于基本可用状态。运行前装好资源依赖，修改好配置即可。
 
-## Development
-[dev](https://github.com/wish/dev) tool is preferred.
+注意源文件文件名包含 `conf`的. 主要是:
+- `conf.py`
+- `crawl_conf.py`
+- `dispatcher_conf.py`
+- `web_conf.py`
 
-just run `dev zspider` to see options
+## 开发工具
+[dev](https://github.com/wish/dev) 工具可以尝试使用.
+
+安装好后在本项目目录执行 `dev zspider` 查看选项

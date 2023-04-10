@@ -7,10 +7,26 @@
 <body>
 
 <form method="post">
-    <label>用户名：<input type="text" name="username" /></label>
-    <label>密码：<input type="password" name="password" /></label>
-    <button type="submit">登录</button>
+    <label>账号(account)：<input type="text" name="username" /></label>
+    <label style="margin-top: 10px">密码(password)：<input type="password" name="password" /></label>
+    <p style="margin: 5px 0">首次登陆的账号名和密码将自动记录作为管理员账号</p>
+    <p style="margin: 0">the username and password used to log in for the first time will be recorded as the admin account</p>
+
+    <div style="margin-top: 20px"><button type="submit">登录(submit)</button></div>
 </form>
 
 </body>
+<style>
+    form {
+        display: flex;
+        flex-direction: column;
+        width: 300px;
+        margin: auto;
+        margin-top: 100px;
+    }
+    p {
+        color: red;
+        font-size: 13px;
+    }
+</style>
 </html>
