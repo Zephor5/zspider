@@ -67,6 +67,24 @@
 - Python 3.8
 - Python 3.9
 
+> ⚠️ 不建议使用 Python 3.10+ 直接运行本项目。项目中的 `pooled-pika~=0.3.0`、`flask-mongoengine~=1.0.0` 等老依赖在高版本 Python 上兼容性较差。
+
+### 推荐开发环境
+
+推荐使用 **pyenv + Python 3.9 + 项目独立 `.venv`**：
+
+```bash
+cd ~/projects/zspider
+pyenv install 3.9.20
+pyenv local 3.9.20
+python -m venv .venv
+. .venv/bin/activate
+pip install -U pip setuptools wheel
+pip install -r requirements_dev.txt
+```
+
+如果已经存在 `.venv`，建议在切换 Python 版本后重建一次，避免旧解释器残留。
+
 ### 外部依赖
 | 服务 | 用途 | 默认端口 |
 |------|------|----------|

@@ -67,6 +67,24 @@ A distributed cron spider system
 - Python 3.8
 - Python 3.9
 
+> ⚠️ Python 3.10+ is not recommended for this project. Some legacy dependencies such as `pooled-pika~=0.3.0` and `flask-mongoengine~=1.0.0` have poor compatibility with newer Python runtimes.
+
+### Recommended Development Environment
+
+Use **pyenv + Python 3.9 + project-local `.venv`**:
+
+```bash
+cd ~/projects/zspider
+pyenv install 3.9.20
+pyenv local 3.9.20
+python -m venv .venv
+. .venv/bin/activate
+pip install -U pip setuptools wheel
+pip install -r requirements_dev.txt
+```
+
+If `.venv` already exists, rebuild it after switching Python versions to avoid interpreter mismatch issues.
+
 ### External Dependencies
 | Service | Purpose | Default Port |
 |---------|---------|--------------|
