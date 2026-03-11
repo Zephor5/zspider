@@ -1,7 +1,7 @@
 # coding=utf-8
 import unittest
+from unittest import mock
 
-import mock
 from mongoengine import ValidationError
 
 from zspider.models import PubSubscribe
@@ -11,25 +11,16 @@ __author__ = "zephor"
 
 
 class TestFieldsModels(unittest.TestCase):
-    # noinspection PyUnresolvedReferences
-    @mock.patch.multiple(
-        "mongoengine.document.Document",
-        _get_collection=mock.DEFAULT,
-        validate=mock.DEFAULT,
-    )
-    def test_base_document(self, _get_collection, validate):
+    @mock.patch("mongoengine.document.Document.save")
+    def test_base_document(self, document_save):
         class D(fm.BaseDocument):
             pass
 
         d = D()
-        _conn = mock.Mock()
-        _conn.save.return_value = "test"
-        _get_collection.return_value = _conn
         d.save()
 
-        self.assertFalse(validate.called, "validate shouldn't be called")
-        self.assertEqual(len(_get_collection.mock_calls), 3)
-        self.assertEqual(d.id, "test")
+        self.assertTrue(document_save.called)
+        self.assertEqual(document_save.call_args.kwargs.get("validate"), False)
 
     def test_base_task_conf(self):
         class T(fm.BaseTaskConf):
@@ -64,17 +55,47 @@ class TestFieldsModels(unittest.TestCase):
             t = T(**p)
             self.assertIsNone(t.validate())
 
+    def test_cron_field_validate_cron(self):
+        good = (
+            "*/5 * * * *",
+            "0 9 * * 1-5",
+            "1,5,10 0 1 1 0",
+            "1-10/2 * * * *",
+        )
+        for expr in good:
+            fm.CronField.validate_cron(expr)
+
+        bad = (
+            "",
+            "* * * *",
+            "60 * * * *",
+            "* 24 * * *",
+            "10-1 * * * *",
+            "1-10/20 * * * *",
+            "abc * * * *",
+        )
+        for expr in bad:
+            with self.assertRaises(AssertionError, msg=expr):
+                fm.CronField.validate_cron(expr)
+
+    def test_regexp_field_validate(self):
+        field = fm.RegExpField(group_num=1, group_names=("id",))
+        field.validate(r"(?P<id>\\d+)")
+
+        with self.assertRaises(AssertionError):
+            field.validate(r"(\\d+)-(\\w+)")
+
+    def test_xpath_field_validate(self):
+        fm.XPathField().validate("//div[@class='content']/text()")
+        with self.assertRaises(AssertionError):
+            fm.XPathField().validate("//div[")
+
 
 class TestPubSubscribe(unittest.TestCase):
-    # noinspection PyUnresolvedReferences
-    @mock.patch.multiple(
-        "mongoengine.document.Document",
-        _get_collection=mock.DEFAULT,
-        validate=mock.DEFAULT,
-    )
-    def test_type(self, _get_collection, validate):
-        ps = PubSubscribe(cids="1")
-        _conn = mock.Mock()
-        _conn.save.return_value = "test"
-        _get_collection.return_value = _conn
+    @mock.patch("mongoengine.document.Document.save")
+    def test_type(self, document_save):
+        ps = PubSubscribe(cids="1", model_id="model1")
         ps.save()
+
+        self.assertTrue(document_save.called)
+        self.assertEqual(document_save.call_args.kwargs.get("validate"), False)
