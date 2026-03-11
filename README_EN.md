@@ -204,9 +204,20 @@ GET /remove/{task_id}/{MANAGE_KEY} # Remove task
 ### Web - Admin Dashboard
 
 - Flask + MongoEngine
+- Frontend: **Ace Admin** template (Bootstrap responsive admin)
 - Task CRUD management
 - Visual field configuration
 - Result viewing
+- User permission management
+
+**Pages:**
+| Page | Function |
+|------|----------|
+| Dashboard | Dispatcher status monitoring |
+| Task List | View/manage all tasks |
+| Add Task | Create new crawl task |
+| Data Records | View crawl results |
+| Logs | Crawler/Dispatcher logs |
 
 ---
 
