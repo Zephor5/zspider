@@ -204,9 +204,21 @@ GET /remove/{task_id}/{MANAGE_KEY} # 删除任务
 ### Web - 管理后台
 
 - Flask + MongoEngine
+- 前端：**Ace Admin** 模板（Bootstrap 响应式后台）
 - 任务管理 CRUD
 - 字段配置可视化
 - 抓取结果查看
+- 用户权限管理
+
+**页面功能：**
+| 页面 | 功能 |
+|------|------|
+| Dashboard | 调度中心状态监控 |
+| 任务列表 | 查看/管理所有任务 |
+| 添加任务 | 创建新抓取任务 |
+| 数据记录 | 查看抓取结果 |
+| 日志记录 | Crawler/Dispatcher 日志 |
+| 用户管理 | 用户 CRUD（需 admin 权限） |
 
 ---
 
