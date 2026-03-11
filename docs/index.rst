@@ -1,51 +1,118 @@
-.. zspider documentation master file, created by
-   sphinx-quickstart on Thu Dec 24 16:40:17 2015.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
-.. toctree::
-   :maxdepth: 1
-   :numbered:
-   :hidden:
-
-    desgin <desgin.rst>
-    internal_message <internal_message.rst>
-    item_info <item_info.rst>
+.. zspider documentation master file
 
 =======
 ZSPIDER
 =======
-a distributed spider system
+
+A distributed cron spider system with web management interface.
+
+|build-status|
+
+.. |build-status| image:: https://readthedocs.org/projects/zspider/badge/?version=latest
+   :target: http://zspider.readthedocs.org/en/latest/?badge=latest
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Contents:
+
+   installation
+   quickstart
+   desgin
+   internal_message
+   item_info
+   api
+
+Installation
+============
+
+Requirements
+------------
+
+Python Version
+~~~~~~~~~~~~~~
+
+- Python 3.7
+- Python 3.8
+- Python 3.9
+
+External Dependencies
+~~~~~~~~~~~~~~~~~~~~~
+
++------------+---------------+------------------+
+| Service    | Purpose       | Default Port     |
++============+===============+==================+
+| RabbitMQ   | Task Queue    | 5672             |
++------------+---------------+------------------+
+| MongoDB    | Data Storage  | 27017            |
++------------+---------------+------------------+
+| Memcached  | Heartbeat     | 11211            |
++------------+---------------+------------------+
+
+Install from PyPI
+-----------------
+
+.. code-block:: bash
+
+   pip install zspider
+
+Install from Source
+-------------------
+
+.. code-block:: bash
+
+   git clone https://github.com/Zephor5/zspider.git
+   cd zspider
+   pip install -r requirements.txt
+   pip install -e .
+
+Docker Installation
+-------------------
+
+.. code-block:: bash
+
+   docker-compose up -d
 
 Components
 ----------
-- **dispatcher**
-   *dispatch center :* auto detect to work.
-- **crawler**
-   *crawler daemon :* to process the crawl task
-- **web**
-   *a web site :* to manage this system.
 
-Resource Dependencis
---------------------
-rabbitmq, mongodb, memcached
+Dispatcher
+~~~~~~~~~~
 
-Notice
-------
-  Docs are writing, but not that quick.
+Task scheduling center with high availability support.
 
-  This is ready for use. There are several resources to be prepared and configured to use.
+.. code-block:: bash
 
-  Mind those source file containing ``conf`` in the filename. mainly: ``conf.py``, ``crawl_conf.py``, ``dispatcher_conf.py``, ``web_conf.py``
+   python -m zspider.dispatcher
 
-  The web user isn't finish yet. see ``www/handlers/__init__.py``
+Crawler
+~~~~~~~
+
+Worker process for executing crawl tasks.
+
+.. code-block:: bash
+
+   python -m zspider.crawler
+
+Web Admin
+~~~~~~~~~
+
+Flask-based management interface.
+
+.. code-block:: bash
+
+   python -m zspider.web
+
+Quick Start
+-----------
+
+1. Start external services (RabbitMQ, MongoDB, Memcached)
+2. Configure ``zspider/confs/*.py`` files
+3. Start Dispatcher, Crawler, and Web components
+4. Access Web Admin at ``http://localhost:5000``
 
 Indices and tables
-------------------
+==================
 
-* :doc:`desgin`
-* :doc:`internal_message`
-* :doc:`item_info`
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
