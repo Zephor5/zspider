@@ -13,6 +13,6 @@ pooled-pika~=0.3.0
 python-memcached==1.59
 
 # crawl_daemon
-pyopenssl==22.0.0
-scrapy~=2.8.0
-selenium==4.8.3
+pyopenssl>=24.0.0
+scrapy~=2.14.0
+selenium>=4.15.0
