@@ -1,61 +1,36 @@
 # coding=utf-8
-import json
-import time
+import importlib
+import sys
+from types import SimpleNamespace
+from unittest import mock
 
-import mock
 from twisted.internet import defer
-from twisted.internet import reactor
 from twisted.trial.unittest import TestCase
-
-from zspider import dispatcher
-from zspider.confs.dispatcher_conf import STATE_DISPATCH
 
 __author__ = "zephor"
 
 
-class HeartBeatTest(TestCase):
-    @classmethod
-    def setUpClass(cls):
-        from zspider import init
+# preload a fake pooled_pika module so dispatcher can be imported in test env
+sys.modules.setdefault("pooled_pika", SimpleNamespace(PooledConn=mock.Mock()))
 
-        init.init()
+dispatcher = importlib.import_module("zspider.dispatcher")
 
-    def setUp(self):
-        self.patch_pc = mock.patch("dispatcher.pooled_conn")
-        self.patch_hb = mock.patch("dispatcher.HeartBeat")
 
-        fake_q = mock.Mock()
-        fake_q.get.return_value = (
-            mock.Mock(),
-            mock.Mock(),
-            None,
-            json.dumps({"1.1.1.1": {"status": STATE_DISPATCH, "refresh": time.time()}}),
-        )
+class DispatcherStartupTest(TestCase):
+    def test_startup_calls_main_job_after_queue_setup(self):
         fake_channel = mock.Mock()
-        fake_channel.basic_consume.return_value = fake_q, None
-        fake_conn = mock.Mock()
-        fake_conn.channel.return_value = fake_channel
+        fake_channel.exchange_declare.return_value = defer.succeed(None)
+        fake_channel.queue_declare.return_value = defer.succeed(None)
+        fake_channel.queue_bind.return_value = defer.succeed(None)
 
-        def _():
-            _d = defer.Deferred()
-            reactor.callLater(0, _d.callback, fake_conn)
-            return _d
+        with mock.patch.object(dispatcher.pooled_conn, "acquire", return_value=defer.succeed(fake_channel)), \
+             mock.patch.object(dispatcher.pooled_conn, "release", return_value=None), \
+             mock.patch.object(dispatcher.reactor, "callLater", side_effect=lambda delay, fn, *a, **kw: fn(*a, **kw)):
+            main_job = mock.Mock()
+            d = dispatcher.startup(main_job)
 
-        pc = self.patch_pc.start()
-        pc.prepare.side_effect = _
-        pc.release.return_value = None
+        def _assert(_):
+            main_job.assert_called_once_with()
 
-    def tearDown(self):
-        self.patch_pc.stop()
-
-    def test_startup(self):
-        hb = self.patch_hb.start()
-
-        def _():
-            self.assertTrue(hb.called)
-            self.patch_hb.stop()
-
-        hb.side_effect = _
-
-        d = dispatcher.startup(hb)
+        d.addCallback(_assert)
         return d
