@@ -23,38 +23,38 @@ A distributed cron spider system
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                        ZSpider System                        │
+│                        ZSpider System                       │
 ├─────────────────────────────────────────────────────────────┤
-│                                                              │
+│                                                             │
 │   ┌──────────────┐      ┌──────────────┐                    │
 │   │  Dispatcher  │◄────►│  Dispatcher  │  (Hot standby)     │
 │   │   (Master)   │      │   (Backup)   │                    │
 │   └──────┬───────┘      └──────────────┘                    │
-│          │                                                    │
-│          ▼                                                    │
-│   ┌──────────────┐                                           │
-│   │   RabbitMQ   │  Task Queue                               │
-│   └──────┬───────┘                                           │
-│          │                                                    │
-│          ▼                                                    │
+│          │                                                  │
+│          ▼                                                  │
+│   ┌──────────────┐                                          │
+│   │   RabbitMQ   │  Task Queue                              │
+│   └──────┬───────┘                                          │
+│          │                                                  │
+│          ▼                                                  │
 │   ┌──────────────┐   ┌──────────────┐   ┌──────────────┐    │
 │   │   Crawler    │   │   Crawler    │   │   Crawler    │    │
 │   │   (Worker)   │   │   (Worker)   │   │   (Worker)   │    │
 │   └──────┬───────┘   └──────────────┘   └──────────────┘    │
-│          │                                                    │
-│          ▼                                                    │
-│   ┌──────────────┐                                           │
-│   │   MongoDB    │  Data Storage                             │
-│   └──────────────┘                                           │
-│                                                              │
-│   ┌──────────────┐                                           │
-│   │  Memcached   │  Heartbeat + Deduplication                │
-│   └──────────────┘                                           │
-│                                                              │
-│   ┌──────────────┐                                           │
-│   │  Web Admin   │  Management Dashboard                     │
-│   └──────────────┘                                           │
-│                                                              │
+│          │                                                  │
+│          ▼                                                  │
+│   ┌──────────────┐                                          │
+│   │   MongoDB    │  Data Storage                            │
+│   └──────────────┘                                          │
+│                                                             │
+│   ┌──────────────┐                                          │
+│   │  Memcached   │  Heartbeat + Deduplication               │
+│   └──────────────┘                                          │
+│                                                             │
+│   ┌──────────────┐                                          │
+│   │  Web Admin   │  Management Dashboard                    │
+│   └──────────────┘                                          │
+│                                                             │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -307,22 +307,6 @@ ArticleField(
 | `CappedStorePipeLine` | Store to MongoDB (capped collection) |
 | `PubPipeLine` | Publish to external systems |
 | `TestResultPipeLine` | Test mode result collection |
-
----
-
-## Development Tool
-
-Install [dev](https://github.com/wish/dev) tool:
-
-```bash
-pip install dev
-```
-
-Run in project directory:
-
-```bash
-dev zspider
-```
 
 ---
 
