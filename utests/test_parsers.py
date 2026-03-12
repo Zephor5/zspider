@@ -5,6 +5,8 @@ from unittest import mock
 
 from zspider.parsers import BaseParser, get_parser
 from zspider.parsers.baseparser import BaseNewsParser
+from zspider.parsers.index import IndexParser
+from zspider.parsers.jsonparser import JSONParser
 
 __author__ = "zephor"
 
@@ -17,6 +19,19 @@ class DemoParser(BaseNewsParser):
         return self._parse_article_field(response)
 
 
+class FakeXPathNode(object):
+    def __init__(self, text="", href=""):
+        self._text = text
+        self._href = href
+
+    def xpath(self, expr):
+        if expr == "@href":
+            return FakeXPathResult([self._href])
+        if "text()" in expr:
+            return FakeXPathResult([self._text])
+        return FakeXPathResult([])
+
+
 class FakeXPathResult(object):
     def __init__(self, values):
         self._values = values
@@ -24,12 +39,16 @@ class FakeXPathResult(object):
     def extract(self):
         return self._values
 
+    def __iter__(self):
+        return iter(self._values)
+
 
 class FakeResponse(object):
     def __init__(self, url, xpath_map=None, body=""):
         self.url = url
         self._xpath_map = xpath_map or {}
         self._body = body
+        self.body = body
 
     def xpath(self, expr):
         return FakeXPathResult(self._xpath_map.get(expr, []))
@@ -130,3 +149,44 @@ class TestParsers(unittest.TestCase):
 
         item = parser.parse_article(response)
         self.assertEqual(item["publish_time"], "2026-03-11 09:08:07")
+
+    def test_index_parser_extracts_urls_from_xpath(self):
+        conf = SimpleNamespace(front_url="https://example.com", url_xpath="//a/@href", url_re="")
+        parser = IndexParser("test_parser", "demo", task_conf=conf, article_fields=[])
+        response = FakeResponse(
+            "https://example.com",
+            xpath_map={"//a/@href": [FakeXPathResult(["/a1"]), FakeXPathResult(["/a2"])]},
+        )
+
+        self.assertEqual(list(parser.parse_index(response)), [["/a1"], ["/a2"]])
+
+    def test_index_parser_extracts_urls_from_regex(self):
+        conf = SimpleNamespace(front_url="https://example.com", url_xpath="", url_re=r'url="([^"]+)"')
+        parser = IndexParser("test_parser", "demo", task_conf=conf, article_fields=[])
+        response = FakeResponse("https://example.com", body='url="https://a" url="https://b"')
+
+        self.assertEqual(list(parser.parse_index(response)), ["https://a", "https://b"])
+
+    def test_json_parser_extracts_nested_list_items(self):
+        conf = SimpleNamespace(
+            front_url="https://example.com",
+            pre_boundary="",
+            suf_boundary="",
+            json_struct="items->[]->url",
+        )
+        parser = JSONParser("test_parser", "demo", task_conf=conf, article_fields=[])
+        response = FakeResponse("https://example.com", body='{"items": [{"url": "u1"}, {"url": "u2"}]}')
+
+        self.assertEqual(list(parser.parse_index(response)), ["u1", "u2"])
+
+    def test_json_parser_extracts_indexed_item_with_boundaries(self):
+        conf = SimpleNamespace(
+            front_url="https://example.com",
+            pre_boundary="callback(",
+            suf_boundary=")",
+            json_struct="items->[0]->url",
+        )
+        parser = JSONParser("test_parser", "demo", task_conf=conf, article_fields=[])
+        response = FakeResponse("https://example.com", body='callback({"items": [{"url": "u1"}, {"url": "u2"}]})')
+
+        self.assertEqual(list(parser.parse_index(response)), ["u1"])
