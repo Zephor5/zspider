@@ -104,3 +104,29 @@ class TestParsers(unittest.TestCase):
 
         item = parser.parse_article(response)
         self.assertEqual(item["content"], "hello")
+
+    @mock.patch("zspider.parsers.baseparser.datetime")
+    def test_parse_article_field_time_falls_back_to_now_when_only_partial_date(self, mock_datetime):
+        mock_datetime.datetime.now.return_value.strftime.return_value = "2026-03-12 12:34:56"
+        article_fields = [
+            SimpleNamespace(name="publish_time", specify="", xpath="//time/text()", re=""),
+        ]
+        conf = SimpleNamespace(front_url="https://example.com")
+        parser = DemoParser("test_parser", "demo", task_conf=conf, article_fields=article_fields)
+        response = FakeResponse("https://example.com/a1", xpath_map={"//time/text()": ["2026-03"]})
+
+        item = parser.parse_article(response)
+        self.assertEqual(item["publish_time"], "2026-03-12 12:34:56")
+
+    @mock.patch("zspider.parsers.baseparser.datetime")
+    def test_parse_article_field_time_adds_current_clock_when_missing_seconds(self, mock_datetime):
+        mock_datetime.datetime.now.return_value.strftime.return_value = "09:08:07"
+        article_fields = [
+            SimpleNamespace(name="publish_time", specify="", xpath="//time/text()", re=""),
+        ]
+        conf = SimpleNamespace(front_url="https://example.com")
+        parser = DemoParser("test_parser", "demo", task_conf=conf, article_fields=article_fields)
+        response = FakeResponse("https://example.com/a1", xpath_map={"//time/text()": ["2026-03-11"]})
+
+        item = parser.parse_article(response)
+        self.assertEqual(item["publish_time"], "2026-03-11 09:08:07")

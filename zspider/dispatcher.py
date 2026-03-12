@@ -127,7 +127,7 @@ class HeartBeat(threading.Thread):
         clear out dates
         :param nodes:
         """
-        for uid in nodes.keys():
+        for uid in list(nodes.keys()):
             if time.time() - nodes[uid]["refresh"] > cls.__expire:
                 nodes.pop(uid)
 
