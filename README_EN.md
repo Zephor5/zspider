@@ -74,7 +74,6 @@ A distributed cron spider system
 Use **pyenv + Python 3.9 + project-local `.venv`**:
 
 ```bash
-cd ~/projects/zspider
 pyenv install 3.9.20
 pyenv local 3.9.20
 python -m venv .venv
@@ -111,17 +110,16 @@ pip install -r requirements.txt
 
 ### 3. Start External Services
 
-Using Docker for quick setup:
+Use the project-local Docker Compose file:
 
 ```bash
-# Start RabbitMQ
-docker run -d --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:management
+docker compose -f docker-compose.services.yml up -d
+```
 
-# Start MongoDB
-docker run -d --name mongodb -p 27017:27017 mongo:4.4
+Check service status:
 
-# Start Memcached
-docker run -d --name memcached -p 11211:11211 memcached:alpine
+```bash
+docker compose -f docker-compose.services.yml ps
 ```
 
 ### 4. Configuration
@@ -165,10 +163,10 @@ python -m zspider.crawler
 python -m zspider.web
 ```
 
-Or using Docker:
+Stop external services:
 
 ```bash
-docker-compose up -d
+docker compose -f docker-compose.services.yml down
 ```
 
 ---
