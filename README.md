@@ -74,7 +74,6 @@
 推荐使用 **pyenv + Python 3.9 + 项目独立 `.venv`**：
 
 ```bash
-cd ~/projects/zspider
 pyenv install 3.9.20
 pyenv local 3.9.20
 python -m venv .venv
@@ -111,17 +110,16 @@ pip install -r requirements.txt
 
 ### 3. 启动外部服务
 
-使用 Docker Compose 快速启动：
+使用项目内的 Docker Compose 配置启动：
 
 ```bash
-# 启动 RabbitMQ
-docker run -d --name rabbitmq -p 5672:5672 -p 15672:15672 rabbitmq:management
+docker compose -f docker-compose.services.yml up -d
+```
 
-# 启动 MongoDB
-docker run -d --name mongodb -p 27017:27017 mongo:4.4
+查看状态：
 
-# 启动 Memcached
-docker run -d --name memcached -p 11211:11211 memcached:alpine
+```bash
+docker compose -f docker-compose.services.yml ps
 ```
 
 ### 4. 配置修改
@@ -165,10 +163,10 @@ python -m zspider.crawler
 python -m zspider.web
 ```
 
-或使用 Docker：
+停止外部服务：
 
 ```bash
-docker-compose up -d
+docker compose -f docker-compose.services.yml down
 ```
 
 ---

@@ -1,0 +1,35 @@
+services:
+  mongodb:
+    image: mongo:4.4
+    container_name: zspider-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: mongoadmin
+      MONGO_INITDB_ROOT_PASSWORD: mongopwd
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: zspider-rabbitmq
+    restart: unless-stopped
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - ./docker/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
+      - rabbitmq_data:/var/lib/rabbitmq
+
+  memcached:
+    image: memcached:1.6-alpine
+    container_name: zspider-memcached
+    restart: unless-stopped
+    command: ["memcached", "-m", "128", "-p", "11211", "-u", "memcache", "-vv"]
+    ports:
+      - "11211:11211"
+
+volumes:
+  mongodb_data:
+  rabbitmq_data:
