@@ -105,3 +105,64 @@ class TaskManageTest(TestCase):
         res = json.loads(body)
         self.assertFalse(res["status"])
         self.assertIn("missing", res["data"])
+
+    def test_render_get_load_returns_next_run_time(self):
+        request = FakeRequest("/load/task-1/%s" % dispatcher.MANAGE_KEY)
+        fake_job = SimpleNamespace(next_run_time="2026-03-12 09:30:00")
+        with mock.patch.object(dispatcher, "load_tasks", return_value=fake_job):
+            body = dispatcher.TaskManage().render_GET(request)
+
+        res = json.loads(body)
+        self.assertTrue(res["status"])
+        self.assertIn("2026-03-12 09:30:00", res["data"])
+
+
+class SendTest(TestCase):
+    def test_on_send_publishes_message_and_returns_channel(self):
+        sender = dispatcher.Send({"id": "task-1", "name": "demo"})
+        channel = mock.Mock()
+
+        result = sender._on_send(channel)
+
+        channel.basic_publish.assert_called_once_with(
+            dispatcher.EXCHANGE_PARAMS["exchange"],
+            dispatcher.TASK_BIND_PARAMS["routing_key"],
+            sender.msgs,
+        )
+        self.assertFalse(sender._doing)
+        self.assertIs(result, channel)
+
+    def test_reset_state_sets_doing_false(self):
+        sender = dispatcher.Send({"id": "task-1", "name": "demo"})
+        sender._doing = True
+
+        sender._reset_state()
+
+        self.assertFalse(sender._doing)
+
+    def test_rand_reschedule_uses_scheduler_and_sets_max(self):
+        sender = dispatcher.Send({"id": "task-1", "name": "demo"}, rand=True)
+        fake_now = 1000
+
+        class FakeRunTime(object):
+            def __sub__(self, other):
+                return SimpleNamespace(total_seconds=lambda: 100)
+
+        existing_job = SimpleNamespace(next_run_time=FakeRunTime())
+        scheduled_job = SimpleNamespace(next_run_time="later")
+
+        with mock.patch.object(dispatcher.scheduler, "get_job", return_value=existing_job), \
+             mock.patch.object(dispatcher.scheduler, "add_job", return_value=scheduled_job) as add_job, \
+             mock.patch.object(dispatcher.tzlocal, "get_localzone", return_value="UTC"), \
+             mock.patch.object(dispatcher.datetime, "datetime") as mock_datetime, \
+             mock.patch.object(dispatcher.datetime, "timedelta", side_effect=lambda seconds: seconds), \
+             mock.patch.object(dispatcher.random, "random", return_value=0.5):
+            mock_datetime.now.return_value = fake_now
+            mock_datetime.now.side_effect = None
+            sender._rand_reschedule()
+
+        self.assertEqual(sender._max, 140)
+        add_job.assert_called_once()
+        self.assertEqual(add_job.call_args.kwargs["id"], "task-1")
+        self.assertEqual(add_job.call_args.kwargs["replace_existing"], True)
+        self.assertEqual(add_job.call_args.kwargs["run_date"], 1130.0)
