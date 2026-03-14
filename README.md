@@ -143,10 +143,10 @@ python -m zspider.web
 
 ## 面向开发者的进一步阅读
 
-- `docs/developer_guide.rst`：环境要求、配置文件、核心组件、Parser / Pipeline、项目结构
-- `docs/desgin.rst`：架构设计说明
-- `docs/internal_message.rst`：内部消息设计
-- `docs/item_info.rst`：数据模型与字段说明
+- [开发指南](docs/developer_guide.rst)：环境要求、配置文件、核心组件、Parser / Pipeline、项目结构
+- [架构设计](docs/desgin.rst)：架构设计说明
+- [内部消息设计](docs/internal_message.rst)
+- [数据模型](docs/item_info.rst)：数据模型与字段说明
 
 完整文档可通过 Sphinx 构建：
 
