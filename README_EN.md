@@ -14,10 +14,10 @@ ZSpider is built for continuously collecting public web content such as news sit
 
 ZSpider is not just a crawler code scaffold. It is a more platform-oriented system for operating recurring collection workflows:
 
-- Manage crawl jobs from a **web dashboard** instead of scattered scripts
-- Run **scheduled monitoring** with Cron rather than manual execution
-- Extract structured data through **configurable parsers**
-- Review and manage results through a **centralized backend**
+- manage crawl jobs from a **web dashboard** instead of scattered scripts
+- run **scheduled monitoring** with Cron rather than manual execution
+- extract structured data through **configurable parsers**
+- review and manage results through a **centralized backend**
 
 Typical use cases include:
 - news and article aggregation
@@ -49,6 +49,52 @@ Typical use cases include:
 | WeChat Collection | Collect article indexes and detail pages from public accounts |
 | Research / Intel Gathering | Continuously gather public information for analysis workflows |
 | Self-hosted Content Ops | Centralize crawl jobs, parser rules, and result review in one system |
+
+---
+
+## Why not plain crawler scripts
+
+When a crawler evolves from a one-off script into an ongoing collection workflow, teams usually run into the same problems:
+
+- jobs are scattered across scripts and hard to manage
+- scheduling depends on ad-hoc crontab or supervisor setups
+- parser changes lack a unified execution and review flow
+- logs, status, and results become messy when multiple sites run in parallel
+
+ZSpider is not trying to replace every crawler development style. Its goal is to make **recurring crawling + scheduled monitoring + result management** easier to operate as a platform.
+
+---
+
+## Quick Start
+
+### 1. Clone the project
+
+```bash
+git clone https://github.com/Zephor5/zspider.git
+cd zspider
+```
+
+### 2. Install dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+### 3. Start external services
+
+```bash
+docker compose -f docker-compose.services.yml up -d
+```
+
+### 4. Start ZSpider components
+
+```bash
+python -m zspider.dispatcher
+python -m zspider.crawler
+python -m zspider.web
+```
+
+> For environment requirements, configuration details, components, parser model, pipelines, and project structure, see `docs/` or Read the Docs.
 
 ---
 
@@ -93,257 +139,14 @@ Typical use cases include:
 
 ---
 
-## Requirements
+## Further Reading for Developers
 
-### Python Version
-- Python 3.7
-- Python 3.8
-- Python 3.9
+- `docs/developer_guide.rst`: requirements, configuration, core components, parsers, pipelines, project structure
+- `docs/desgin.rst`: architecture design notes
+- `docs/internal_message.rst`: internal messaging details
+- `docs/item_info.rst`: item and field model reference
 
-> ⚠️ Python 3.10+ is not recommended for this project. Some legacy dependencies such as `pooled-pika~=0.3.0` and `flask-mongoengine~=1.0.0` have poor compatibility with newer Python runtimes.
-
-### Recommended Development Environment
-
-Use **pyenv + Python 3.9 + project-local `.venv`**:
-
-```bash
-pyenv install 3.9.20
-pyenv local 3.9.20
-python -m venv .venv
-. .venv/bin/activate
-pip install -U pip setuptools wheel
-pip install -r requirements_dev.txt
-```
-
-If `.venv` already exists, rebuild it after switching Python versions to avoid interpreter mismatch issues.
-
-### External Dependencies
-| Service | Purpose | Default Port |
-|---------|---------|--------------|
-| RabbitMQ | Task Queue | 5672 |
-| MongoDB | Data Storage | 27017 |
-| Memcached | Heartbeat + Deduplication | 11211 |
-
----
-
-## Quick Start
-
-### 1. Clone the Project
-
-```bash
-git clone https://github.com/Zephor5/zspider.git
-cd zspider
-```
-
-### 2. Install Dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
-### 3. Start External Services
-
-Use the project-local Docker Compose file:
-
-```bash
-docker compose -f docker-compose.services.yml up -d
-```
-
-Check service status:
-
-```bash
-docker compose -f docker-compose.services.yml ps
-```
-
-### 4. Configuration
-
-Modify configuration files in `zspider/confs/`:
-
-**conf.py** - Core configuration:
-```python
-# Development mode
-DEBUG = True
-
-# RabbitMQ connection
-AMQP_PARAM = URLParameters("amqp://guest:guest@127.0.0.1")
-
-# Memcached servers
-MC_SERVERS = "127.0.0.1:11211"
-```
-
-**web_conf.py** - Web backend configuration:
-```python
-FLASK_CONF = {
-    "SECRET_KEY": "your-secret-key",
-    "MONGODB_SETTINGS": {
-        "db": "spider",
-        "host": "localhost",
-        "port": 27017,
-    },
-}
-```
-
-### 5. Start Services
-
-```bash
-# Start Dispatcher (Task Scheduler)
-python -m zspider.dispatcher
-
-# Start Crawler (Worker Process)
-python -m zspider.crawler
-
-# Start Web Admin
-python -m zspider.web
-```
-
-Stop external services:
-
-```bash
-docker compose -f docker-compose.services.yml down
-```
-
----
-
-## Configuration Files
-
-| File | Purpose |
-|------|---------|
-| `conf.py` | Core config (MQ, MC, logging, etc.) |
-| `crawl_conf.py` | Scrapy crawler settings |
-| `dispatcher_conf.py` | Dispatcher scheduler config |
-| `web_conf.py` | Flask web config |
-
-### Production Configuration
-
-Set environment variable for production mode:
-
-```bash
-export ZSPIDER_PRODUCT=1
-```
-
-Then update production parameters in each config file.
-
----
-
-## Core Components
-
-### Dispatcher - Task Scheduler
-
-- APScheduler-based Cron scheduling
-- Multi-node deployment with automatic failover
-- Heartbeat detection via Memcached
-- Hot reload, pause, and delete tasks
-
-**Management API:**
-```
-GET /{MANAGE_KEY}              # Get status
-GET /reload/{MANAGE_KEY}       # Reload all tasks
-GET /load/{task_id}/{MANAGE_KEY}   # Load specific task
-GET /pause/{task_id}/{MANAGE_KEY}  # Pause task
-GET /remove/{task_id}/{MANAGE_KEY} # Remove task
-```
-
-### Crawler - Worker Process
-
-- Built on Scrapy framework
-- Fetches tasks from RabbitMQ
-- Multiple Spider types supported
-- Built-in Pipeline processing
-
-### Web - Admin Dashboard
-
-- Flask + MongoEngine
-- Frontend: **Ace Admin** template (Bootstrap responsive admin)
-- Task CRUD management
-- Visual field configuration
-- Result viewing
-- User permission management
-
-**Pages:**
-| Page | Function |
-|------|----------|
-| Dashboard | Dispatcher status monitoring |
-| Task List | View/manage all tasks |
-| Add Task | Create new crawl task |
-| Data Records | View crawl results |
-| Logs | Crawler/Dispatcher logs |
-
----
-
-## Spider Types
-
-| Spider | Purpose | File |
-|--------|---------|------|
-| `news` | News websites | `spiders/news.py` |
-| `wechat` | WeChat articles | `spiders/wechat.py` |
-| `selenium` | Dynamic rendering | `spiders/selenium.py` |
-
-### Custom Spider
-
-Extend `BaseSpider` to create your own:
-
-```python
-from zspider.basespider import BaseSpider
-
-class MySpider(BaseSpider):
-    name = "myspider"
-    
-    def parse(self, response):
-        # Parse index page
-        for item in self._parse_index(response):
-            yield item
-```
-
----
-
-## Parser Configuration
-
-Parser handles extraction logic with XPath + Regex:
-
-```python
-# Task configuration example
-task = Task(
-    name="News Crawler",
-    spider="news",
-    parser="news",
-    cron="0 */2 * * *",  # Every 2 hours
-    is_active=True,
-)
-
-# Field extraction configuration
-ArticleField(
-    task=task,
-    name="title",
-    xpath="//h1/text()",
-)
-ArticleField(
-    task=task,
-    name="content",
-    xpath="//div[@class='content']//text()",
-)
-ArticleField(
-    task=task,
-    name="src_time",
-    xpath="//span[@class='date']/text()",
-    re=r"(\d{4}-\d{2}-\d{2})",
-)
-```
-
----
-
-## Pipeline Processing
-
-| Pipeline | Function |
-|----------|----------|
-| `CappedStorePipeLine` | Store to MongoDB (capped collection) |
-| `PubPipeLine` | Publish to external systems |
-| `TestResultPipeLine` | Test mode result collection |
-
----
-
-## Documentation
-
-Build with Sphinx:
+Build docs with Sphinx:
 
 ```bash
 cd docs
@@ -351,42 +154,6 @@ make html
 ```
 
 Or visit [ReadTheDocs](http://zspider.readthedocs.org/)
-
----
-
-## Project Structure
-
-```
-zspider/
-├── zspider/
-│   ├── spiders/          # Spider implementations
-│   │   ├── news.py       # News spider
-│   │   ├── wechat.py     # WeChat spider
-│   │   └── selenium.py   # Dynamic rendering spider
-│   ├── parsers/          # Parsers
-│   │   ├── baseparser.py # Base parser
-│   │   ├── jsonparser.py # JSON parser
-│   │   ├── wechat.py     # WeChat parser
-│   │   └── papers.py     # Paper parser
-│   ├── pipelines/        # Data pipelines
-│   │   ├── store.py      # MongoDB storage
-│   │   └── publish.py    # Publish pipeline
-│   ├── middlewares/      # Scrapy middlewares
-│   ├── utils/            # Utilities
-│   ├── www/              # Web admin
-│   │   ├── handlers/     # Request handlers
-│   │   └── templates/    # Templates
-│   ├── confs/            # Configuration files
-│   ├── models.py         # Data models
-│   ├── crawler.py        # Crawler entry
-│   ├── dispatcher.py     # Dispatcher entry
-│   └── web.py            # Web entry
-├── utests/               # Unit tests
-├── docs/                 # Sphinx docs
-├── requirements.txt      # Dependencies
-├── Dockerfile            # Docker build
-└── docker-compose.yml    # Docker Compose
-```
 
 ---
 
