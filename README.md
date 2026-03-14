@@ -62,7 +62,7 @@ cd zspider
 cp .env.example .env
 python3.9 -m venv .venv
 ./.venv/bin/pip install -U pip setuptools wheel
-./.venv/bin/pip install -r requirements_dev.txt
+./.venv/bin/pip install -r requirements_dev.txt -c constraints/py39.txt
 ```
 
 ### 2）一键启动依赖服务

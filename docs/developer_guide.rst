@@ -16,7 +16,7 @@ If you only want to get a local instance running quickly:
    cp .env.example .env
    python3.9 -m venv .venv
    ./.venv/bin/pip install -U pip setuptools wheel
-   ./.venv/bin/pip install -r requirements_dev.txt
+   ./.venv/bin/pip install -r requirements_dev.txt -c constraints/py39.txt
    make services-up
    make dev
 
@@ -46,7 +46,7 @@ Recommended Development Environment
    python -m venv .venv
    . .venv/bin/activate
    pip install -U pip setuptools wheel
-   pip install -r requirements_dev.txt
+   pip install -r requirements_dev.txt -c constraints/py39.txt
 
 External Dependencies
 ~~~~~~~~~~~~~~~~~~~~~
