@@ -141,10 +141,10 @@ python -m zspider.web
 
 ## Further Reading for Developers
 
-- `docs/developer_guide.rst`: requirements, configuration, core components, parsers, pipelines, project structure
-- `docs/desgin.rst`: architecture design notes
-- `docs/internal_message.rst`: internal messaging details
-- `docs/item_info.rst`: item and field model reference
+- [Developer Guide](docs/developer_guide.rst): requirements, configuration, core components, parsers, pipelines, project structure
+- [Desgin](docs/desgin.rst): architecture design notes
+- [Internal Message](docs/internal_message.rst): internal messaging details
+- [Item Info](docs/item_info.rst): item and field model reference
 
 Build docs with Sphinx:
 
