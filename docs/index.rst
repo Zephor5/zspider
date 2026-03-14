@@ -4,111 +4,42 @@
 ZSPIDER
 =======
 
-A distributed cron spider system with web management interface.
+A self-hosted crawling platform for content monitoring and news aggregation.
 
 |build-status|
 
 .. |build-status| image:: https://readthedocs.org/projects/zspider/badge/?version=latest
    :target: http://zspider.readthedocs.org/en/latest/?badge=latest
 
+ZSpider helps teams run recurring collection workflows for public web content such as news, announcements, company updates, and WeChat articles.
+
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 
-   installation
-   quickstart
+   developer_guide
    desgin
    internal_message
    item_info
-   api
 
-Installation
-============
+Overview
+========
 
-Requirements
-------------
+ZSpider focuses on three practical needs:
 
-Python Version
-~~~~~~~~~~~~~~
+- schedule recurring collection jobs
+- configure extraction rules through parsers
+- review and manage results from a centralized backend
 
-- Python 3.7
-- Python 3.8
-- Python 3.9
+It is a better fit for content monitoring and information aggregation workflows than one-off crawler scripts.
 
-External Dependencies
-~~~~~~~~~~~~~~~~~~~~~
+Documentation Guide
+===================
 
-+------------+---------------+------------------+
-| Service    | Purpose       | Default Port     |
-+============+===============+==================+
-| RabbitMQ   | Task Queue    | 5672             |
-+------------+---------------+------------------+
-| MongoDB    | Data Storage  | 27017            |
-+------------+---------------+------------------+
-| Memcached  | Heartbeat     | 11211            |
-+------------+---------------+------------------+
-
-Install from PyPI
------------------
-
-.. code-block:: bash
-
-   pip install zspider
-
-Install from Source
--------------------
-
-.. code-block:: bash
-
-   git clone https://github.com/Zephor5/zspider.git
-   cd zspider
-   pip install -r requirements.txt
-   pip install -e .
-
-Docker Installation
--------------------
-
-.. code-block:: bash
-
-   docker-compose up -d
-
-Components
-----------
-
-Dispatcher
-~~~~~~~~~~
-
-Task scheduling center with high availability support.
-
-.. code-block:: bash
-
-   python -m zspider.dispatcher
-
-Crawler
-~~~~~~~
-
-Worker process for executing crawl tasks.
-
-.. code-block:: bash
-
-   python -m zspider.crawler
-
-Web Admin
-~~~~~~~~~
-
-Flask-based management interface.
-
-.. code-block:: bash
-
-   python -m zspider.web
-
-Quick Start
------------
-
-1. Start external services (RabbitMQ, MongoDB, Memcached)
-2. Configure ``zspider/confs/*.py`` files
-3. Start Dispatcher, Crawler, and Web components
-4. Access Web Admin at ``http://localhost:5000``
+- ``developer_guide``: environment, configuration, components, parser model, and project structure
+- ``desgin``: architecture design notes
+- ``internal_message``: internal messaging details
+- ``item_info``: item and field model reference
 
 Indices and tables
 ==================
