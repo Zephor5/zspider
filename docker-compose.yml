@@ -15,7 +15,7 @@ services:
       - ./logs/mongodb:/var/log/mongodb:delegated
     shm_size: "2gb"
     ports:
-      - "5000:5000"
+      - "${WEB_PORT:-5000}:5000"
     environment:
       - "DOCKER_USER=${USER:-app}"
     hostname: "$USER"

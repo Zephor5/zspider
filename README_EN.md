@@ -1,159 +1,205 @@
-# ZSPIDER
+# ZSpider
 
+[![CI](https://github.com/Zephor5/zspider/actions/workflows/ci.yml/badge.svg)](https://github.com/Zephor5/zspider/actions/workflows/ci.yml)
 [![Documentation Status](https://readthedocs.org/projects/zspider/badge/?version=latest)](http://zspider.readthedocs.org/en/latest/?badge=latest)
 
 A self-hosted crawling platform for **content monitoring and news aggregation**.
 
-ZSpider is built for continuously collecting public web content such as news sites, announcements, WeChat articles, and other information sources. You manage jobs in a web dashboard, configure extraction rules, schedule crawls, and review results in one place.
+ZSpider is not just a place to dump crawler scripts. It is a platform-oriented system with a **web admin, scheduling, configurable parsing, and result review**, built for recurring collection workflows such as monitoring news sites, announcements, WeChat articles, and other public web content.
 
 [中文说明](README.md)
 
 ---
 
-## What ZSpider is
+## What it is good for
 
-ZSpider is not just a crawler code scaffold. It is a more platform-oriented system for operating recurring collection workflows:
+ZSpider fits ongoing collection workflows better than one-off scripts:
 
-- manage crawl jobs from a **web dashboard** instead of scattered scripts
-- run **scheduled monitoring** with Cron rather than manual execution
-- extract structured data through **configurable parsers**
-- review and manage results through a **centralized backend**
+- **News / content aggregation** across multiple sites
+- **Announcement monitoring** for government, school, or company websites
+- **WeChat article collection** for archiving or downstream analysis
+- **Research / intelligence gathering** from public information sources
+- **Self-hosted content operations** with jobs, fields, logs, and results in one backend
 
-Typical use cases include:
-- news and article aggregation
-- public announcement monitoring
-- company website update tracking
-- WeChat content collection
-- continuous gathering of public information for research and intelligence work
+If your goal is long-running monitoring rather than a one-time scrape, ZSpider is the better fit.
 
 ---
 
-## Features
+## Core capabilities
 
-- 🕷️ **Platform-oriented crawling** - built for content monitoring and information aggregation
-- ⏰ **Cron Scheduling** - APScheduler-based timed tasks
-- 🌐 **Web Management** - Flask admin dashboard for managing jobs, fields, and results
-- 📦 **Configurable Parsing** - XPath + Regex extraction without coding
-- 🔐 **Login Support** - Automatic handling of login-required websites
-- 🔄 **Deduplication** - Memcached-based distributed URL deduplication
-- 🚚 **Scalable Architecture** - decoupled Dispatcher / Crawler design with horizontal scaling
-
----
-
-## Use Cases
-
-| Use Case | Description |
-|----------|-------------|
-| News Monitoring | Periodically crawl media sites for aggregation and topic tracking |
-| Announcement Tracking | Monitor government, school, or company websites for updates |
-| WeChat Collection | Collect article indexes and detail pages from public accounts |
-| Research / Intel Gathering | Continuously gather public information for analysis workflows |
-| Self-hosted Content Ops | Centralize crawl jobs, parser rules, and result review in one system |
+- 🕷️ **Platform-style job management** through a web admin
+- ⏰ **Scheduled crawling** powered by APScheduler Cron jobs
+- 🌐 **Visual backend** for task status, logs, and results
+- 📦 **Configurable parsing** with XPath + regex extraction
+- 🔐 **Login-aware crawling** for authenticated sites
+- 🔄 **Deduplication** backed by Memcached
+- 🚚 **Scalable architecture** with decoupled Dispatcher / Crawler components
 
 ---
 
 ## Why not plain crawler scripts
 
-When a crawler evolves from a one-off script into an ongoing collection workflow, teams usually run into the same problems:
+Once a scraper turns into an always-on monitoring workflow, teams usually hit the same problems:
 
-- jobs are scattered across scripts and hard to manage
+- jobs are scattered across many scripts
 - scheduling depends on ad-hoc crontab or supervisor setups
-- parser changes lack a unified execution and review flow
-- logs, status, and results become messy when multiple sites run in parallel
+- parser changes have no single execution path to verify them
+- logs, status, and results become fragmented across many places
 
-ZSpider is not trying to replace every crawler development style. Its goal is to make **recurring crawling + scheduled monitoring + result management** easier to operate as a platform.
+ZSpider exists to make **recurring crawling + scheduling + result management** easier to operate as a real platform.
 
 ---
 
-## Quick Start
+## 5-minute quick start
 
-### 1. Clone the project
+### 1) Prepare the environment
+
+Python 3.9 is recommended:
 
 ```bash
 git clone https://github.com/Zephor5/zspider.git
 cd zspider
+cp .env.example .env
+python3.9 -m venv .venv
+./.venv/bin/pip install -U pip setuptools wheel
+./.venv/bin/pip install -r requirements_dev.txt
 ```
 
-### 2. Install dependencies
+### 2) Start dependency services
 
 ```bash
-pip install -r requirements.txt
+make services-up
 ```
 
-### 3. Start external services
+This starts:
+
+- MongoDB
+- RabbitMQ
+- Memcached
+
+### 3) Start the local ZSpider stack
 
 ```bash
-docker compose -f docker-compose.services.yml up -d
+make dev
 ```
 
-### 4. Start ZSpider components
+This unified entry point starts:
+
+- `zspider.dispatcher`
+- `zspider.crawler`
+- `zspider.web`
+
+Default URL:
+
+```text
+http://127.0.0.1:5000
+```
+
+### 4) Initialize the admin account
+
+On the first visit to `/login`:
+
+- enter **any username and password**
+- if the user table is empty, that credential pair becomes the **initial admin account**
+
+So there is no hard-coded default admin account today. The **first successful login creates the initial admin user**.
+
+### 5) Verify the setup
+
+- open the dashboard and confirm it loads
+- log in and verify task pages open normally
+- inspect `logs/web.log`, `logs/dispatcher.log`, and `logs/crawler.log` for errors
+
+Stop everything with:
 
 ```bash
-python -m zspider.dispatcher
-python -m zspider.crawler
-python -m zspider.web
+# Ctrl + C stops the local processes started by make dev
+make services-down
 ```
-
-> For environment requirements, configuration details, components, parser model, pipelines, and project structure, see `docs/` or Read the Docs.
 
 ---
 
-## System Architecture
+## Unified local development flow
 
+To reduce first-run friction, the repository now provides one local entry point:
+
+```bash
+make dev
 ```
+
+It will:
+
+1. bring up dependency services from `docker-compose.services.yml`
+2. start dispatcher / crawler / web from the repo `.venv`
+3. write logs to `logs/dispatcher.log`, `logs/crawler.log`, and `logs/web.log`
+
+If you only want the dependency services:
+
+```bash
+make services-up
+```
+
+If you only want tests:
+
+```bash
+make test
+```
+
+---
+
+## Basic trust signals
+
+For phase one, the goal is to improve the fastest trust-building signals:
+
+- **GitHub Actions CI** added for unit tests
+- the repository currently includes **27 unit tests**, runnable via `make test`
+- `docs/` remains available as the deeper developer documentation entry
+- README now covers positioning, use cases, quick start, admin initialization, and the unified startup path
+
+Still worth adding later:
+
+- dashboard screenshots / GIFs
+- more realistic task templates
+- clearer production deployment docs
+- better health / observability docs
+
+---
+
+## System architecture
+
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │                        ZSpider System                       │
 ├─────────────────────────────────────────────────────────────┤
 │                                                             │
-│   ┌──────────────┐      ┌──────────────┐                    │
-│   │  Dispatcher  │◄────►│  Dispatcher  │  (Hot standby)     │
-│   │   (Master)   │      │   (Backup)   │                    │
-│   └──────┬───────┘      └──────────────┘                    │
-│          │                                                  │
-│          ▼                                                  │
-│   ┌──────────────┐                                          │
-│   │   RabbitMQ   │  Task Queue                              │
-│   └──────┬───────┘                                          │
-│          │                                                  │
-│          ▼                                                  │
-│   ┌──────────────┐   ┌──────────────┐   ┌──────────────┐    │
-│   │   Crawler    │   │   Crawler    │   │   Crawler    │    │
-│   │   (Worker)   │   │   (Worker)   │   │   (Worker)   │    │
-│   └──────┬───────┘   └──────────────┘   └──────────────┘    │
-│          │                                                  │
-│          ▼                                                  │
-│   ┌──────────────┐                                          │
-│   │   MongoDB    │  Data Storage                            │
-│   └──────────────┘                                          │
+│   Dispatcher  →  RabbitMQ  →  Crawler Workers              │
+│        │                               │                    │
+│        └──────── status / control ─────┘                    │
 │                                                             │
-│   ┌──────────────┐                                          │
-│   │  Memcached   │  Heartbeat + Deduplication               │
-│   └──────────────┘                                          │
-│                                                             │
-│   ┌──────────────┐                                          │
-│   │  Web Admin   │  Management Dashboard                    │
-│   └──────────────┘                                          │
+│   MongoDB   stores tasks and crawl results                  │
+│   Memcached heartbeat and deduplication                     │
+│   Web Admin backend management and review                   │
 │                                                             │
 └─────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Further Reading for Developers
+## Further reading
 
-- [Developer Guide](docs/developer_guide.rst): requirements, configuration, core components, parsers, pipelines, project structure
-- [Desgin](docs/desgin.rst): architecture design notes
-- [Internal Message](docs/internal_message.rst): internal messaging details
-- [Item Info](docs/item_info.rst): item and field model reference
+- [Developer Guide](docs/developer_guide.rst)
+- [Desgin](docs/desgin.rst)
+- [Internal Message](docs/internal_message.rst)
+- [Item Info](docs/item_info.rst)
 
-Build docs with Sphinx:
+Build docs with:
 
 ```bash
 cd docs
 make html
 ```
 
-Or visit [ReadTheDocs](http://zspider.readthedocs.org/)
+Or visit [Read the Docs](http://zspider.readthedocs.org/).
 
 ---
 
@@ -161,8 +207,6 @@ Or visit [ReadTheDocs](http://zspider.readthedocs.org/)
 
 MIT License
 
----
-
 ## Contributing
 
-Issues and Pull Requests are welcome!
+Issues and Pull Requests are welcome.

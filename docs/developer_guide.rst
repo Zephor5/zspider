@@ -6,6 +6,25 @@ This guide is for developers who want to understand, extend, or operate ZSpider 
 Requirements
 ------------
 
+First-run shortcut
+------------------
+
+If you only want to get a local instance running quickly:
+
+.. code-block:: bash
+
+   cp .env.example .env
+   python3.9 -m venv .venv
+   ./.venv/bin/pip install -U pip setuptools wheel
+   ./.venv/bin/pip install -r requirements_dev.txt
+   make services-up
+   make dev
+
+Then open ``http://127.0.0.1:5000/login``.
+
+When the user table is empty, the first username + password you submit becomes the initial admin account.
+
+
 Python Version
 ~~~~~~~~~~~~~~
 

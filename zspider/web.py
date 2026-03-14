@@ -1,4 +1,5 @@
 # coding=utf-8
+import os
 import sys
 import threading
 
@@ -19,11 +20,12 @@ def main():
     t = threading.Thread(target=test_crawler.start, args=(False, False))
     t.setDaemon(True)
     t.start()
+    host = os.getenv("ZSPIDER_WEB_HOST", INNER_IP)
     if len(sys.argv) == 2:
         port = int(sys.argv[1])
-        app.run(host=INNER_IP, port=port)
+        app.run(host=host, port=port)
     else:
-        app.run(host=INNER_IP, debug=True)
+        app.run(host=host, debug=True)
 
 
 if __name__ == "__main__":

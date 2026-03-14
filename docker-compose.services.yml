@@ -7,7 +7,7 @@ services:
       MONGO_INITDB_ROOT_USERNAME: mongoadmin
       MONGO_INITDB_ROOT_PASSWORD: mongopwd
     ports:
-      - "27017:27017"
+      - "${MONGO_PORT:-27017}:27017"
     volumes:
       - mongodb_data:/data/db
 
@@ -16,8 +16,8 @@ services:
     container_name: zspider-rabbitmq
     restart: unless-stopped
     ports:
-      - "5672:5672"
-      - "15672:15672"
+      - "${RABBITMQ_PORT:-5672}:5672"
+      - "${RABBITMQ_MANAGEMENT_PORT:-15672}:15672"
     volumes:
       - ./docker/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
       - rabbitmq_data:/var/lib/rabbitmq
@@ -28,7 +28,7 @@ services:
     restart: unless-stopped
     command: ["memcached", "-m", "128", "-p", "11211", "-u", "memcache", "-vv"]
     ports:
-      - "11211:11211"
+      - "${MEMCACHED_PORT:-11211}:11211"
 
 volumes:
   mongodb_data:
