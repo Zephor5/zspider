@@ -1,140 +1,184 @@
-# ZSPIDER
+# ZSpider
 
+[![CI](https://github.com/Zephor5/zspider/actions/workflows/ci.yml/badge.svg)](https://github.com/Zephor5/zspider/actions/workflows/ci.yml)
 [![Documentation Status](https://readthedocs.org/projects/zspider/badge/?version=latest)](http://zspider.readthedocs.org/en/latest/?badge=latest)
 
-面向**内容监控 / 资讯聚合**场景的自托管抓取平台。
+面向 **内容监控 / 资讯聚合** 场景的自托管抓取平台。
 
-ZSpider 适合用于持续采集新闻、公告、公众号、资讯站点等公开网页内容：你可以通过 Web 后台管理任务、配置解析规则、定时抓取并统一查看结果。
+ZSpider 不是“写几个爬虫脚本然后自己拼调度”的工具，而是一套带 **Web 后台、定时调度、配置化解析、结果查看** 的平台化抓取系统，适合持续监控新闻、公告、公众号和各类公开网页内容。
 
 [English README](README_EN.md)
 
 ---
 
-## ZSpider 是什么
+## 它适合什么场景
 
-ZSpider 不是一个只负责“写爬虫代码”的脚手架，而是一套更偏平台化的抓取系统：
+ZSpider 更适合“持续运行的内容采集任务”，而不是一次性脚本：
 
-- 用 **Web 后台** 管理抓取任务，而不是散落在各处的脚本
-- 用 **Cron 调度** 持续监控内容更新，而不是手工触发
-- 用 **配置化解析** 提取结构化字段，而不是每次都重写逻辑
-- 用 **统一存储与查看** 管理抓取结果，而不是临时输出到日志
+- **新闻 / 资讯聚合**：监控多个媒体站点，统一采集标题、正文、时间、来源
+- **公告监控**：追踪政府、学校、企业官网的公告更新
+- **公众号采集**：抓取公众号文章列表和正文，做归档或二次分析
+- **行业情报收集**：持续拉取公开网页内容，用于研究、投研、舆情或专题跟踪
+- **自建抓取后台**：把任务、字段、结果、日志放在同一套后台中集中管理
 
-如果你的目标是做：
-- 新闻 / 资讯聚合
-- 政务公告 / 招标公告监控
-- 企业官网动态跟踪
-- 微信公众号内容采集
-- 研究资料与公开信息持续收集
-
-那么 ZSpider 会比“单个爬虫脚本”更像一个可持续运转的工具。
+如果你的目标是“长期稳定地监控内容变化”，ZSpider 会比零散脚本更省心。
 
 ---
 
-## 特性
+## 核心能力
 
-- 🕷️ **平台化抓取** - 面向内容监控与资讯聚合的任务管理平台
-- ⏰ **定时调度** - 基于 APScheduler 的 Cron 定时任务
-- 🌐 **Web 管理** - Flask 后台可视化管理任务、字段与结果
-- 📦 **可配置解析** - XPath + 正则表达式配置化提取
-- 🔐 **登录支持** - 自动处理需要登录的网站
-- 🔄 **去重机制** - 基于 Memcached 的分布式 URL 去重
-- 🚚 **可扩展架构** - Dispatcher / Crawler 解耦，支持横向扩展
-
----
-
-## 适用场景
-
-| 场景 | 说明 |
-|------|------|
-| 新闻监控 | 定时抓取新闻站点，做资讯聚合或专题追踪 |
-| 公告追踪 | 监控政府、学校、企业官网公告更新 |
-| 微信内容采集 | 抓取公众号文章列表与正文，用于归档或分析 |
-| 行业情报收集 | 面向研究、投研、舆情、情报等公开信息收集 |
-| 自建内容后台 | 将抓取任务、解析规则、结果查看集中到一套后台中 |
+- 🕷️ **平台化任务管理**：通过 Web 后台集中管理抓取任务和字段配置
+- ⏰ **定时调度**：基于 APScheduler 的 Cron 任务调度
+- 🌐 **可视化后台**：查看任务状态、抓取结果、运行日志
+- 📦 **配置化解析**：支持 XPath + 正则提取，不必每次都重写代码
+- 🔐 **登录站点支持**：支持需要登录态的网站抓取
+- 🔄 **去重机制**：基于 Memcached 的 URL 去重和心跳机制
+- 🚚 **可扩展架构**：Dispatcher / Crawler 解耦，可横向扩展 Worker
 
 ---
 
 ## 为什么不是普通爬虫脚本
 
-当抓取需求从“一次性脚本”变成“持续运营的内容采集任务”时，团队通常会遇到这些问题：
+当需求从“一次抓完”变成“持续监控”后，团队通常会开始遇到这些问题：
 
 - 任务分散在多个脚本里，不好管理
-- 定时执行依赖 crontab / supervisor，维护成本高
-- 解析规则改动后，缺少统一的任务入口和结果查看方式
-- 多个站点并行抓取时，状态、日志、结果难以集中管理
+- 调度依赖 crontab / supervisor，链路分散
+- 解析规则改完后，没有统一入口重新验证
+- 多站点并发后，日志、状态、结果难以集中查看
 
-ZSpider 的目标不是替代所有爬虫开发方式，而是把这类**持续抓取 + 定时调度 + 结果管理**的工作，沉淀成一套更容易运转的平台。
+ZSpider 的目标就是把这类 **持续抓取 + 定时调度 + 结果管理** 的工作沉淀成一套更容易跑起来、也更容易交接的平台。
 
 ---
 
-## 快速开始
+## 5 分钟快速体验
 
-### 1. 克隆项目
+### 1）准备环境
+
+推荐使用 Python 3.9：
 
 ```bash
 git clone https://github.com/Zephor5/zspider.git
 cd zspider
+cp .env.example .env
+python3.9 -m venv .venv
+./.venv/bin/pip install -U pip setuptools wheel
+./.venv/bin/pip install -r requirements_dev.txt
 ```
 
-### 2. 安装依赖
+### 2）一键启动依赖服务
 
 ```bash
-pip install -r requirements.txt
+make services-up
 ```
 
-### 3. 启动外部服务
+会启动：
+
+- MongoDB
+- RabbitMQ
+- Memcached
+
+### 3）启动 ZSpider 本地开发栈
 
 ```bash
-docker compose -f docker-compose.services.yml up -d
+make dev
 ```
 
-### 4. 启动 ZSpider 组件
+这个命令会统一启动：
+
+- `zspider.dispatcher`
+- `zspider.crawler`
+- `zspider.web`
+
+默认访问地址：
+
+```text
+http://127.0.0.1:5000
+```
+
+### 4）初始化管理员账号
+
+第一次访问 `/login` 时：
+
+- **输入任意账号和密码**
+- 如果当前用户表为空，这组凭据会被写入并成为 **首个管理员账号**
+
+也就是说，项目当前没有预置默认管理员账号，**首次登录输入的账号 / 密码就是初始化管理员账号**。
+
+### 5）验证是否跑通
+
+- 打开后台首页，确认能访问 Dashboard
+- 登录后新建任务 / 查看任务页是否正常打开
+- 查看 `logs/web.log`、`logs/dispatcher.log`、`logs/crawler.log` 是否有异常
+
+停止服务：
 
 ```bash
-python -m zspider.dispatcher
-python -m zspider.crawler
-python -m zspider.web
+# Ctrl + C 停止 make dev 启动的本地进程
+make services-down
 ```
 
-> 详细环境要求、配置文件说明、组件介绍、Parser / Pipeline / 项目结构等专业开发文档，请查看 `docs/` 或 Read the Docs。
+---
+
+## 本地开发的统一入口
+
+为了减少“到底先起哪个组件”的理解成本，仓库现在提供了统一入口：
+
+```bash
+make dev
+```
+
+它会：
+
+1. 自动拉起 `docker-compose.services.yml` 里的依赖
+2. 用当前仓库 `.venv` 启动 dispatcher / crawler / web
+3. 将日志写入 `logs/dispatcher.log`、`logs/crawler.log`、`logs/web.log`
+
+如果你只想启动外部依赖：
+
+```bash
+make services-up
+```
+
+如果你只想运行测试：
+
+```bash
+make test
+```
+
+---
+
+## 当前基础信任信号
+
+第一阶段先补最基础、最直接影响首次判断的信号：
+
+- 已补 **GitHub Actions CI**：默认执行单元测试
+- 仓库现有 **27 个单元测试**，可通过 `make test` 运行
+- 已保留并补充 `docs/` 开发文档入口
+- README 已补充：定位、场景、快速体验、初始化说明、统一启动方式
+
+当前仍未完成但后续值得继续补的部分：
+
+- 后台截图 / GIF
+- 更贴近真实业务的任务模板示例
+- 更明确的生产部署文档
+- 更细的健康检查 / 观测说明
 
 ---
 
 ## 系统架构
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
-│                        ZSpider 系统                          │
+│                        ZSpider 系统                         │
 ├─────────────────────────────────────────────────────────────┤
 │                                                             │
-│   ┌──────────────┐      ┌──────────────┐                    │
-│   │  Dispatcher  │◄────►│  Dispatcher  │  (主备热切换）       │
-│   │   (主节点)    │      │   (备节点)    │                    │
-│   └──────┬───────┘      └──────────────┘                    │
-│          │                                                  │
-│          ▼                                                  │
-│   ┌──────────────┐                                          │
-│   │   RabbitMQ   │  任务队列                                  │
-│   └──────┬───────┘                                          │
-│          │                                                  │
-│          ▼                                                  │
-│   ┌──────────────┐   ┌──────────────┐   ┌──────────────┐    │
-│   │   Crawler    │   │   Crawler    │   │   Crawler    │    │
-│   │   (Worker)   │   │   (Worker)   │   │   (Worker)   │    │
-│   └──────┬───────┘   └──────────────┘   └──────────────┘    │
-│          │                                                  │
-│          ▼                                                  │
-│   ┌──────────────┐                                          │
-│   │   MongoDB    │  数据存储                                  │
-│   └──────────────┘                                          │
+│   Dispatcher  →  RabbitMQ  →  Crawler Workers              │
+│        │                               │                    │
+│        └──────── 状态 / 管理 ──────────┘                    │
 │                                                             │
-│   ┌──────────────┐                                          │
-│   │  Memcached   │  心跳 + 去重                               │
-│   └──────────────┘                                          │
-│                                                             │
-│   ┌──────────────┐                                          │
-│   │  Web Admin   │  管理后台                                  │
-│   └──────────────┘                                          │
+│   MongoDB   存储任务与抓取结果                              │
+│   Memcached 心跳与去重                                      │
+│   Web Admin 后台管理与查看                                  │
 │                                                             │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -143,19 +187,19 @@ python -m zspider.web
 
 ## 面向开发者的进一步阅读
 
-- [开发指南](docs/developer_guide.rst)：环境要求、配置文件、核心组件、Parser / Pipeline、项目结构
-- [架构设计](docs/desgin.rst)：架构设计说明
+- [开发指南](docs/developer_guide.rst)
+- [架构设计](docs/desgin.rst)
 - [内部消息设计](docs/internal_message.rst)
-- [数据模型](docs/item_info.rst)：数据模型与字段说明
+- [数据模型](docs/item_info.rst)
 
-完整文档可通过 Sphinx 构建：
+构建文档：
 
 ```bash
 cd docs
 make html
 ```
 
-或访问 [ReadTheDocs](http://zspider.readthedocs.org/)
+或访问 [Read the Docs](http://zspider.readthedocs.org/)。
 
 ---
 
@@ -163,8 +207,6 @@ make html
 
 MIT License
 
----
+## Contributing
 
-## 贡献
-
-欢迎提交 Issue 和 Pull Request！
+欢迎提交 Issue 和 Pull Request。
