@@ -147,24 +147,6 @@ make test
 
 ---
 
-## Basic trust signals
-
-For phase one, the goal is to improve the fastest trust-building signals:
-
-- **GitHub Actions CI** added for unit tests
-- the repository currently includes **27 unit tests**, runnable via `make test`
-- `docs/` remains available as the deeper developer documentation entry
-- README now covers positioning, use cases, quick start, admin initialization, and the unified startup path
-
-Still worth adding later:
-
-- dashboard screenshots / GIFs
-- more realistic task templates
-- clearer production deployment docs
-- better health / observability docs
-
----
-
 ## System architecture
 
 ```text
