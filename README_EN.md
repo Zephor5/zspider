@@ -2,20 +2,53 @@
 
 [![Documentation Status](https://readthedocs.org/projects/zspider/badge/?version=latest)](http://zspider.readthedocs.org/en/latest/?badge=latest)
 
-A distributed cron spider system
+A self-hosted crawling platform for **content monitoring and news aggregation**.
+
+ZSpider is built for continuously collecting public web content such as news sites, announcements, WeChat articles, and other information sources. You manage jobs in a web dashboard, configure extraction rules, schedule crawls, and review results in one place.
 
 [中文说明](README.md)
 
 ---
 
+## What ZSpider is
+
+ZSpider is not just a crawler code scaffold. It is a more platform-oriented system for operating recurring collection workflows:
+
+- Manage crawl jobs from a **web dashboard** instead of scattered scripts
+- Run **scheduled monitoring** with Cron rather than manual execution
+- Extract structured data through **configurable parsers**
+- Review and manage results through a **centralized backend**
+
+Typical use cases include:
+- news and article aggregation
+- public announcement monitoring
+- company website update tracking
+- WeChat content collection
+- continuous gathering of public information for research and intelligence work
+
+---
+
 ## Features
 
-- 🕷️ **Distributed Architecture** - Dispatcher hot-standby, Crawler horizontal scaling
+- 🕷️ **Platform-oriented crawling** - built for content monitoring and information aggregation
 - ⏰ **Cron Scheduling** - APScheduler-based timed tasks
-- 🌐 **Web Management** - Flask admin dashboard for task management
+- 🌐 **Web Management** - Flask admin dashboard for managing jobs, fields, and results
 - 📦 **Configurable Parsing** - XPath + Regex extraction without coding
 - 🔐 **Login Support** - Automatic handling of login-required websites
 - 🔄 **Deduplication** - Memcached-based distributed URL deduplication
+- 🚚 **Scalable Architecture** - decoupled Dispatcher / Crawler design with horizontal scaling
+
+---
+
+## Use Cases
+
+| Use Case | Description |
+|----------|-------------|
+| News Monitoring | Periodically crawl media sites for aggregation and topic tracking |
+| Announcement Tracking | Monitor government, school, or company websites for updates |
+| WeChat Collection | Collect article indexes and detail pages from public accounts |
+| Research / Intel Gathering | Continuously gather public information for analysis workflows |
+| Self-hosted Content Ops | Centralize crawl jobs, parser rules, and result review in one system |
 
 ---
 
