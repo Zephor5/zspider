@@ -14,7 +14,7 @@ mkdir -p "$LOG_DIR"
 
 if [[ ! -x "$PYTHON_BIN" ]]; then
   echo "Python runtime not found: $PYTHON_BIN"
-  echo "Create the venv first, for example: python3.9 -m venv .venv && .venv/bin/pip install -r requirements_dev.txt"
+  echo "Create the venv first, for example: python3.9 -m venv .venv && .venv/bin/pip install -r requirements_dev.txt -c constraints/py39.txt"
   exit 1
 fi
 
