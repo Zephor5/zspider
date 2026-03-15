@@ -173,7 +173,7 @@ url
 转换规则
 ~~~~~~~~
 
-``trans`` 字段当前支持 Python ``eval`` 表达式：
+``trans`` 字段当前支持受限转换表达式：
 
 .. code-block:: python
 
@@ -187,6 +187,110 @@ url
 
 - ``doc``：当前 item 对象的字典
 - ``re``：Python 正则模块
+
+执行方式
+~~~~~~~~
+
+- ``trans`` 按行执行，每行是一条独立表达式
+- 表达式按书写顺序依次作用在同一个 ``doc`` 上
+- 某一行执行报错时，该行修改会被丢弃，并记录 warning 日志；后续行仍会继续执行
+- 如果某一行执行后给 ``doc`` 写入了 ``trash`` 字段，则当前 item 会被标记为 ``STATUS_PUB_SKIP`` 并停止后续发布
+
+支持的语法
+~~~~~~~~~~
+
+当前执行器只支持一小部分 Python 表达式语法，主要覆盖现有发布转换场景：
+
+- 常量：字符串、数字、布尔值、``None``
+- 容器字面量：``dict``、``list``、``tuple``
+- 变量访问：``doc``、``re``
+- 下标访问：例如 ``doc['title']``
+- 布尔表达式：``and``、``or``、``not``
+- 比较表达式：``==``、``!=``、``in``、``not in``、``>``, ``>=``, ``<``, ``<=``
+- 加法：主要用于字符串拼接或列表/元组拼接
+- 有限的方法调用：仅允许白名单中的 ``dict`` / ``str`` / ``re`` 方法
+
+允许的方法
+~~~~~~~~~~
+
+``doc`` 允许的方法：
+
+- ``doc.get(...)``
+- ``doc.update(...)``
+- ``doc.pop(...)``
+- ``doc.setdefault(...)``
+
+字符串允许的方法：
+
+- ``strip`` / ``lstrip`` / ``rstrip``
+- ``replace``
+- ``lower`` / ``upper``
+- ``split``
+
+``re`` 模块允许的方法：
+
+- ``re.search(...)``
+- ``re.match(...)``
+- ``re.sub(...)``
+- ``re.findall(...)``
+- ``re.compile(...)``
+
+由 ``re.compile(...)`` 返回的 pattern 对象允许的方法：
+
+- ``search(...)``
+- ``match(...)``
+- ``sub(...)``
+- ``findall(...)``
+
+常见示例
+~~~~~~~~
+
+去除标题首尾空白：
+
+.. code-block:: python
+
+   "doc.update({'title': doc['title'].strip()})"
+
+给标题补前缀：
+
+.. code-block:: python
+
+   "doc.update({'title': '[专题] ' + doc['title']})"
+
+仅当字段不存在时写入默认来源：
+
+.. code-block:: python
+
+   "doc.setdefault('source', 'ZSpider')"
+
+用正则替换正文中的多余空白：
+
+.. code-block:: python
+
+   "doc.update({'content': re.sub(r'\\s+', ' ', doc['content']).strip()})"
+
+命中过滤条件时跳过发布：
+
+.. code-block:: python
+
+   "re.search(r'广告|推广', doc.get('title', '')) and doc.update({'trash': 1})"
+
+先编译正则再复用：
+
+.. code-block:: python
+
+   "doc.update({'source': re.compile(r'来源[:：]\\s*(.+)').findall(doc['content'])[0]})"
+
+不支持的能力
+~~~~~~~~~~~~
+
+以下写法会被拒绝，不会像旧版 ``eval`` 那样执行任意 Python 代码：
+
+- 任意模块导入，例如 ``__import__('os')``
+- 任意函数调用，例如 ``open(...)``、``eval(...)``、``exec(...)``
+- 属性链穿透到白名单之外的对象
+- 赋值语句、``lambda``、列表推导式、生成器表达式、条件表达式
+- 自定义函数定义、类定义、异常处理、循环等完整 Python 语句
 
 Pipeline 流程
 -------------

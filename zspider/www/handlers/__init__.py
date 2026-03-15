@@ -5,11 +5,11 @@ from urllib.parse import urljoin
 import flask
 from mongoengine import DoesNotExist
 
-from zspider.auth import hash_password
-from zspider.health import web_readiness
 from zspider import settings
+from zspider.auth import verify_password
 from zspider.confs.dispatcher_conf import STATE_DICT
 from zspider.confs.web_conf import FLASK_CONF
+from zspider.health import web_readiness
 from zspider.utils.models import User
 from zspider.www.tools import get_internal_msg
 
@@ -44,19 +44,23 @@ def login_page():
 def login():
     username = flask.request.form.get("username", type=str)
     password = flask.request.form.get("password", type=str)
-    user = None
     if not (username and password):
         flask.abort(400)
-    hashed_pwd = hash_password(password)
     # noinspection PyBroadException
     try:
-        user = User.objects.get(username=username, password=hashed_pwd)
+        user = User.objects.get(username=username)
     except DoesNotExist:
         flask.abort(403)
     except Exception:
         import traceback
 
         traceback.print_exc()
+        flask.abort(403)
+    try:
+        verified = verify_password(password, user.password)
+    except ValueError:
+        flask.abort(403)
+    if not verified:
         flask.abort(403)
     flask.session["user"] = username
     flask.session["role"] = user.role

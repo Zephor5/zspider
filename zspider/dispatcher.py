@@ -263,7 +263,7 @@ def load_tasks(task_id=None):
                 trigger="cron",
                 misfire_grace_time=20,
                 replace_existing=True,
-                **trigger_kwargs
+                **trigger_kwargs,
             )
         except ValueError:
             logger.error("failed to add job %s" % task, extra={"task_id": msg["id"]})
@@ -282,12 +282,26 @@ class TaskManage(Resource):
     res = {"status": False, "data": ""}
 
     def render_GET(self, request):
-        res = dict(self.res)
-
         request.setHeader("content-type", "application/json;charset=UTF-8")
+        path = request.path.decode("utf-8")
+        if path == "/healthz":
+            return self._json_response(
+                {"status": "ok", "service": "dispatcher", "state": STATE_DICT[_state_]}
+            )
+        if path == "/readyz":
+            return self._json_response(
+                {
+                    "status": "ready",
+                    "service": "dispatcher",
+                    "state": STATE_DICT[_state_],
+                    "scheduler_running": scheduler.running,
+                }
+            )
+
+        res = dict(self.res)
         import urllib.parse
 
-        args = urllib.parse.unquote(request.path.decode("utf-8")).split("/", 3)
+        args = urllib.parse.unquote(path).split("/", 3)
 
         if args[-1] != MANAGE_KEY:
             res["status"] = False
@@ -331,7 +345,11 @@ class TaskManage(Resource):
                     res["data"] = str(e)
         logger.info(res["data"], extra={"component": "manager"})
 
-        return json.dumps(res).encode("utf-8")
+        return self._json_response(res)
+
+    @staticmethod
+    def _json_response(payload):
+        return json.dumps(payload).encode("utf-8")
 
 
 def startup(main_job):

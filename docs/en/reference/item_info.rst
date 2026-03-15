@@ -17,7 +17,7 @@ The main data model for crawled content:
            "max_size": 8 * 2**30,      # 8GB capped collection
            "max_documents": 1000000,    # Max 1 million documents
        }
-       
+
        title = StringField(required=True)
        content = StringField()
        src_time = DateTimeField()       # Source publish time
@@ -133,14 +133,14 @@ Example Configuration
        name="title",
        xpath="//h1[@class='title']/text()",
    )
-   
+
    # Content field
    ArticleField(
        task=task,
        name="content",
        xpath="//div[@class='article-content']//p/text()",
    )
-   
+
    # Time field with regex
    ArticleField(
        task=task,
@@ -148,7 +148,7 @@ Example Configuration
        xpath="//span[@class='pub-time']/text()",
        re=r"(\d{4}-\d{2}-\d{2} \d{2}:\d{2})",
    )
-   
+
    # Fixed value field
    ArticleField(
        task=task,
@@ -173,13 +173,13 @@ For publishing crawled items to external systems:
 Transformation Rules
 ~~~~~~~~~~~~~~~~~~~~
 
-The ``trans`` field accepts Python eval statements:
+The ``trans`` field accepts restricted transform expressions:
 
 .. code-block:: python
 
    # Filter condition
    "not doc.get('trash') and doc.update({'published': 1})"
-   
+
    # Field transformation
    "doc.update({'title': doc['title'].strip()})"
 
@@ -187,6 +187,110 @@ Pre-defined Variables:
 
 - ``doc``: The item dictionary
 - ``re``: Python regex module
+
+Execution Model
+~~~~~~~~~~~~~~~
+
+- ``trans`` is processed line by line; each line is an independent expression
+- Expressions run in order against the same mutable ``doc``
+- If one line fails, its changes are discarded and a warning is logged; later lines still run
+- If a line writes ``trash`` into ``doc``, the item is marked as ``STATUS_PUB_SKIP`` and publishing stops
+
+Supported Syntax
+~~~~~~~~~~~~~~~~
+
+The evaluator intentionally supports only a small Python expression subset:
+
+- Constants: strings, numbers, booleans, ``None``
+- Container literals: ``dict``, ``list``, ``tuple``
+- Variable access: ``doc``, ``re``
+- Subscription access: for example ``doc['title']``
+- Boolean expressions: ``and``, ``or``, ``not``
+- Comparisons: ``==``, ``!=``, ``in``, ``not in``, ``>``, ``>=``, ``<``, ``<=``
+- Addition: mainly for string or list/tuple concatenation
+- Limited method calls: only whitelisted ``dict`` / ``str`` / ``re`` methods
+
+Allowed Methods
+~~~~~~~~~~~~~~~
+
+Allowed on ``doc``:
+
+- ``doc.get(...)``
+- ``doc.update(...)``
+- ``doc.pop(...)``
+- ``doc.setdefault(...)``
+
+Allowed on strings:
+
+- ``strip`` / ``lstrip`` / ``rstrip``
+- ``replace``
+- ``lower`` / ``upper``
+- ``split``
+
+Allowed on the ``re`` module:
+
+- ``re.search(...)``
+- ``re.match(...)``
+- ``re.sub(...)``
+- ``re.findall(...)``
+- ``re.compile(...)``
+
+Allowed on compiled regex patterns:
+
+- ``search(...)``
+- ``match(...)``
+- ``sub(...)``
+- ``findall(...)``
+
+Common Examples
+~~~~~~~~~~~~~~~
+
+Trim title whitespace:
+
+.. code-block:: python
+
+   "doc.update({'title': doc['title'].strip()})"
+
+Add a title prefix:
+
+.. code-block:: python
+
+   "doc.update({'title': '[Feature] ' + doc['title']})"
+
+Set a default source only if it is missing:
+
+.. code-block:: python
+
+   "doc.setdefault('source', 'ZSpider')"
+
+Normalize repeated whitespace in content:
+
+.. code-block:: python
+
+   "doc.update({'content': re.sub(r'\\s+', ' ', doc['content']).strip()})"
+
+Skip publishing when a filter matches:
+
+.. code-block:: python
+
+   "re.search(r'ad|promo', doc.get('title', '')) and doc.update({'trash': 1})"
+
+Compile a regex and reuse it immediately:
+
+.. code-block:: python
+
+   "doc.update({'source': re.compile(r'Source[:：]\\s*(.+)').findall(doc['content'])[0]})"
+
+Unsupported Capabilities
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+The new evaluator rejects anything that would execute arbitrary Python code, including:
+
+- Arbitrary imports such as ``__import__('os')``
+- Arbitrary function calls such as ``open(...)``, ``eval(...)``, ``exec(...)``
+- Attribute access outside the allowlist
+- Assignment statements, ``lambda``, comprehensions, generator expressions, ternary expressions
+- Function definitions, class definitions, exception handling, loops, and other full Python statements
 
 Pipeline Flow
 -------------
@@ -214,20 +318,20 @@ Using MongoEngine:
 
    from zspider.models import Item
    from zspider.utils.models import Task
-   
+
    # Get items by task
    task = Task.objects.get(name="News Crawler")
    items = Item.objects.filter(task=task)
-   
+
    # Get items by status
    pending = Item.objects.filter(status=0)
    published = Item.objects.filter(status=1)
-   
+
    # Get items by date range
    recent = Item.objects.filter(
        save_time__gte=datetime(2026, 3, 1)
    )
-   
+
    # Full-text search (if enabled)
    results = Item.objects.filter(
        title__contains="keyword"

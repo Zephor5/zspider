@@ -10,6 +10,7 @@ from twisted.internet import defer
 
 from zspider import models as zsm
 from zspider.utils import http
+from zspider.utils.transform import SafeTransformEvaluator
 
 __author__ = "zephor"
 
@@ -104,11 +105,11 @@ class PubPipeLine(object):
         for x in self.tans:
             __doc = dict(_doc)
             try:
-                eval(x, {"doc": _doc, "re": re})
+                SafeTransformEvaluator.execute(x, _doc)
             except Exception as e:
                 # we skip this process when it's incorrect
                 logger.warning(
-                    "get error :{0:s}, when eval :{1:s}".format(e, x), extra=extra
+                    "get error :{0:s}, when transform :{1:s}".format(e, x), extra=extra
                 )
                 _doc = __doc
             else:

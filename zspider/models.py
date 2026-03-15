@@ -39,8 +39,8 @@ class PubSubscribe(fm.BaseDocument):
         required=True, max_length=32, regex=r"^[\w\d]+$", verbose_name="模型ID"
     )
     trans = fields.StringField(
-        verbose_name="Python evals",
-        help_text="每行为一条python eval语句，预置变量 doc、re，"
+        verbose_name="转换表达式",
+        help_text="每行为一条受限转换表达式，预置变量 doc、re，"
         "前者是dict类型新闻数据、后者是python正则模块，"
         "过滤器的写法示例：condition and doc.update({'trash':1})",
     )

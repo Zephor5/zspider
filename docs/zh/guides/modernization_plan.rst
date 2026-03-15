@@ -35,8 +35,8 @@ P0：基线与工具链
 - [x] 补齐开发与运行文档
 - [x] 提供统一本地入口 ``make install`` / ``make dev`` / ``make docs``
 - [ ] 明确仓库支持的 Python 版本策略
-- [ ] 给 CI 增加 lint 检查，而不只是跑单元测试
-- [ ] 引入 ``ruff``
+- [x] 给 CI 增加 lint 检查，而不只是跑单元测试
+- [x] 引入 ``ruff``
 - [ ] 引入 ``pytest`` 并逐步替代 ``unittest discover``
 - [ ] 为关键模块增加最小 ``mypy`` 覆盖
 - [ ] 补全 ``pyproject.toml``，让它真正承载工具链配置
@@ -62,12 +62,12 @@ P2：安全加固
 
 - [x] 移除“首次登录自动成为管理员”
 - [x] 提供显式管理员初始化命令
-- [ ] 将密码哈希从 SHA-256 升级到 ``bcrypt`` 或 ``argon2``
-- [ ] 为密码哈希升级设计兼容迁移路径
-- [ ] 补充登录、登出、管理员初始化的回归测试
+- [x] 将密码哈希从 SHA-256 升级到 ``bcrypt`` 或 ``argon2``
+- [x] 为密码哈希升级设计兼容迁移路径
+- [x] 补充登录、登出、管理员初始化的回归测试
 - [ ] 检查 ``SECRET_KEY``、session cookie、CSRF 配置
 - [ ] 明确管理员操作的权限边界
-- [ ] 替换 ``publish.py`` 中的 ``eval``
+- [x] 替换 ``publish.py`` 中的 ``eval``
 
 P3：Web/API 边界重构
 --------------------
@@ -116,4 +116,4 @@ P5：体验层现代化
 - [ ] 为登录和管理员初始化补单元测试
 - [ ] 替换 ``publish.py`` 里的 ``eval``
 - [ ] 给 CI 增加 lint 阶段
-- [ ] 给 Dispatcher 增加健康检查或 readiness 端点
+- [x] 给 Dispatcher 增加健康检查或 readiness 端点

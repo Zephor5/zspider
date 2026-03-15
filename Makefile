@@ -44,7 +44,7 @@ test: venv
 	$(PYTHON_BIN) -m unittest discover -s utests -v
 
 lint: venv
-	$(PYTHON_BIN) -m compileall zspider utests
+	$(PYTHON_BIN) -m ruff check zspider utests
 
 docs:
 	$(MAKE) -C docs html

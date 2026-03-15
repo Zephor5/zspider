@@ -303,5 +303,3 @@ Equivalent direct module commands:
    .venv/bin/python -m zspider.dispatcher
    .venv/bin/python -m zspider.crawler
    .venv/bin/python -m zspider.web
-   ├── Dockerfile
-   └── docker-compose.services.yml

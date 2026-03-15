@@ -12,6 +12,7 @@ waitress~=3.0.0
 # all
 pooled-pika~=0.3.0
 python-memcached==1.59
+bcrypt~=5.0.0
 
 # crawl_daemon
 # Scrapy/Twisted pull TLS dependencies transitively; the tested versions are
