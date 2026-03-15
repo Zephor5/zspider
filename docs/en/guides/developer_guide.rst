@@ -22,9 +22,13 @@ If you only want to get a local instance running quickly:
    make services-up
    make dev
 
-Then open ``http://127.0.0.1:5000/login``.
+Bootstrap the initial admin account:
 
-When the user table is empty, the first username + password you submit becomes the initial admin account.
+.. code-block:: bash
+
+   make bootstrap-admin ADMIN_USERNAME=admin ADMIN_PASSWORD=change-me
+
+Then open ``http://127.0.0.1:5000/login`` and log in with that account.
 
 If you prefer the repository-level convenience target:
 
@@ -290,6 +294,7 @@ Preferred local entry points are source-based:
    make run-dispatcher
    make run-crawler
    make run-web
+   make bootstrap-admin ADMIN_USERNAME=admin ADMIN_PASSWORD=change-me
 
 Equivalent direct module commands:
 

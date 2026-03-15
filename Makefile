@@ -4,7 +4,7 @@ PYTHON_BIN := $(VENV)/bin/python
 PIP_BIN := $(VENV)/bin/pip
 CONSTRAINTS ?= constraints/py39.txt
 
-.PHONY: services-up services-down venv install dev run-web run-dispatcher run-crawler test lint docs
+.PHONY: services-up services-down venv install dev run-web run-dispatcher run-crawler bootstrap-admin test lint docs
 
 services-up:
 	docker compose -f docker-compose.services.yml up -d
@@ -32,6 +32,13 @@ run-dispatcher: venv
 
 run-crawler: venv
 	$(PYTHON_BIN) -m zspider.crawler
+
+bootstrap-admin: venv
+	@if [ -z "$(ADMIN_USERNAME)" ] || [ -z "$(ADMIN_PASSWORD)" ]; then \
+		echo "Usage: make bootstrap-admin ADMIN_USERNAME=<name> ADMIN_PASSWORD=<password>"; \
+		exit 1; \
+	fi
+	$(PYTHON_BIN) -m zspider.bootstrap_admin --username "$(ADMIN_USERNAME)" --password "$(ADMIN_PASSWORD)"
 
 test: venv
 	$(PYTHON_BIN) -m unittest discover -s utests -v

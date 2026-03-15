@@ -154,10 +154,10 @@ That is workable, but it increases the cost of deployment hardening and environm
 Security posture
 ~~~~~~~~~~~~~~~~
 
-The current web login model is intentionally simple:
+The current web login model still has legacy traits:
 
 - password hashing uses SHA-256 directly
-- the first successful login becomes the initial admin when no users exist
+- admin bootstrap is explicit, but still simple and internal-oriented
 
 That may be acceptable for an internal trusted deployment, but it is not a strong security model for wider exposure.
 

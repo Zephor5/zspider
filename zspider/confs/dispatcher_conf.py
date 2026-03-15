@@ -1,6 +1,7 @@
 # coding=utf-8
+from zspider import settings
+
 from .conf import EXCHANGE_PARAMS
-from .conf import INNER_IP
 
 __author__ = "zephor"
 
@@ -17,13 +18,13 @@ __all__ = [
     "BEAT_INTERVAL",
 ]
 
-UID = INNER_IP
+UID = settings.DISPATCHER_UID
 
-DISPATCHER_KEY = "_zspider_cluster"
+DISPATCHER_KEY = settings.DISPATCHER_KEY
 
-MANAGE_PORT = 43722
+MANAGE_PORT = settings.DISPATCHER_MANAGE_PORT
 
-MANAGE_KEY = "#managekey$$"  # you can change this as you wish
+MANAGE_KEY = settings.DISPATCHER_MANAGE_KEY
 
 # internal use
 STATE_WAITING = 0x00  # stand by state
@@ -36,4 +37,4 @@ STATE_DICT = {
     STATE_DISPATCH: "dispatch",
 }
 
-BEAT_INTERVAL = 5
+BEAT_INTERVAL = settings.DISPATCHER_BEAT_INTERVAL

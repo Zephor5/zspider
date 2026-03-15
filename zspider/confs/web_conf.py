@@ -1,26 +1,14 @@
 # coding=utf-8
-from .conf import DEBUG
+from zspider import settings
 
 __author__ = "zephor"
 
 FLASK_CONF = {
-    "SECRET_KEY": "\x02\xcf\x12\\\x95\xbe\xc0\xc4\x03\xb8\xde\x198\x04\xd7\x88\xfe\x82\xfc\xf73\xf1v\xa3",
-    "MONGODB_SETTINGS": {
-        "db": "spider",
-        "host": "host for production",
-        "port": 27017,
-        "username": "user",
-        "password": "pwd",
-        "authentication_source": "admin",
-    },
+    "SECRET_KEY": settings.WEB_SECRET_KEY,
+    "MONGODB_SETTINGS": settings.mongodb_settings(),
+    "ENV": settings.ENV,
+    "DEBUG": settings.DEBUG,
+    "TESTING": settings.IS_TESTING,
+    "SESSION_COOKIE_HTTPONLY": True,
+    "SESSION_COOKIE_SAMESITE": "Lax",
 }
-
-if DEBUG:
-    # mongodb for dev
-    FLASK_CONF["MONGODB_SETTINGS"].update(
-        {
-            "host": "localhost",
-            "username": "mongoadmin",
-            "password": "mongopwd",
-        }
-    )

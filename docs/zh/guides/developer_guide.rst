@@ -22,9 +22,13 @@ ZSpider 应被视为一个自托管应用仓库。源码目录虽然保持了 Py
    make services-up
    make dev
 
-然后访问 ``http://127.0.0.1:5000/login`` 。
+先初始化管理员账号：
 
-如果用户表为空，第一次提交的用户名和密码会被写入为初始管理员账号。
+.. code-block:: bash
+
+   make bootstrap-admin ADMIN_USERNAME=admin ADMIN_PASSWORD=change-me
+
+然后访问 ``http://127.0.0.1:5000/login`` 并使用该账号登录。
 
 如果你想使用仓库统一入口，也可以直接执行：
 
@@ -289,6 +293,7 @@ Pipeline
    make run-dispatcher
    make run-crawler
    make run-web
+   make bootstrap-admin ADMIN_USERNAME=admin ADMIN_PASSWORD=change-me
 
 对应的直接模块命令为：
 

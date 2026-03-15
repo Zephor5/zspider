@@ -1,11 +1,13 @@
 # coding=utf-8
-import hashlib
 from datetime import datetime
 from urllib.parse import urljoin
 
 import flask
 from mongoengine import DoesNotExist
 
+from zspider.auth import hash_password
+from zspider.health import web_readiness
+from zspider import settings
 from zspider.confs.dispatcher_conf import STATE_DICT
 from zspider.confs.web_conf import FLASK_CONF
 from zspider.utils.models import User
@@ -22,7 +24,9 @@ app.config.update(FLASK_CONF)
 
 @app.before_request
 def is_login():
-    if flask.request.path not in ("/login", "/logout") and "user" not in flask.session:
+    if flask.request.path in ("/login", "/logout", "/healthz", "/readyz"):
+        return None
+    if "user" not in flask.session:
         _login = urljoin(flask.request.url_root, "login?to=%s" % flask.request.url)
         return flask.redirect(_login)
 
@@ -43,16 +47,12 @@ def login():
     user = None
     if not (username and password):
         flask.abort(400)
-    hashed_pwd = hashlib.sha256(password.encode()).hexdigest()
+    hashed_pwd = hash_password(password)
     # noinspection PyBroadException
     try:
         user = User.objects.get(username=username, password=hashed_pwd)
     except DoesNotExist:
-        if User.objects.count() == 0:
-            user = User(username=username, password=hashed_pwd, role="admin")
-            user.save()
-        else:
-            flask.abort(403)
+        flask.abort(403)
     except Exception:
         import traceback
 
@@ -77,6 +77,23 @@ def logout():
 @app.route("/")
 def root():
     return flask.redirect(flask.url_for("index"))
+
+
+@app.route("/healthz")
+def healthz():
+    return flask.jsonify({"status": "ok", "service": "web", "env": settings.ENV})
+
+
+@app.route("/readyz")
+def readyz():
+    ready, checks = web_readiness()
+    status = 200 if ready else 503
+    payload = {
+        "status": "ready" if ready else "error",
+        "service": "web",
+        "checks": checks,
+    }
+    return flask.jsonify(payload), status
 
 
 @app.route("/index.html")

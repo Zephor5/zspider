@@ -1,9 +1,8 @@
 # coding=utf-8
-import os
 import sys
 import threading
 
-from zspider.confs.conf import INNER_IP
+from zspider import settings
 from zspider.www.handlers import app
 from zspider.www.utils import test_crawler
 
@@ -20,12 +19,16 @@ def main():
     t = threading.Thread(target=test_crawler.start, args=(False, False))
     t.setDaemon(True)
     t.start()
-    host = os.getenv("ZSPIDER_WEB_HOST", INNER_IP)
-    if len(sys.argv) == 2:
-        port = int(sys.argv[1])
-        app.run(host=host, port=port)
-    else:
-        app.run(host=host, debug=True)
+    port = int(sys.argv[1]) if len(sys.argv) == 2 else settings.WEB_PORT
+
+    try:
+        from waitress import serve
+    except ImportError as exc:
+        raise RuntimeError(
+            "waitress is required to run zspider.web; install requirements first"
+        ) from exc
+
+    serve(app, host=settings.WEB_HOST, port=port, threads=settings.WEB_THREADS)
 
 
 if __name__ == "__main__":

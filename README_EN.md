@@ -105,12 +105,13 @@ http://127.0.0.1:5000
 
 ### 4) Initialize the admin account
 
-On the first visit to `/login`:
+Create the initial admin account explicitly:
 
-- enter **any username and password**
-- if the user table is empty, that credential pair becomes the **initial admin account**
+```bash
+make bootstrap-admin ADMIN_USERNAME=admin ADMIN_PASSWORD=change-me
+```
 
-So there is no hard-coded default admin account today. The **first successful login creates the initial admin user**.
+Then visit `/login` and sign in with that account.
 
 ### 5) Verify the setup
 
@@ -161,6 +162,12 @@ make run-crawler
 make run-web
 ```
 
+If you need to bootstrap the admin user:
+
+```bash
+make bootstrap-admin ADMIN_USERNAME=admin ADMIN_PASSWORD=change-me
+```
+
 If you only want to build docs:
 
 ```bash
@@ -206,6 +213,7 @@ Chinese documentation:
 
 - [Documentation Home](docs/zh/index.rst)
 - [开发指南](docs/zh/guides/developer_guide.rst)
+- [运维指南](docs/zh/guides/operations.rst)
 - [现代化改造规划](docs/zh/guides/modernization_plan.rst)
 - [架构设计](docs/zh/architecture/design.rst)
 - [内部消息设计](docs/zh/architecture/internal_message.rst)
@@ -215,6 +223,7 @@ English documentation:
 
 - [Documentation Home](docs/en/index.rst)
 - [Developer Guide](docs/en/guides/developer_guide.rst)
+- [Operations Guide](docs/en/guides/operations.rst)
 - [Modernization Plan](docs/en/guides/modernization_plan.rst)
 - [Architecture Design](docs/en/architecture/design.rst)
 - [Internal Message Design](docs/en/architecture/internal_message.rst)

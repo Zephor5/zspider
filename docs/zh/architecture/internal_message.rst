@@ -82,7 +82,7 @@ Dispatcher 暴露了一组 HTTP 管理接口。
 
    GET /{MANAGE_KEY}
 
-默认 key 为 ``#managekey$$``，可在 ``dispatcher_conf.py`` 中配置。
+默认 key 为 ``managekey-change-me``，可通过环境变量配置。
 
 接口列表
 ~~~~~~~~

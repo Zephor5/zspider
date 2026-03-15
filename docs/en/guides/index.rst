@@ -7,4 +7,5 @@ This section focuses on day-to-day usage, development workflow, and planned mode
    :maxdepth: 1
 
    developer_guide
+   operations
    modernization_plan

@@ -9,6 +9,7 @@
 #     http://scrapy.readthedocs.org/en/latest/topics/spider-middleware.html
 from .conf import DEBUG
 from .conf import MC_SERVERS
+from zspider import settings
 
 BOT_NAME = "ZSPIDER"
 
@@ -72,8 +73,8 @@ DOWNLOADER_MIDDLEWARES = {
 
 # Configure item pipelines
 # See http://scrapy.readthedocs.org/en/latest/topics/item-pipeline.html
-PUB_PORT = "http://pubserver.com"
-TRANS_PORT = "http://image.server.com/totranslate/images"
+PUB_PORT = settings.PUBLISH_URL
+TRANS_PORT = settings.TRANSFORM_URL
 ITEM_PIPELINES = {
     "zspider.pipelines.PubPipeLine": 300,
     "zspider.pipelines.CappedStorePipeLine": 999,

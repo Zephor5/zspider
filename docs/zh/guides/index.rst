@@ -7,4 +7,5 @@
    :maxdepth: 1
 
    developer_guide
+   operations
    modernization_plan

@@ -82,7 +82,7 @@ All requests must end with the management key:
 
    GET /{MANAGE_KEY}
 
-Default key: ``#managekey$$`` (configurable in ``dispatcher_conf.py``)
+Default key: ``managekey-change-me`` (configurable through environment variables)
 
 Endpoints
 ~~~~~~~~~

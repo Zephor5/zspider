@@ -1,29 +1,21 @@
 # coding=utf-8
-import os
-
 from pika import URLParameters
 
-from zspider.utils import ip
+from zspider import settings
 
 __author__ = "zephor"
 
 
-ROOT_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+ROOT_PATH = settings.ROOT_PATH
 
-DATA_PATH = "%s/data/" % ROOT_PATH
+DATA_PATH = settings.DATA_PATH
 
-
-try:
-    assert int(os.getenv("ZSPIDER_PRODUCT")) == 1
-except Exception:
-    DEBUG = True
-else:
-    DEBUG = False
+DEBUG = settings.DEBUG
 
 
 LOG_TOP_LEVEL = {"scrapy", "zspider", "www", "utils"}
 
-LOG_PRO_INFO = "DEBUG" if DEBUG else "INFO"
+LOG_PRO_INFO = settings.LOG_LEVEL
 
 DEFAULT_LOGGING = {
     "version": 1,
@@ -45,15 +37,11 @@ LOG_FORMAT = "[%(name)s:%(lineno)d] %(asctime)s %(levelname)s:%(message)s"
 LOG_DATEFORMAT = "%Y-%m-%d %H:%M:%S"
 
 
-INNER_IP = ip.get_ip()
+INNER_IP = settings.INNER_IP
 
-MC_SERVERS = "127.0.0.1:11211" if DEBUG else "memcache for production use"
-MC_SERVERS = MC_SERVERS.split(",")
+MC_SERVERS = settings.MEMCACHED_SERVERS
 
-if DEBUG:
-    AMQP_PARAM = URLParameters("amqp://guest:guest@127.0.0.1")
-else:
-    AMQP_PARAM = URLParameters("amqp://spider:spider@amqpserver.for.production/spider")
+AMQP_PARAM = URLParameters(settings.AMQP_URL)
 
 EXCHANGE_PARAMS = dict(exchange="spider", exchange_type="direct")
 

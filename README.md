@@ -105,12 +105,13 @@ http://127.0.0.1:5000
 
 ### 4）初始化管理员账号
 
-第一次访问 `/login` 时：
+先显式创建管理员账号：
 
-- **输入任意账号和密码**
-- 如果当前用户表为空，这组凭据会被写入并成为 **首个管理员账号**
+```bash
+make bootstrap-admin ADMIN_USERNAME=admin ADMIN_PASSWORD=change-me
+```
 
-也就是说，项目当前没有预置默认管理员账号，**首次登录输入的账号 / 密码就是初始化管理员账号**。
+然后再访问 `/login` 使用该账号登录。
 
 ### 5）验证是否跑通
 
@@ -161,6 +162,12 @@ make run-crawler
 make run-web
 ```
 
+如果需要初始化管理员账号：
+
+```bash
+make bootstrap-admin ADMIN_USERNAME=admin ADMIN_PASSWORD=change-me
+```
+
 如果你只想构建文档：
 
 ```bash
@@ -206,6 +213,7 @@ ZSpider 按“自托管应用”维护，意味着：
 
 - [文档首页](docs/zh/index.rst)
 - [开发指南](docs/zh/guides/developer_guide.rst)
+- [运维指南](docs/zh/guides/operations.rst)
 - [现代化改造规划](docs/zh/guides/modernization_plan.rst)
 - [架构设计](docs/zh/architecture/design.rst)
 - [内部消息设计](docs/zh/architecture/internal_message.rst)
@@ -215,6 +223,7 @@ ZSpider 按“自托管应用”维护，意味着：
 
 - [Documentation Home](docs/en/index.rst)
 - [Developer Guide](docs/en/guides/developer_guide.rst)
+- [Operations Guide](docs/en/guides/operations.rst)
 - [Modernization Plan](docs/en/guides/modernization_plan.rst)
 - [Architecture Design](docs/en/architecture/design.rst)
 - [Internal Message Design](docs/en/architecture/internal_message.rst)
