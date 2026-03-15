@@ -44,6 +44,40 @@ class DispatcherStartupTest(TestCase):
         d.addCallback(_assert)
         return d
 
+    def test_acquire_singleton_lock_returns_none_when_locked(self):
+        fake_file = mock.Mock()
+        err = OSError()
+        err.errno = 11
+
+        with mock.patch.object(dispatcher, "logger") as logger, mock.patch(
+            "builtins.open", return_value=fake_file
+        ), mock.patch.object(
+            dispatcher,
+            "_acquire_singleton_lock",
+            wraps=dispatcher._acquire_singleton_lock,
+        ):
+            with mock.patch("fcntl.lockf", side_effect=err):
+                result = dispatcher._acquire_singleton_lock()
+
+        self.assertIsNone(result)
+        fake_file.close.assert_called_once_with()
+        logger.error.assert_called_once_with("dispatcher already running")
+
+    def test_acquire_singleton_lock_raises_unexpected_os_error(self):
+        fake_file = mock.Mock()
+        err = OSError()
+        err.errno = 2
+
+        with mock.patch.object(dispatcher, "logger") as logger, mock.patch(
+            "builtins.open", return_value=fake_file
+        ):
+            with mock.patch("fcntl.lockf", side_effect=err):
+                with self.assertRaises(OSError):
+                    dispatcher._acquire_singleton_lock()
+
+        fake_file.close.assert_called_once_with()
+        logger.exception.assert_called_once()
+
 
 class DispatcherHeartbeatTest(TestCase):
     def test_clear_expire_removes_only_expired_nodes(self):

@@ -47,6 +47,26 @@ scheduler = TwistedScheduler()
 _state_ = STATE_WAITING
 
 
+def _acquire_singleton_lock():
+    import errno
+    import fcntl
+    import os
+    from zspider.confs.conf import DATA_PATH
+
+    unique_path = os.path.join(DATA_PATH, "unique")
+    unique_f = open(unique_path, "w")
+    try:
+        fcntl.lockf(unique_f, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except OSError as err:
+        unique_f.close()
+        if err.errno in (errno.EACCES, errno.EAGAIN):
+            logger.error("dispatcher already running")
+            return None
+        logger.exception("failed to acquire dispatcher lock: %s", unique_path)
+        raise
+    return unique_f
+
+
 def _prepare_to_dispatch():
     global _state_
     _state_ = STATE_PENDING
@@ -421,16 +441,8 @@ def main():
         reactor, "tcp:%s:interface=%s" % (MANAGE_PORT, UID)
     ).listen(Site(TaskManage()))
 
-    try:
-        import fcntl
-        import os
-        from zspider.confs.conf import DATA_PATH
-
-        unique_f = open(os.path.join(DATA_PATH, "unique"), "w")
-        fcntl.lockf(unique_f, fcntl.LOCK_EX | fcntl.LOCK_NB)
-    except IOError:
-        logger.error("dispatcher already running")
-    else:
+    unique_f = _acquire_singleton_lock()
+    if unique_f is not None:
         logger.info("loop start")
         reactor.run()
 

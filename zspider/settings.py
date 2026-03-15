@@ -29,8 +29,9 @@ def _split_csv(value):
     return [item.strip() for item in value.split(",") if item.strip()]
 
 
-ROOT_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-DATA_PATH = os.path.join(ROOT_PATH, "data")
+PACKAGE_PATH = os.path.abspath(os.path.dirname(__file__))
+ROOT_PATH = os.path.abspath(os.path.join(PACKAGE_PATH, ".."))
+DATA_PATH = os.path.join(PACKAGE_PATH, "data")
 
 ENV = _get_env("ZSPIDER_ENV", "development").lower()
 DEBUG = _get_bool("ZSPIDER_DEBUG", ENV == "development")
