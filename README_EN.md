@@ -7,6 +7,8 @@ A self-hosted crawling platform for **content monitoring and news aggregation**.
 
 ZSpider is not just a place to dump crawler scripts. It is a platform-oriented system with a **web admin, scheduling, configurable parsing, and result review**, built for recurring collection workflows such as monitoring news sites, announcements, WeChat articles, and other public web content.
 
+The project is maintained as a **self-hosted application**, not as a general-purpose Python package for PyPI. The intended operating model is source checkout + virtualenv + Docker Compose.
+
 [中文说明](README.md)
 
 ---
@@ -61,8 +63,14 @@ git clone https://github.com/Zephor5/zspider.git
 cd zspider
 cp .env.example .env
 python3.9 -m venv .venv
-./.venv/bin/pip install -U pip setuptools wheel
+./.venv/bin/pip install -U pip
 ./.venv/bin/pip install -r requirements_dev.txt -c constraints/py39.txt
+```
+
+You can also use the unified bootstrap target:
+
+```bash
+make install
 ```
 
 ### 2) Start dependency services
@@ -144,6 +152,31 @@ If you only want tests:
 ```bash
 make test
 ```
+
+If you want to start a single service:
+
+```bash
+make run-dispatcher
+make run-crawler
+make run-web
+```
+
+If you only want to build docs:
+
+```bash
+make docs
+```
+
+---
+
+## Repository Shape
+
+ZSpider is maintained as a self-hosted application. In practice that means:
+
+- the default operating model is source checkout + `.venv` + `docker compose`
+- the preferred entry points are `make`, `scripts/dev-start.sh`, and `python -m zspider.<service>`
+- the Python package layout is kept for module organization and source-based execution
+- the project is **not currently targeting PyPI publication**
 
 ---
 

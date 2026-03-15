@@ -102,7 +102,7 @@ Current Constraints
 
 The current repository shows several constraints that should shape the plan:
 
-- ``setup.py`` is still the primary packaging entry point
+- the repository still carries legacy packaging assumptions
 - ``pyproject.toml`` is minimal and does not define modern build metadata
 - the documented local stack is pinned to Python 3.9
 - ``zspider/confs/conf.py`` embeds local and production assumptions in code
@@ -143,12 +143,16 @@ Goal:
 
 Changes:
 
-- move package metadata fully into ``pyproject.toml``
-- keep console entry points but define them through the modern build backend
 - standardize local development around one Python version target
 - add linting, formatting, import sorting, and test commands to CI
 - introduce a lock strategy for application and development dependencies
 - document supported Python versions and deprecation windows
+
+Application-oriented direction:
+
+- treat the repository as a deployable application, not a publishable library
+- prefer source-based runtime entry points such as ``python -m zspider.web``
+- keep packaging concerns minimal and only where they help internal deployment
 
 Recommended tooling direction:
 

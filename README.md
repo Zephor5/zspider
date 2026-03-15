@@ -7,6 +7,8 @@
 
 ZSpider 不是“写几个爬虫脚本然后自己拼调度”的工具，而是一套带 **Web 后台、定时调度、配置化解析、结果查看** 的平台化抓取系统，适合持续监控新闻、公告、公众号和各类公开网页内容。
 
+项目最终形态按 **自托管应用** 设计，而不是面向 PyPI 的通用 Python 包。推荐使用源码仓库 + 虚拟环境 + Docker Compose 来运行和维护。
+
 [English README](README_EN.md)
 
 ---
@@ -61,8 +63,14 @@ git clone https://github.com/Zephor5/zspider.git
 cd zspider
 cp .env.example .env
 python3.9 -m venv .venv
-./.venv/bin/pip install -U pip setuptools wheel
+./.venv/bin/pip install -U pip
 ./.venv/bin/pip install -r requirements_dev.txt -c constraints/py39.txt
+```
+
+也可以直接使用统一入口：
+
+```bash
+make install
 ```
 
 ### 2）一键启动依赖服务
@@ -144,6 +152,31 @@ make services-up
 ```bash
 make test
 ```
+
+如果你只想单独启动某个进程：
+
+```bash
+make run-dispatcher
+make run-crawler
+make run-web
+```
+
+如果你只想构建文档：
+
+```bash
+make docs
+```
+
+---
+
+## 仓库形态
+
+ZSpider 按“自托管应用”维护，意味着：
+
+- 默认运行方式是源码仓库 + `.venv` + `docker compose`
+- 推荐入口是 `make`、`scripts/dev-start.sh` 和 `python -m zspider.<service>`
+- 仓库保留 Python 包目录结构，是为了模块组织和源码运行
+- 项目当前**不以发布 PyPI 包为目标**
 
 ---
 

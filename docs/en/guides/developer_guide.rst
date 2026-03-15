@@ -3,6 +3,8 @@ Developer Guide
 
 This guide is for developers who want to understand, extend, or operate ZSpider beyond the first-run experience.
 
+ZSpider should be treated as a self-hosted application repository. The source tree is importable as Python modules, but the primary operating model is source checkout + virtualenv + supporting services, not publishing or consuming a PyPI package.
+
 Requirements
 ------------
 
@@ -15,7 +17,7 @@ If you only want to get a local instance running quickly:
 
    cp .env.example .env
    python3.9 -m venv .venv
-   ./.venv/bin/pip install -U pip setuptools wheel
+   ./.venv/bin/pip install -U pip
    ./.venv/bin/pip install -r requirements_dev.txt -c constraints/py39.txt
    make services-up
    make dev
@@ -23,6 +25,12 @@ If you only want to get a local instance running quickly:
 Then open ``http://127.0.0.1:5000/login``.
 
 When the user table is empty, the first username + password you submit becomes the initial admin account.
+
+If you prefer the repository-level convenience target:
+
+.. code-block:: bash
+
+   make install
 
 
 Python Version
@@ -45,8 +53,20 @@ Recommended Development Environment
    pyenv local 3.9.20
    python -m venv .venv
    . .venv/bin/activate
-   pip install -U pip setuptools wheel
+   pip install -U pip
    pip install -r requirements_dev.txt -c constraints/py39.txt
+
+Repository workflow
+~~~~~~~~~~~~~~~~~~~
+
+The recommended way to work with ZSpider is:
+
+1. clone the repository
+2. create a project-local virtualenv
+3. bring up external services with Docker Compose
+4. run services from source with ``python -m`` or ``make``
+
+The project keeps a Python package layout for import structure, but it is not currently intended for PyPI publication.
 
 External Dependencies
 ~~~~~~~~~~~~~~~~~~~~~
@@ -258,5 +278,25 @@ Project Structure
    ├── docs/
    ├── requirements.txt
    ├── requirements_dev.txt
+
+Runtime entry points
+--------------------
+
+Preferred local entry points are source-based:
+
+.. code-block:: bash
+
+   make dev
+   make run-dispatcher
+   make run-crawler
+   make run-web
+
+Equivalent direct module commands:
+
+.. code-block:: bash
+
+   .venv/bin/python -m zspider.dispatcher
+   .venv/bin/python -m zspider.crawler
+   .venv/bin/python -m zspider.web
    ├── Dockerfile
    └── docker-compose.services.yml

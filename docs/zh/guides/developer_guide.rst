@@ -3,6 +3,8 @@
 
 本文面向希望理解、扩展或维护 ZSpider 的开发者。
 
+ZSpider 应被视为一个自托管应用仓库。源码目录虽然保持了 Python 模块结构，但主要运行方式是“源码检出 + 虚拟环境 + 外部依赖服务”，而不是发布或消费一个 PyPI 包。
+
 环境要求
 --------
 
@@ -15,7 +17,7 @@
 
    cp .env.example .env
    python3.9 -m venv .venv
-   ./.venv/bin/pip install -U pip setuptools wheel
+   ./.venv/bin/pip install -U pip
    ./.venv/bin/pip install -r requirements_dev.txt -c constraints/py39.txt
    make services-up
    make dev
@@ -23,6 +25,12 @@
 然后访问 ``http://127.0.0.1:5000/login`` 。
 
 如果用户表为空，第一次提交的用户名和密码会被写入为初始管理员账号。
+
+如果你想使用仓库统一入口，也可以直接执行：
+
+.. code-block:: bash
+
+   make install
 
 Python 版本
 ~~~~~~~~~~~
@@ -44,8 +52,20 @@ Python 版本
    pyenv local 3.9.20
    python -m venv .venv
    . .venv/bin/activate
-   pip install -U pip setuptools wheel
+   pip install -U pip
    pip install -r requirements_dev.txt -c constraints/py39.txt
+
+仓库工作方式
+~~~~~~~~~~~~
+
+推荐按下面的方式使用 ZSpider：
+
+1. 克隆源码仓库
+2. 创建项目本地虚拟环境
+3. 用 Docker Compose 拉起依赖服务
+4. 通过 ``python -m`` 或 ``make`` 从源码运行各组件
+
+项目保留 Python 包目录结构，主要是为了模块组织和源码运行，而不是为了发布 PyPI 包。
 
 外部依赖服务
 ~~~~~~~~~~~~
@@ -257,3 +277,23 @@ Pipeline
    ├── docs/
    ├── requirements.txt
    ├── requirements_dev.txt
+
+运行入口
+--------
+
+推荐使用以下源码运行入口：
+
+.. code-block:: bash
+
+   make dev
+   make run-dispatcher
+   make run-crawler
+   make run-web
+
+对应的直接模块命令为：
+
+.. code-block:: bash
+
+   .venv/bin/python -m zspider.dispatcher
+   .venv/bin/python -m zspider.crawler
+   .venv/bin/python -m zspider.web

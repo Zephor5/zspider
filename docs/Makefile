@@ -6,7 +6,9 @@ SPHINXOPTS ?=
 BUILDDIR ?= _build
 SOURCEDIR := .
 
-LOCAL_SPHINX_SITEPKG := $(firstword $(wildcard ../venv/lib/python*/site-packages))
+LOCAL_SPHINX_SITEPKG := $(firstword \
+	$(wildcard ../.venv/lib/python*/site-packages) \
+	$(wildcard ../venv/lib/python*/site-packages))
 
 ifneq ($(LOCAL_SPHINX_SITEPKG),)
 export PYTHONPATH := $(LOCAL_SPHINX_SITEPKG)$(if $(PYTHONPATH),:$(PYTHONPATH),)
