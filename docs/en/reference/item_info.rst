@@ -1,5 +1,5 @@
-Item Info
-=========
+Item Model Reference
+====================
 
 Data Model
 ----------

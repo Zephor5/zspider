@@ -1,5 +1,5 @@
-Design
-======
+Architecture Design
+===================
 
 Architecture Overview
 ---------------------

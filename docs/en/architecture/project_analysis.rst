@@ -132,7 +132,7 @@ Current Risks And Constraints
 The main technical constraint is age and dependency sensitivity.
 
 Python and dependency compatibility
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The project is documented for Python 3.7 to 3.9. Newer Python versions are explicitly not recommended because several dependencies are legacy-sensitive.
 
