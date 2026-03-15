@@ -162,6 +162,11 @@ make run-crawler
 make run-web
 ```
 
+常见区别是：
+
+- `make run-web`：只启动 Web 进程，适合单独调试后台页面或 Web 行为
+- `make dev`：启动完整本地开发栈，会同时拉起依赖服务、dispatcher、crawler 和 web，更适合联调整条链路
+
 如果需要初始化管理员账号：
 
 ```bash

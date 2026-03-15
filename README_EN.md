@@ -162,6 +162,11 @@ make run-crawler
 make run-web
 ```
 
+The practical difference is:
+
+- `make run-web`: starts only the web process, which is useful when you only want to work on the admin UI or web-side behavior
+- `make dev`: starts the full local development stack, including dependency services, dispatcher, crawler, and web, which is better for end-to-end local validation
+
 If you need to bootstrap the admin user:
 
 ```bash
