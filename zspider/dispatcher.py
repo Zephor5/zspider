@@ -423,9 +423,10 @@ def main():
 
     try:
         import fcntl
+        import os
         from zspider.confs.conf import DATA_PATH
 
-        unique_f = open("%sunique" % DATA_PATH, "w")
+        unique_f = open(os.path.join(DATA_PATH, "unique"), "w")
         fcntl.lockf(unique_f, fcntl.LOCK_EX | fcntl.LOCK_NB)
     except IOError:
         logger.error("dispatcher already running")
