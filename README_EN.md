@@ -3,13 +3,13 @@
 [![CI](https://github.com/Zephor5/zspider/actions/workflows/ci.yml/badge.svg)](https://github.com/Zephor5/zspider/actions/workflows/ci.yml)
 [![Documentation Status](https://readthedocs.org/projects/zspider/badge/?version=latest)](http://zspider.readthedocs.org/en/latest/?badge=latest)
 
+[中文说明](README.md)
+
 A self-hosted crawling platform for **content monitoring and news aggregation**.
 
 ZSpider is not just a place to dump crawler scripts. It is a platform-oriented system with a **web admin, scheduling, configurable parsing, and result review**, built for recurring collection workflows such as monitoring news sites, announcements, WeChat articles, and other public web content.
 
 The project is maintained as a **self-hosted application**, not as a general-purpose Python package for PyPI. The intended operating model is source checkout + virtualenv + Docker Compose.
-
-[中文说明](README.md)
 
 ---
 
@@ -213,18 +213,6 @@ ZSpider is maintained as a self-hosted application. In practice that means:
 ---
 
 ## Further Reading
-
-Chinese documentation:
-
-- [Documentation Home](docs/zh/index.rst)
-- [开发指南](docs/zh/guides/developer_guide.rst)
-- [运维指南](docs/zh/guides/operations.rst)
-- [现代化改造规划](docs/zh/guides/modernization_plan.rst)
-- [架构设计](docs/zh/architecture/design.rst)
-- [内部消息设计](docs/zh/architecture/internal_message.rst)
-- [数据模型参考](docs/zh/reference/item_info.rst)
-
-English documentation:
 
 - [Documentation Home](docs/en/index.rst)
 - [Developer Guide](docs/en/guides/developer_guide.rst)

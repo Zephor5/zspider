@@ -3,13 +3,13 @@
 [![CI](https://github.com/Zephor5/zspider/actions/workflows/ci.yml/badge.svg)](https://github.com/Zephor5/zspider/actions/workflows/ci.yml)
 [![Documentation Status](https://readthedocs.org/projects/zspider/badge/?version=latest)](http://zspider.readthedocs.org/en/latest/?badge=latest)
 
+[English README](README_EN.md)
+
 面向 **内容监控 / 资讯聚合** 场景的自托管抓取平台。
 
 ZSpider 不是“写几个爬虫脚本然后自己拼调度”的工具，而是一套带 **Web 后台、定时调度、配置化解析、结果查看** 的平台化抓取系统，适合持续监控新闻、公告、公众号和各类公开网页内容。
 
 项目最终形态按 **自托管应用** 设计，而不是面向 PyPI 的通用 Python 包。推荐使用源码仓库 + 虚拟环境 + Docker Compose 来运行和维护。
-
-[English README](README_EN.md)
 
 ---
 
@@ -214,8 +214,6 @@ ZSpider 按“自托管应用”维护，意味着：
 
 ## 面向开发者的进一步阅读
 
-中文文档：
-
 - [文档首页](docs/zh/index.rst)
 - [开发指南](docs/zh/guides/developer_guide.rst)
 - [运维指南](docs/zh/guides/operations.rst)
@@ -224,15 +222,6 @@ ZSpider 按“自托管应用”维护，意味着：
 - [内部消息设计](docs/zh/architecture/internal_message.rst)
 - [数据模型参考](docs/zh/reference/item_info.rst)
 
-英文文档：
-
-- [Documentation Home](docs/en/index.rst)
-- [Developer Guide](docs/en/guides/developer_guide.rst)
-- [Operations Guide](docs/en/guides/operations.rst)
-- [Modernization Plan](docs/en/guides/modernization_plan.rst)
-- [Architecture Design](docs/en/architecture/design.rst)
-- [Internal Message Design](docs/en/architecture/internal_message.rst)
-- [Item Model Reference](docs/en/reference/item_info.rst)
 
 构建文档：
 
