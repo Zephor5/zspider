@@ -11,6 +11,63 @@
 #subscribe-message dd{
     margin-left: 100px;
 }
+.task-summary-card,
+.task-guide-card{
+    border: 1px solid #dce8f1;
+    border-radius: 4px;
+    background: #f7fbff;
+    margin-bottom: 18px;
+    padding: 16px 18px;
+}
+.task-summary-grid{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+.task-summary-item{
+    min-width: 160px;
+    border: 1px solid #dce8f1;
+    border-radius: 4px;
+    background: #fff;
+    padding: 12px 14px;
+}
+.task-summary-item strong{
+    display: block;
+    font-size: 24px;
+    line-height: 1.2;
+}
+.task-guide-card h4,
+.task-summary-card h4{
+    margin-top: 0;
+    margin-bottom: 10px;
+}
+.task-guide-card ol{
+    padding-left: 18px;
+    margin-bottom: 10px;
+}
+.task-name-cell{
+    min-width: 220px;
+}
+.task-name-cell .task-meta{
+    color: #666;
+    margin-top: 4px;
+}
+.task-stage{
+    min-width: 220px;
+}
+.task-stage .label{
+    margin-bottom: 8px;
+    display: inline-block;
+}
+.task-stage .task-hint{
+    color: #666;
+    margin-bottom: 0;
+}
+.task-actions .btn,
+.task-actions a{
+    margin-right: 8px;
+    margin-bottom: 8px;
+}
 </style>
 {% endblock %}
 {% block main_content %}
@@ -48,6 +105,39 @@
                 </button>
                 {{ msg.1 }}
             </div></div>{% endfor %}</div>
+            <div class="task-summary-card">
+                <h4>任务总览</h4>
+                <div class="task-summary-grid">
+                    <div class="task-summary-item">
+                        <span>任务总数</span>
+                        <strong>{{ count }}</strong>
+                    </div>
+                    <div class="task-summary-item">
+                        <span>运行中</span>
+                        <strong>{{ running_count }}</strong>
+                    </div>
+                    <div class="task-summary-item">
+                        <span>待处理</span>
+                        <strong>{{ draft_count }}</strong>
+                    </div>
+                    <div class="task-summary-item">
+                        <span>快捷入口</span>
+                        <a class="btn btn-sm btn-primary" href="{{ url_for('task_add') }}">
+                            <i class="ace-icon fa fa-plus bigger-110"></i>
+                            新建任务
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="task-guide-card">
+                <h4>推荐操作路径</h4>
+                <ol>
+                    <li>先从任务列表进入编辑页，补齐任务配置和字段规则。</li>
+                    <li>在编辑页完成“测试索引”和“测试新闻”，确认抓取与解析结果。</li>
+                    <li>保存并启动任务后，回到这里查看最近结果、日志和订阅状态。</li>
+                    <li>如果任务不符合预期，优先从结果页和 crawler 日志页定位问题。</li>
+                </ol>
+            </div>
             <div class="row">
                 <div class="col-xs-12">
                     <div class="dataTables_wrapper form-inline">
@@ -64,7 +154,7 @@
                                         </div>
                                         <div class="col-xs-6" style="padding-left:0">
                                             <div class="input-group">
-                                                <input name="q" type="text" class="form-control search-query" placeholder="Type your query">
+                                                <input name="q" type="text" class="form-control search-query" placeholder="按任务名称搜索">
                                                 <span class="input-group-btn">
                                                     <button type="submit" class="btn btn-purple btn-sm">
                                                         搜索
@@ -86,39 +176,59 @@
                                     </label>
                                 </th>
                                 <th>任务名称</th>
-                                <th>任务调度</th>
+                                <th>调度与解析</th>
                                 <th class="hidden-480">修改者</th>
                                 <th>
                                     <i class="ace-icon fa fa-clock-o bigger-110 hidden-480"></i>
                                     最近修改
                                 </th>
-                                <th class="hidden-480">状态</th>
-                                <th>功能</th>
+                                <th>当前阶段</th>
+                                <th>操作入口</th>
                             </tr></thead>
                             <tbody>
-                                {% for task in tasks.items %}<tr data-id="{{ task.id }}">
+                                {% for task in task_rows %}<tr data-id="{{ task.id }}">
                                 <td class="center">
                                     <label class="position-relative">
                                         <input type="checkbox" class="ace" />
                                         <span class="lbl"></span>
                                     </label>
                                 </td>
-                                <td><a href="{{ url_for('task_edit', task_id=task.id) }}">{{ task.name or task.id }}</a></td>
-                                <td>{{ task.cron }}</td>
-                                <td>{{ task.mender }}</td>
-                                <td>{{ task.mtime.strftime('%Y-%m-%d %H:%M:%S') }}</td>
-                                <td>
-                                    <input type="button" data-rel="tooltip" title="点击切换状态" data-placement="top" class="status_toggle btn btn-xs {% if task.is_active %}btn-success" value="运行">{% else %}btn-warning" value="停止">{% endif %}
+                                <td class="task-name-cell">
+                                    <a href="{{ url_for('task_edit', task_id=task.id) }}">{{ task.name }}</a>
+                                    <div class="task-meta">Spider：{{ task.spider }} / Parser：{{ task.parser }}</div>
                                 </td>
                                 <td>
+                                    <div><strong>定时：</strong>{{ task.cron_text }}</div>
+                                    <div><strong>订阅：</strong>{% if task.has_subscription %}已配置{% else %}未配置{% endif %}</div>
+                                </td>
+                                <td>{{ task.mender }}</td>
+                                <td>
+                                    {{ task.mtime.strftime('%Y-%m-%d %H:%M:%S') }}
+                                </td>
+                                <td class="task-stage">
+                                    <span class="label label-{{ task.stage_class }}">{{ task.stage_label }}</span>
+                                    <p class="task-hint">{{ task.stage_hint }}</p>
+                                    <input type="button" data-rel="tooltip" title="点击切换状态" data-placement="top" class="status_toggle btn btn-xs {% if task.is_active %}btn-warning" value="停止">{% else %}btn-success" value="启动">{% endif %}
+                                </td>
+                                <td class="task-actions">
+                                    <a class="btn btn-xs btn-primary" href="{{ url_for('task_edit', task_id=task.id) }}">
+                                        <i class="ace-icon fa fa-pencil bigger-120"></i>继续配置
+                                    </a>
                                     <button class="subscribe_check btn btn-xs btn-success">
                                         <i class="ace-icon fa fa-check bigger-120"></i>查看订阅
                                     </button>
                                     <a class="btn btn-xs btn-info" href="{{ url_for('task_subscribe', task_id=task.id) }}">
-                                        <i class="ace-icon fa fa-pencil bigger-120"></i>添加订阅
+                                        <i class="ace-icon fa fa-envelope bigger-120"></i>{% if task.has_subscription %}编辑订阅{% else %}添加订阅{% endif %}
                                     </a>
-                                    <a href="{{ url_for('task_doc', task_id=task.id) }}">最近数据</a>
-                                    <a href="{{ url_for('log_list', part='crawler', task_id=task.id) }}">最近日志</a>
+                                    <a class="btn btn-xs btn-default" href="{{ url_for('task_doc', task_id=task.id) }}">
+                                        <i class="ace-icon fa fa-database bigger-120"></i>最近结果
+                                    </a>
+                                    <a class="btn btn-xs btn-default" href="{{ url_for('task_run_list', task_id=task.id) }}">
+                                        <i class="ace-icon fa fa-history bigger-120"></i>运行历史
+                                    </a>
+                                    <a class="btn btn-xs btn-default" href="{{ url_for('log_list', part='crawler', task_id=task.id) }}">
+                                        <i class="ace-icon fa fa-file-text-o bigger-120"></i>最近日志
+                                    </a>
                                 </td>
                                 </tr>{% endfor %}
                             </tbody>
@@ -136,6 +246,7 @@
                         {% endif -%}
                         <div class="row">
                             <div class="col-xs-3">当前运行任务数：{{ running_count }}</div>
+                            <div class="col-xs-3">待处理任务数：{{ draft_count }}</div>
                             <div class="col-xs-3">任务数总计：{{ count }}</div>
                             <div class="col-xs-6">
                                 <div class="dataTables_paginate paging_bootstrap">
@@ -210,7 +321,7 @@
                     return;
                 }
                 _self.val()=='停止'?
-                    _self.val('运行').addClass('btn-success').removeClass('btn-warning'):
+                    _self.val('启动').addClass('btn-success').removeClass('btn-warning'):
                     _self.val('停止').addClass('btn-warning').removeClass('btn-success');
                 alert(res['data']);
             });

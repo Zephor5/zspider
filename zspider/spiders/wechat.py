@@ -46,6 +46,16 @@ class WeChatSpider(BaseSpider):
         else:
             err = "没找到微信号"
         if err:
+            from zspider.models import RUN_ERROR_CRAWL_RUNTIME
+            from zspider.task_runs import record_task_run_issue
+
+            record_task_run_issue(
+                self.run_id,
+                "crawl",
+                RUN_ERROR_CRAWL_RUNTIME,
+                err,
+                latest_url=response.url,
+            )
             logger.error(err, extra=self._extra)
 
     def parse_index(self, response):
@@ -57,4 +67,14 @@ class WeChatSpider(BaseSpider):
         f = response.xpath('//form[@name="authform"]')
         if not f:
             return self._parse_article(response)
+        from zspider.models import RUN_ERROR_CRAWL_ANTI
+        from zspider.task_runs import record_task_run_issue
+
+        record_task_run_issue(
+            self.run_id,
+            "crawl",
+            RUN_ERROR_CRAWL_ANTI,
+            "antispider",
+            latest_url=response.url,
+        )
         logger.warning("antispider", extra=self._extra)

@@ -9,6 +9,14 @@ from mongoengine import DoesNotExist
 from twisted.internet import defer
 
 from zspider import models as zsm
+from zspider.models import RUN_ERROR_PUBLISH_FILTER
+from zspider.models import RUN_ERROR_PUBLISH_NO_SUBSCRIBE
+from zspider.models import RUN_ERROR_PUBLISH_REQUEST
+from zspider.models import RUN_ERROR_PUBLISH_RESPONSE
+from zspider.models import RUN_STAGE_PUBLISH
+from zspider.task_runs import increment_task_run_metric
+from zspider.task_runs import mark_task_run_stage
+from zspider.task_runs import record_task_run_issue
 from zspider.utils import http
 from zspider.utils.transform import SafeTransformEvaluator
 
@@ -32,12 +40,19 @@ class PubPipeLine(object):
 
     REPLACE_SPACE = re.compile(" {2,}")
 
-    def __init__(self, task_id):
+    def __init__(self, task_id, run_id=None):
         self._extra = {"task_id": task_id}
+        self.run_id = run_id
         try:
             pub_subscribe = zsm.PubSubscribe.objects.get(id=task_id)
         except DoesNotExist:
             self._pub = False
+            record_task_run_issue(
+                self.run_id,
+                RUN_STAGE_PUBLISH,
+                RUN_ERROR_PUBLISH_NO_SUBSCRIBE,
+                "task has no subscriber",
+            )
             logger.warning("task %s has no subscriber" % task_id)
         else:
             self._pub = True
@@ -54,12 +69,13 @@ class PubPipeLine(object):
     def from_crawler(cls, crawler):
         cls.PUB_PORT = crawler.settings.get("PUB_PORT")
         cls.TRANS_PORT = crawler.settings.get("TRANS_PORT")
-        return cls(crawler.spider.task_id)
+        return cls(crawler.spider.task_id, getattr(crawler.spider, "run_id", None))
 
     def process_item(self, item, _):
         d = defer.Deferred()
         extra = dict(self._extra)
         extra.update({"url": item.get("url", "")})
+        mark_task_run_stage(self.run_id, RUN_STAGE_PUBLISH, item.get("url", ""))
         if self._pub:
             _doc = dict(item)
             d.addCallback(self.process_content, extra)
@@ -79,6 +95,9 @@ class PubPipeLine(object):
         else:
             item["status"] = zsm.STATUS_NO
             item["info"] = "无发布订阅"
+            increment_task_run_metric(
+                self.run_id, "publish_skip_count", latest_url=item.get("url", "")
+            )
             logger.info(json.dumps(item, indent=4), extra=extra)
             d.callback(item)
         return d
@@ -120,6 +139,18 @@ class PubPipeLine(object):
                     )
                     item["status"] = zsm.STATUS_PUB_SKIP
                     item["info"] = "发布过滤：%s" % x
+                    increment_task_run_metric(
+                        self.run_id,
+                        "publish_skip_count",
+                        latest_url=item.get("url", ""),
+                    )
+                    record_task_run_issue(
+                        self.run_id,
+                        RUN_STAGE_PUBLISH,
+                        RUN_ERROR_PUBLISH_FILTER,
+                        x,
+                        latest_url=item.get("url", ""),
+                    )
                     raise _SkipDoc
         return _doc
 
@@ -134,25 +165,46 @@ class PubPipeLine(object):
         doc.update(_doc)
         return doc
 
-    @staticmethod
-    def after_pub(res, item, extra):
+    def after_pub(self, res, item, extra):
         data = json.loads(res).get("result", {}).get("data")
         if isinstance(data, dict):
             item["status"] = zsm.STATUS_PUB_OK
             item["info"] = "发布成功:%s" % data
+            increment_task_run_metric(
+                self.run_id, "publish_ok_count", latest_url=item.get("url", "")
+            )
             logger.info("发布成功: %s" % res, extra=extra)
         else:
             item["status"] = zsm.STATUS_PUB_FAIL
             item["info"] = str(data)
+            increment_task_run_metric(
+                self.run_id, "publish_fail_count", latest_url=item.get("url", "")
+            )
+            record_task_run_issue(
+                self.run_id,
+                RUN_STAGE_PUBLISH,
+                RUN_ERROR_PUBLISH_RESPONSE,
+                data,
+                latest_url=item.get("url", ""),
+            )
             logger.warning("发布失败：%s" % res, extra=extra)
         return item
 
-    @staticmethod
-    def post_fail_or_skip(failure, item, extra):
+    def post_fail_or_skip(self, failure, item, extra):
         if failure.type is _SkipDoc:
             return item
         item["status"] = zsm.STATUS_PUB_FAIL
         item["info"] = str(failure)
+        increment_task_run_metric(
+            self.run_id, "publish_fail_count", latest_url=item.get("url", "")
+        )
+        record_task_run_issue(
+            self.run_id,
+            RUN_STAGE_PUBLISH,
+            RUN_ERROR_PUBLISH_REQUEST,
+            failure,
+            latest_url=item.get("url", ""),
+        )
         logger.error("调用发布接口失败：{0:s}".format(failure), extra=extra)
         return item
 

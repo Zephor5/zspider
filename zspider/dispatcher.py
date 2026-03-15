@@ -30,6 +30,11 @@ from zspider.confs.dispatcher_conf import STATE_DISPATCH
 from zspider.confs.dispatcher_conf import STATE_PENDING
 from zspider.confs.dispatcher_conf import STATE_WAITING
 from zspider.confs.dispatcher_conf import UID
+from zspider.models import RUN_ERROR_DISPATCH_SEND
+from zspider.models import RUN_STAGE_DISPATCH
+from zspider.task_messages import TaskDispatchMessage
+from zspider.task_runs import create_task_run
+from zspider.task_runs import fail_task_run
 from zspider.utils.models import Task
 
 __author__ = "zephor"
@@ -171,17 +176,28 @@ class HeartBeat(threading.Thread):
 
 class Send(object):
     def __init__(self, msg, rand=False):
-        self.task_id = msg["id"]
-        self.msgs = json.dumps(msg)
+        self.msg = msg
+        self.task_id = msg.task_id
+        self.msgs = msg.to_json()
         self._doing = False
         self._rand = rand
         self._max = None
+        self.run_id = None
 
     def __call__(self):
         if self._doing:
             logger.warning("last doing, skip this", extra={"task_id": self.task_id})
         else:
             self._doing = True
+            task_run = create_task_run(
+                self.task_id,
+                self.msg.task_name,
+                self.msg.spider,
+                self.msg.parser,
+                trigger_type=self.msg.trigger_type,
+            )
+            self.run_id = str(task_run.id)
+            self.msgs = self.msg.with_run_id(self.run_id).to_json()
             d = pooled_conn.acquire(channel=True)
             d.addCallbacks(self._on_send, self._on_err_conn)
             d.addBoth(pooled_conn.release)
@@ -215,8 +231,8 @@ class Send(object):
     def _on_err_conn(err):
         logger.error(err)
 
-    @staticmethod
-    def _on_err(err):
+    def _on_err(self, err):
+        fail_task_run(self.run_id, RUN_STAGE_DISPATCH, RUN_ERROR_DISPATCH_SEND, err)
         logger.error(err)
 
     def _reset_state(self, _=None):
@@ -231,6 +247,12 @@ class Send(object):
                 EXCHANGE_PARAMS["exchange"], TASK_BIND_PARAMS["routing_key"], self.msgs
             )
         except Exception:
+            fail_task_run(
+                self.run_id,
+                RUN_STAGE_DISPATCH,
+                RUN_ERROR_DISPATCH_SEND,
+                "send gets error",
+            )
             logger.exception("send gets error", extra={"task_id": self.task_id})
         finally:
             self._doing = False
@@ -246,29 +268,23 @@ def load_tasks(task_id=None):
     if task_id is not None:
         kwargs["id"] = task_id
     for task in Task.objects.filter(**kwargs):
-        msg = {
-            "id": str(task.id),
-            "name": task.name,
-            "spider": task.spider,
-            "parser": task.parser,
-            "is_login": task.is_login,
-        }
-        logger.debug(msg)
+        msg = TaskDispatchMessage.from_task(task)
+        logger.debug(msg.to_dict())
         trigger_kwargs = dict(zip(trigger_keys, task.cron.split(" ")))
         trigger_kwargs["second"] = str(random.random() * 60).split(".")[0]
         try:
             job = scheduler.add_job(
-                Send(msg, rand=msg["spider"] == "wechat"),
-                id=msg["id"],
+                Send(msg, rand=msg.spider == "wechat"),
+                id=msg.task_id,
                 trigger="cron",
                 misfire_grace_time=20,
                 replace_existing=True,
                 **trigger_kwargs,
             )
         except ValueError:
-            logger.error("failed to add job %s" % task, extra={"task_id": msg["id"]})
+            logger.error("failed to add job %s" % task, extra={"task_id": msg.task_id})
         else:
-            logger.info("add job %s" % task, extra={"task_id": msg["id"]})
+            logger.info("add job %s" % task, extra={"task_id": msg.task_id})
             num += 1
     if task_id:
         return job

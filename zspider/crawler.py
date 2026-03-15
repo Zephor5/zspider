@@ -4,17 +4,29 @@ import logging
 from queue import Queue
 
 from pooled_pika import PooledConn
+from scrapy import signals
 from scrapy.crawler import CrawlerProcess
 from scrapy.settings import Settings
 from scrapy.utils.log import log_scrapy_info
 from scrapy.utils.ossignal import install_shutdown_handlers
 from twisted.internet import defer
+from twisted.internet import reactor
 from twisted.internet.error import ConnectionDone
+from twisted.web.resource import Resource
 
+from zspider import settings as app_settings
 from zspider.confs.conf import AMQP_PARAM
 from zspider.confs.conf import EXCHANGE_PARAMS
 from zspider.confs.conf import TASK_BIND_PARAMS
 from zspider.confs.conf import TASK_Q_PARAMS
+from zspider.models import RUN_ERROR_CRAWL_MESSAGE
+from zspider.models import RUN_ERROR_CRAWL_RUNTIME
+from zspider.models import RUN_STAGE_CRAWL
+from zspider.task_messages import TaskDispatchMessage
+from zspider.task_messages import TaskMessageError
+from zspider.task_runs import fail_task_run
+from zspider.task_runs import finish_task_run
+from zspider.task_runs import mark_task_run_running
 
 __author__ = "zephor"
 
@@ -90,6 +102,39 @@ class CrawlerDaemon(CrawlerProcess):
         self._pconn = PooledConn(AMQP_PARAM)
         self._set_up()
 
+    def health_payload(self):
+        return {
+            "status": "ok",
+            "service": "crawler",
+            "active_crawlers": len(self.crawlers),
+        }
+
+    def readiness_payload(self):
+        checks = {
+            "connection": {
+                "status": "ready" if hasattr(self, "_conn") else "error",
+                "detail": "connected" if hasattr(self, "_conn") else "not connected",
+            },
+            "channel": {
+                "status": "ready" if hasattr(self, "_channel") else "error",
+                "detail": "open" if hasattr(self, "_channel") else "not initialized",
+            },
+            "task_queue": {
+                "status": "ready" if self.__task_queue is not None else "error",
+                "detail": "consuming"
+                if self.__task_queue is not None
+                else "not consuming",
+            },
+        }
+        ready = all(item["status"] == "ready" for item in checks.values())
+        payload = {
+            "status": "ready" if ready else "error",
+            "service": "crawler",
+            "checks": checks,
+            "active_crawlers": len(self.crawlers),
+        }
+        return ready, payload
+
     def _set_up(self, _=None):
         d = self._pconn.acquire()
         d.addCallbacks(self._on_conn, self._on_err_conn)
@@ -138,18 +183,22 @@ class CrawlerDaemon(CrawlerProcess):
 
     def _on_msg(self, body):
         logger.info("_on_msg %s" % body)
+        run_id = None
         try:
-            msg = json.loads(body)
-            self.settings.set("COOKIES_ENABLED", msg["is_login"], "spider")
+            msg = TaskDispatchMessage.from_body(body)
+            run_id = msg.run_id
+            self.settings.set("COOKIES_ENABLED", msg.needs_login, "spider")
             d = self.crawl(
-                msg["spider"],
-                parser=msg["parser"],
-                task_id=msg["id"],
-                task_name=msg["name"],
+                msg.spider,
+                parser=msg.parser,
+                task_id=msg.task_id,
+                task_name=msg.task_name,
+                run_id=run_id,
             )
             # d.addCallback(lambda som: reactor.callLater(2, debug))
             d.addErrback(lambda err: logger.error(err))
-        except Exception as e:
+        except (TaskMessageError, Exception) as e:
+            fail_task_run(run_id, RUN_STAGE_CRAWL, RUN_ERROR_CRAWL_MESSAGE, repr(e))
             logger.error(repr(e))
         if len(self._active) > 1:
             return self.join()
@@ -160,6 +209,9 @@ class CrawlerDaemon(CrawlerProcess):
 
     def crawl(self, spider_name, *args, **kwargs):
         crawler = self._create_crawler(spider_name)
+        crawler.signals.connect(self._on_spider_opened, signal=signals.spider_opened)
+        crawler.signals.connect(self._on_spider_error, signal=signals.spider_error)
+        crawler.signals.connect(self._on_spider_closed, signal=signals.spider_closed)
 
         self.crawlers.add(crawler)
         d = crawler.crawl(*args, **kwargs)
@@ -177,6 +229,48 @@ class CrawlerDaemon(CrawlerProcess):
 
         return d.addBoth(_done)
 
+    @staticmethod
+    def _on_spider_opened(spider):
+        mark_task_run_running(getattr(spider, "run_id", None))
+
+    @staticmethod
+    def _on_spider_error(failure, response, spider):
+        fail_task_run(
+            getattr(spider, "run_id", None),
+            RUN_STAGE_CRAWL,
+            RUN_ERROR_CRAWL_RUNTIME,
+            failure.getErrorMessage(),
+            latest_url=getattr(response, "url", None),
+        )
+
+    @staticmethod
+    def _on_spider_closed(spider, reason):
+        finish_task_run(getattr(spider, "run_id", None), close_reason=reason)
+
+
+class CrawlerManage(Resource):
+    isLeaf = True
+
+    def __init__(self, daemon):
+        super(CrawlerManage, self).__init__()
+        self.daemon = daemon
+
+    def render_GET(self, request):
+        request.setHeader("content-type", "application/json;charset=UTF-8")
+        path = request.path.decode("utf-8")
+        if path == "/healthz":
+            return self._json_response(self.daemon.health_payload())
+        if path == "/readyz":
+            ready, payload = self.daemon.readiness_payload()
+            request.setResponseCode(200 if ready else 503)
+            return self._json_response(payload)
+        request.setResponseCode(404)
+        return self._json_response({"status": "error", "service": "crawler"})
+
+    @staticmethod
+    def _json_response(payload):
+        return json.dumps(payload).encode("utf-8")
+
 
 def main():
     from zspider import init
@@ -184,6 +278,14 @@ def main():
     init.init("crawler")
     if init.done:
         p = CrawlerDaemon()
+        from twisted.web.server import Site
+        from twisted.internet import endpoints
+
+        endpoints.serverFromString(
+            reactor,
+            "tcp:%s:interface=%s"
+            % (app_settings.CRAWLER_MANAGE_PORT, app_settings.INNER_IP),
+        ).listen(Site(CrawlerManage(p)))
         p.start(stop_after_crawl=False)
 
 

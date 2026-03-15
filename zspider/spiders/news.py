@@ -29,6 +29,16 @@ class NewsSpider(BaseSpider):
             yield request
         elif "_login" in response.meta and response.meta["_login"] == "doing":
             if response.status != 200:
+                from zspider.models import RUN_ERROR_CRAWL_LOGIN
+                from zspider.task_runs import fail_task_run
+
+                fail_task_run(
+                    self.run_id,
+                    "crawl",
+                    RUN_ERROR_CRAWL_LOGIN,
+                    "Login failed",
+                    latest_url=response.url,
+                )
                 logger.error("Login failed: %s" % self.parser, extra=self._extra)
                 return
             response.meta["_login"] = "done"

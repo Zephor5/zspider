@@ -1,10 +1,5 @@
 # coding=utf-8
-import json
-import logging
 from datetime import datetime
-from urllib.error import URLError
-from urllib.parse import quote
-from urllib.request import urlopen
 
 from flask import abort
 from flask import flash
@@ -24,21 +19,22 @@ from ..tools import validate_forms
 from ..utils import acquire_admin
 from ..utils import is_xhr
 from ..utils import test_crawler
-from zspider.confs.dispatcher_conf import MANAGE_KEY
-from zspider.confs.dispatcher_conf import MANAGE_PORT
 from zspider.confs.dispatcher_conf import STATE_DISPATCH
-from zspider.models import PubSubscribe
 from zspider.models import PubSubscribeForm
+from zspider.services.task_service import build_task_list_context
+from zspider.services.task_service import delete_task_subscription
+from zspider.services.task_service import get_task_or_404
+from zspider.services.task_service import get_task_subscription
+from zspider.services.task_service import reload_task
+from zspider.services.task_service import serialize_subscription
+from zspider.services.task_service import toggle_task as toggle_task_service
 from zspider.utils.models import ArticleField
 from zspider.utils.models import ArticleFieldForm
 from zspider.utils.models import PARSER_CONF_FORM_REF
-from zspider.utils.models import Task
 from zspider.utils.models import TaskForm
 from zspider.utils.models import User
 
 __author__ = "zephor"
-
-logger = logging.getLogger(__name__)
 
 
 @app.route("/task/list")
@@ -46,21 +42,7 @@ def task_list():
     field = request.args.get("field", "")
     q = request.args.get("q", "")
     context = {"flashes": get_flashed_messages(with_categories=True), "prev_kwargs": {}}
-    q_params = {}
-    if q and field:
-        if field == "task_name":
-            q_params = {"name__contains": q}
-        context["prev_kwargs"] = {"field": field, "q": q}
-    page = int(request.args.get("page", 1))
-    context.update(
-        {
-            "count": Task.objects(**q_params).count(),
-            "running_count": Task.objects(is_active=True, **q_params).count(),
-            "tasks": Task.objects(**q_params).paginate(page=page, per_page=32),
-        }
-    )
-    if context["count"] == 0:
-        context["prev_kwargs"] = {}
+    context.update(build_task_list_context(field, q, int(request.args.get("page", 1))))
     return render_template("task/list.html", **context)
 
 
@@ -130,6 +112,7 @@ def task_add():
         "conf_form": conf_form,
         "article_field_forms": article_field_forms,
         "is_add": True,
+        "task": None,
         "fields_len": fields_len,
         "base_fields_len": len(ArticleField.base_names()),
     }
@@ -140,7 +123,7 @@ def task_add():
 @app.route("/task/edit/<task_id>", methods=["GET", "POST"])
 @acquire_admin
 def task_edit(task_id):
-    task = Task.objects.get_or_404(id=task_id)
+    task = get_task_or_404(task_id)
 
     task_form = TaskForm(request.form, obj=task)
 
@@ -191,6 +174,7 @@ def task_edit(task_id):
         )
 
     context = {
+        "task": task,
         "is_active": task.is_active,
         "form": task_form,
         "conf_form": conf_form,
@@ -328,11 +312,8 @@ def _parse_field_forms(article_field_forms, fields_len):
 @acquire_admin
 def task_subscribe():
     task_id = request.args.get("task_id", None)
-    task = Task.objects.get_or_404(id=task_id)
-    try:
-        pub_sbs = PubSubscribe.objects.get_or_404(id=task_id)
-    except NotFound:
-        pub_sbs = None
+    task = get_task_or_404(task_id)
+    pub_sbs = get_task_subscription(task_id)
     sub_form = PubSubscribeForm(request.form, obj=pub_sbs)
     if request.method == "POST" and sub_form.validate():
         if pub_sbs is None:
@@ -349,13 +330,12 @@ def task_subscribe():
 @app.route("/task/q/subscribe/<task_id>")
 def task_q_subscribe(task_id):
     res = {"status": True, "data": ""}
-    try:
-        sub = PubSubscribe.objects.get_or_404(id=task_id)
-    except NotFound:
+    sub = get_task_subscription(task_id)
+    if sub is None:
         res["status"] = False
         res["data"] = "没找到订阅信息"
     else:
-        res["data"] = {"cids": sub.cids, "model_id": sub.model_id}
+        res["data"] = serialize_subscription(sub)
     return jsonify(res)
 
 
@@ -363,7 +343,7 @@ def task_q_subscribe(task_id):
 def task_d_subscribe(task_id):
     res = {"status": True, "data": ""}
     try:
-        PubSubscribe.objects(id=task_id).delete()
+        delete_task_subscription(task_id)
     except Exception as e:
         res["status"] = False
         res["data"] = str(e)
@@ -376,43 +356,14 @@ def task_toggle(task_id):
     res = {"status": False, "data": ""}
 
     try:
-        task = Task.objects.get_or_404(id=task_id)
-    except NotFound:
-        res["data"] = "任务：%s 没找到" % task_id
-        return jsonify(res)
-
-    try:
         ip = _get_dispatcher()
     except Exception as e:
         res["data"] = "获取dispatcher地址失败，请联系管理员并保留如下原因：%s" % e
         return jsonify(res)
-
-    action = "/%s/{0:s}/{1:s}".format(task_id, MANAGE_KEY)
-
-    if task.is_active:
-        task.is_active = False
-        action %= "pause"
-    elif task.cron:
-        task.is_active = True
-        action %= "load"
-    else:
-        res["data"] = "必须先设置好任务定时才能启动任务"
-        return jsonify(res)
-
-    task.save()
-    if ip:
-        try:
-            d_res = urlopen(
-                "http://{0:s}:{1:d}".format(ip, MANAGE_PORT) + quote(action)
-            ).read()
-        except URLError:
-            res["data"] = "连接到dispatcher %s失败" % ip
-        else:
-            d_res = json.loads(d_res)
-            res["data"] = d_res["data"]
-    else:
-        res["data"] = "找不到dispatcher"
-    res["status"] = True
+    try:
+        res["status"], res["data"] = toggle_task_service(task_id, ip)
+    except NotFound:
+        res["data"] = "任务：%s 没找到" % task_id
     return jsonify(res)
 
 
@@ -448,14 +399,8 @@ def _get_dispatcher():
 
 def _reload_task(task):
     if task.is_active:
-        action = "/load/{0:s}/{1:s}".format(str(task.id), MANAGE_KEY)
         try:
             ip = _get_dispatcher()
-            d_res = urlopen(
-                "http://{0:s}:{1:d}".format(ip, MANAGE_PORT) + quote(action)
-            ).read()
+            flash(reload_task(task, ip))
         except Exception:
             flash("调度更新失败", category="warning")
-        else:
-            d_res = json.loads(d_res)
-            flash(d_res["data"])

@@ -1,19 +1,90 @@
 {% extends "base.html" %}
 {% block page_style %}
+<style>
+.test-result-page{
+    padding: 18px 15px 30px;
+}
+.test-result-card{
+    border: 1px solid #dce8f1;
+    border-radius: 4px;
+    background: #fff;
+    margin-bottom: 16px;
+    padding: 16px 18px;
+}
+.test-result-card h3,
+.test-result-card h4{
+    margin-top: 0;
+}
+.test-result-meta{
+    color: #666;
+    margin-bottom: 12px;
+}
+.test-result-list{
+    margin-bottom: 0;
+    padding-left: 18px;
+}
+.test-result-field{
+    border-top: 1px solid #eef3f7;
+    padding: 12px 0;
+}
+.test-result-field:first-child{
+    border-top: 0;
+    padding-top: 0;
+}
+.test-result-field pre{
+    margin-bottom: 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+.test-result-empty{
+    color: #999;
+}
+</style>
 {% endblock %}
 {% block main_content %}
-    <div class="page-content">
-    {% if done -%}
-    {% if target == 'index' %}
-    {% for r in res %}{{ r.url }}<br>{% endfor %}
-    {% else %}
-    {% if res %}{% for field in res.0 %}<div>{{ field }} : <pre>{{ res.0[field] }}</pre></div>{% endfor %}{% endif %}
-    {% endif %}
-    {% else %}
-    {% if form.error %}{{ form.error }}{% endif %}
-    {% for field in form %}{% if field.errors %}{{ field.errors[0] }}{% endif %}{% endfor %}
-    {% for field in conf_form %}{% if field.errors %}{{ field.errors[0] }}{% endif %}{% endfor %}
-    {% for article_field_form in article_field_forms %}{% if article_field_form.error %}{{ article_field_form.error }}{% endif %}{% for field in article_field_form %}{% if field.errors %}{{ field.errors[0] }}{% endif %}{% endfor %}{% endfor %}
-    {%- endif %}
+<div class="page-content test-result-page">
+    <div class="test-result-card">
+        <h3>{% if target == 'index' %}测试索引结果{% else %}测试新闻结果{% endif %}</h3>
+        <div class="test-result-meta">
+            这个页面只展示本次测试抓取到的预览结果，方便判断入口链接或字段解析是否符合预期。
+        </div>
+        {% if done -%}
+            {% if target == 'index' %}
+                <h4>抓取到的入口链接</h4>
+                {% if res %}
+                <ol class="test-result-list">
+                    {% for r in res %}
+                    <li><a href="{{ r.url }}" target="_blank">{{ r.url }}</a></li>
+                    {% endfor %}
+                </ol>
+                {% else %}
+                <div class="test-result-empty">没有抓到任何入口链接，请回到任务编辑页检查入口页配置。</div>
+                {% endif %}
+            {% else %}
+                <h4>字段预览</h4>
+                {% if res %}
+                    {% for field in res.0 %}
+                    <div class="test-result-field">
+                        <strong>{{ field }}</strong>
+                        <pre>{{ res.0[field] }}</pre>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                <div class="test-result-empty">没有解析出字段内容，请检查详情页 XPath、正则或指定值配置。</div>
+                {% endif %}
+            {% endif %}
+        {% else %}
+            <h4>测试未通过</h4>
+            {% if form.error %}
+            <div class="alert alert-warning">{{ form.error }}</div>
+            {% endif %}
+            {% for field in form %}{% if field.errors %}<div class="alert alert-warning">{{ field.label.text }}：{{ field.errors[0] }}</div>{% endif %}{% endfor %}
+            {% for field in conf_form %}{% if field.errors %}<div class="alert alert-warning">{{ field.label.text }}：{{ field.errors[0] }}</div>{% endif %}{% endfor %}
+            {% for article_field_form in article_field_forms %}
+                {% if article_field_form.error %}<div class="alert alert-warning">{{ article_field_form.error }}</div>{% endif %}
+                {% for field in article_field_form %}{% if field.errors %}<div class="alert alert-warning">{{ field.label.text }}：{{ field.errors[0] }}</div>{% endif %}{% endfor %}
+            {% endfor %}
+        {%- endif %}
     </div>
+</div>
 {% endblock %}

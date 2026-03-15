@@ -1,4 +1,34 @@
 {% extends "base.html" %}
+{% block page_style %}
+<style>
+.task-workflow-card,
+.task-shortcuts-card{
+    border: 1px solid #dce8f1;
+    border-radius: 4px;
+    background: #f7fbff;
+    margin-bottom: 18px;
+    padding: 16px 18px;
+}
+.task-workflow-card h4,
+.task-shortcuts-card h4{
+    margin-top: 0;
+    margin-bottom: 8px;
+}
+.task-workflow-card ol{
+    margin-bottom: 8px;
+    padding-left: 18px;
+}
+.task-shortcuts-card .btn,
+.task-shortcuts-card a{
+    margin-right: 8px;
+    margin-bottom: 8px;
+}
+.task-action-note{
+    color: #666;
+    margin-top: 10px;
+}
+</style>
+{% endblock %}
 {% block main_content %}
 <div class="breadcrumbs" id="breadcrumbs">
     <script type="text/javascript">
@@ -28,6 +58,42 @@
     </div><!-- /.page-header -->
     <div class="row">
         <div class="col-xs-12">
+            <div class="task-workflow-card">
+                <h4>{% if is_add %}推荐操作顺序{% else %}当前任务操作建议{% endif %}</h4>
+                <ol>
+                    <li>先填写任务基本信息、解析配置和字段规则。</li>
+                    <li>用“测试索引”确认入口列表是否能抓到目标链接。</li>
+                    <li>用“测试新闻”确认字段解析结果是否符合预期。</li>
+                    <li>确认无误后再“保存”或“保存并启动”。</li>
+                </ol>
+                <div class="task-action-note">
+                    “测试”只用于预览抓取与解析结果，不会替代保存；“保存并启动”会在保存后把任务切到运行状态。
+                </div>
+            </div>
+            {% if not is_add and task %}
+            <div class="task-shortcuts-card">
+                <h4>调试与观察</h4>
+                <a class="btn btn-sm btn-info" href="{{ url_for('task_list') }}">
+                    <i class="ace-icon fa fa-list bigger-110"></i>
+                    返回任务列表
+                </a>
+                <a class="btn btn-sm btn-success" href="{{ url_for('task_doc', task_id=task.id) }}" target="_blank">
+                    <i class="ace-icon fa fa-database bigger-110"></i>
+                    查看最近结果
+                </a>
+                <a class="btn btn-sm btn-primary" href="{{ url_for('task_run_list', task_id=task.id) }}" target="_blank">
+                    <i class="ace-icon fa fa-history bigger-110"></i>
+                    查看运行历史
+                </a>
+                <a class="btn btn-sm btn-warning" href="{{ url_for('log_list', part='crawler', task_id=task.id) }}" target="_blank">
+                    <i class="ace-icon fa fa-file-text-o bigger-110"></i>
+                    查看最近日志
+                </a>
+                <div class="task-action-note">
+                    如果你正在修改线上任务，建议按“测试索引 -> 测试新闻 -> 保存 -> 看结果/日志”的顺序排查。
+                </div>
+            </div>
+            {% endif %}
             <form id='task_form' class="form-horizontal" role="form" method="POST">
                 {% if form.error %}
                     <div class="alert alert-warning">
@@ -66,11 +132,11 @@
                         </button>{% if not is_add %}
                         <button id="force-save" class="btn btn-info" type="submit">
                             <i class="ace-icon fa fa-check bigger-110"></i>
-                            新建
+                            另存为新任务
                         </button>
                         <button id="force-save-start" class="btn btn-info" type="submit">
                             <i class="ace-icon fa fa-check bigger-110"></i>
-                            新建并启动
+                            另存并启动
                         </button>{% endif %}
                     </div>
                     <div class="col-md-12 hr hr8"></div>
