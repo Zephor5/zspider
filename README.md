@@ -169,10 +169,23 @@ make test
 
 ## 面向开发者的进一步阅读
 
-- [开发指南](docs/developer_guide.rst)
-- [架构设计](docs/desgin.rst)
-- [内部消息设计](docs/internal_message.rst)
-- [数据模型](docs/item_info.rst)
+中文文档：
+
+- [文档首页](docs/zh/index.rst)
+- [开发指南](docs/zh/guides/developer_guide.rst)
+- [现代化改造规划](docs/zh/guides/modernization_plan.rst)
+- [架构设计](docs/zh/architecture/design.rst)
+- [内部消息设计](docs/zh/architecture/internal_message.rst)
+- [数据模型参考](docs/zh/reference/item_info.rst)
+
+英文文档：
+
+- [Documentation Home](docs/en/index.rst)
+- [Developer Guide](docs/en/guides/developer_guide.rst)
+- [Modernization Plan](docs/en/guides/modernization_plan.rst)
+- [Architecture Design](docs/en/architecture/design.rst)
+- [Internal Message Design](docs/en/architecture/internal_message.rst)
+- [Item Model Reference](docs/en/reference/item_info.rst)
 
 构建文档：
 

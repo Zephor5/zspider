@@ -1,5 +1,5 @@
-Internal Message
-================
+Internal Message Design
+=======================
 
 RabbitMQ Message Format
 -----------------------

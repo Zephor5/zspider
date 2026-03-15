@@ -167,12 +167,25 @@ make test
 
 ---
 
-## Further reading
+## Further Reading
 
-- [Developer Guide](docs/developer_guide.rst)
-- [Desgin](docs/desgin.rst)
-- [Internal Message](docs/internal_message.rst)
-- [Item Info](docs/item_info.rst)
+Chinese documentation:
+
+- [Documentation Home](docs/zh/index.rst)
+- [开发指南](docs/zh/guides/developer_guide.rst)
+- [现代化改造规划](docs/zh/guides/modernization_plan.rst)
+- [架构设计](docs/zh/architecture/design.rst)
+- [内部消息设计](docs/zh/architecture/internal_message.rst)
+- [数据模型参考](docs/zh/reference/item_info.rst)
+
+English documentation:
+
+- [Documentation Home](docs/en/index.rst)
+- [Developer Guide](docs/en/guides/developer_guide.rst)
+- [Modernization Plan](docs/en/guides/modernization_plan.rst)
+- [Architecture Design](docs/en/architecture/design.rst)
+- [Internal Message Design](docs/en/architecture/internal_message.rst)
+- [Item Model Reference](docs/en/reference/item_info.rst)
 
 Build docs with:
 
