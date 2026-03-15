@@ -18,6 +18,7 @@ ZSpider helps teams run recurring collection workflows for public web content su
    :caption: Contents:
 
    developer_guide
+   project_analysis
    desgin
    internal_message
    item_info
@@ -37,6 +38,7 @@ Documentation Guide
 ===================
 
 - ``developer_guide``: environment, configuration, components, parser model, and project structure
+- ``project_analysis``: current codebase structure, runtime flow, strengths, and risks
 - ``desgin``: architecture design notes
 - ``internal_message``: internal messaging details
 - ``item_info``: item and field model reference
