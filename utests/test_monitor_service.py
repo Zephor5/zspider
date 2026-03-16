@@ -7,6 +7,35 @@ from zspider.services import monitor_service
 
 
 class TestMonitorService(unittest.TestCase):
+    def test_build_log_list_context_loads_task_when_task_filter_present(self):
+        task = SimpleNamespace(id="task-1", name="任务A")
+        task_model = mock.Mock()
+        task_model.objects.get_or_404.return_value = task
+
+        query_rows = [{"ip": "127.0.0.1"}]
+        query_qs = mock.Mock()
+        query_qs.only.return_value.order_by.return_value.limit.return_value = query_rows
+        query_qs.order_by.return_value.paginate.return_value = "LOGS"
+
+        log_model = mock.Mock()
+        log_model.objects.return_value = query_qs
+
+        with mock.patch.object(monitor_service, "Task", task_model), mock.patch.object(
+            monitor_service, "get_log_model_or_404", return_value=log_model
+        ):
+            context = monitor_service.build_log_list_context(
+                part="crawler",
+                page=1,
+                ip="no",
+                level=0,
+                task_id="task-1",
+                url="",
+            )
+
+        self.assertEqual(context["task"], task)
+        self.assertEqual(context["logs"], "LOGS")
+        log_model.objects.assert_called_with(task_id="task-1")
+
     def test_serialize_doc_maps_task_and_status(self):
         doc = SimpleNamespace(
             task=SimpleNamespace(name="示例任务"),

@@ -9,6 +9,10 @@ from werkzeug.exceptions import NotFound
 from zspider.confs.dispatcher_conf import MANAGE_KEY
 from zspider.confs.dispatcher_conf import MANAGE_PORT
 from zspider.models import PubSubscribe
+from zspider.models import RUN_ERROR_LABELS
+from zspider.models import RUN_STAGE_LABELS
+from zspider.models import RUN_STATUS_LABELS
+from zspider.models import TaskRun
 from zspider.utils.models import Task
 
 
@@ -42,11 +46,41 @@ def build_task_rows(tasks):
     tasks = list(tasks)
     task_ids = [task.id for task in tasks]
     subscribed_ids = set()
+    latest_run_map = {}
     if task_ids:
         subscribed_ids = {
             str(sub.id) for sub in PubSubscribe.objects(id__in=task_ids).only("id")
         }
-    return [_build_task_row(task, str(task.id) in subscribed_ids) for task in tasks]
+        latest_runs = (
+            TaskRun.objects(task__in=task_ids)
+            .order_by("-queued_at")
+            .only(
+                "task",
+                "status",
+                "stage",
+                "queued_at",
+                "finished_at",
+                "last_error_code",
+                "last_error",
+                "stored_count",
+                "article_count",
+                "publish_ok_count",
+                "publish_fail_count",
+                "publish_skip_count",
+            )
+        )
+        for run in latest_runs:
+            task_id = str(run.task.id)
+            if task_id not in latest_run_map:
+                latest_run_map[task_id] = run
+    return [
+        _build_task_row(
+            task,
+            str(task.id) in subscribed_ids,
+            latest_run_map.get(str(task.id)),
+        )
+        for task in tasks
+    ]
 
 
 def get_task_or_404(task_id):
@@ -104,7 +138,7 @@ def reload_task(task, dispatcher_ip):
     return json.loads(response)["data"]
 
 
-def _build_task_row(task, has_subscription):
+def _build_task_row(task, has_subscription, latest_run=None):
     if task.is_active:
         stage_label = "运行中"
         stage_class = "success"
@@ -117,6 +151,8 @@ def _build_task_row(task, has_subscription):
         stage_label = "待补配置"
         stage_class = "default"
         stage_hint = "先补齐定时策略和解析配置，再进入测试。"
+
+    recent_run = _build_recent_run_summary(latest_run)
 
     return {
         "id": task.id,
@@ -131,4 +167,58 @@ def _build_task_row(task, has_subscription):
         "stage_label": stage_label,
         "stage_class": stage_class,
         "stage_hint": stage_hint,
+        "recent_run": recent_run,
+    }
+
+
+def _build_recent_run_summary(run):
+    if run is None:
+        return {
+            "exists": False,
+            "status_label": "暂无运行记录",
+            "status_class": "default",
+            "detail": "保存并启动任务后，这里会显示最近一次运行结果。",
+            "summary": "建议先完成索引测试和文章测试。",
+        }
+
+    error_label = ""
+    detail = []
+    if run.last_error_code:
+        error_label = RUN_ERROR_LABELS.get(run.last_error_code, run.last_error_code)
+        detail.append(error_label)
+    if run.stage:
+        detail.append("阶段：%s" % RUN_STAGE_LABELS.get(run.stage, run.stage))
+    if run.finished_at:
+        detail.append("结束：%s" % run.finished_at.strftime("%Y-%m-%d %H:%M:%S"))
+    else:
+        detail.append("排队：%s" % run.queued_at.strftime("%Y-%m-%d %H:%M:%S"))
+
+    summary = "文章 %s / 入库 %s / 发布成功 %s" % (
+        run.article_count,
+        run.stored_count,
+        run.publish_ok_count,
+    )
+    if run.publish_fail_count or run.publish_skip_count:
+        summary = "%s / 发布失败 %s / 跳过 %s" % (
+            summary,
+            run.publish_fail_count,
+            run.publish_skip_count,
+        )
+
+    status_class = {
+        "success": "success",
+        "partial": "warning",
+        "failed": "danger",
+        "running": "info",
+        "queued": "default",
+    }.get(run.status, "default")
+
+    return {
+        "exists": True,
+        "status_label": RUN_STATUS_LABELS.get(run.status, run.status),
+        "status_class": status_class,
+        "detail": " / ".join(detail),
+        "summary": summary,
+        "error_label": error_label,
+        "error_message": run.last_error or "",
     }

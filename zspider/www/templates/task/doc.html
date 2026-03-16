@@ -11,6 +11,25 @@
 #doc-detail dd{
     margin-left: 100px;
 }
+.task-context-card{
+    border: 1px solid #dce8f1;
+    border-radius: 4px;
+    background: #f7fbff;
+    margin-bottom: 16px;
+    padding: 14px 16px;
+}
+.task-context-card h4{
+    margin-top: 0;
+    margin-bottom: 8px;
+}
+.task-context-card .btn{
+    margin-right: 8px;
+    margin-bottom: 8px;
+}
+.task-context-card p{
+    color: #666;
+    margin-bottom: 10px;
+}
 </style>
 {% endblock %}
 {% block main_content %}
@@ -42,9 +61,18 @@
     </div><!-- /.page-header -->
     <div class="row">
         <div class="col-md-12">
+            {% if task %}
+            <div class="task-context-card">
+                <h4>当前任务：{{ task.name }}</h4>
+                <p>结果、运行历史和 crawler 日志建议配合查看。先确认最近入库结果，再看最近一次运行阶段，最后进入日志定位具体 URL 或错误信息。</p>
+                <a class="btn btn-sm btn-primary" href="{{ url_for('task_edit', task_id=task.id) }}">继续配置</a>
+                <a class="btn btn-sm btn-default" href="{{ url_for('task_run_list', task_id=task.id) }}">查看运行历史</a>
+                <a class="btn btn-sm btn-default" href="{{ url_for('log_list', part='crawler', task_id=task.id) }}">查看 crawler 日志</a>
+            </div>
+            {% endif %}
             <div id="q_form" class="row">
                 <div class="col-md-3 input-group">
-                    <input placeholder="Enter task_id to search" class="form-control" name="task_id" value="{{ task_id if task_id else '' }}"><span class="input-group-addon">
+                    <input placeholder="按 task_id 过滤" class="form-control" name="task_id" value="{{ task_id if task_id else '' }}"><span class="input-group-addon">
                         <i class="ace-icon fa fa-search"></i>
                     </span>
                 </div>
@@ -61,8 +89,8 @@
                 <tbody>{% for doc in docs.items %}
                     <tr data-id="{{ doc.id }}">
                         <td><a target="_blank" href="{{ doc.url }}">{{ doc.title }}</a></td>
-                        <td>{{ doc.task.name }}</td>
-                        <td><a href="{{ url_for('log_list', part='crawler', url=doc.url) }}">{{ statuses[doc.status] }}</a></td>
+                        <td><a href="{{ url_for('task_run_list', task_id=doc.task.id) }}">{{ doc.task.name }}</a></td>
+                        <td><a href="{{ url_for('log_list', part='crawler', task_id=doc.task.id, url=doc.url) }}">{{ statuses[doc.status] }}</a></td>
                         <td>{{ doc.src_time }}</td>
                         <td>{{ doc.save_time }}</td>
                     </tr>

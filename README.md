@@ -245,7 +245,7 @@ ZSpider 按“自托管应用”维护，意味着：
 - [文档首页](docs/zh/index.rst)
 - [开发指南](docs/zh/guides/developer_guide.rst)
 - [运维指南](docs/zh/guides/operations.rst)
-- [现代化改造规划](docs/zh/guides/modernization_plan.rst)
+- [路线图：执行视图](docs/zh/guides/roadmap_execution.rst)
 - [架构设计](docs/zh/architecture/design.rst)
 - [内部消息设计](docs/zh/architecture/internal_message.rst)
 - [数据模型参考](docs/zh/reference/item_info.rst)

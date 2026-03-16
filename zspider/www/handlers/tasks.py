@@ -374,7 +374,7 @@ def _verify_fields(article_field_forms):
             base.pop(base.index(form.name.data))
         except ValueError:
             form.may_error = True
-        if not (form.xpath.data or form.re.data):
+        if not (form.xpath.data or form.re.data or form.specify.data):
             form.error = "字段解析方法至少设置一个"
             return False
     if base:

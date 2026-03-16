@@ -114,3 +114,4 @@ logs/*
 .env/
 data/mongodb/
 .venv/
+.playwright-cli/

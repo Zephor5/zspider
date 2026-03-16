@@ -12,6 +12,86 @@ from zspider.www.handlers import app
 
 
 class TestTaskTemplates(unittest.TestCase):
+    def _render_log_list(self, **context_overrides):
+        class Pagination:
+            def __init__(self, items):
+                self.items = items
+                self.page = 1
+                self.has_prev = False
+                self.has_next = False
+                self.prev_num = None
+                self.next_num = None
+
+            def iter_pages(self):
+                return [1]
+
+        with app.app_context():
+            context = {
+                "part": "crawler",
+                "task": SimpleNamespace(id="task-1", name="失败任务"),
+                "task_id": "task-1",
+                "level": 0,
+                "levels": {0: "NOTSET", 20: "INFO"},
+                "ips": {"127.0.0.1"},
+                "ip": "no",
+                "url": "https://example.com/a",
+                "logs": Pagination(
+                    [
+                        SimpleNamespace(
+                            id="log-1",
+                            time=SimpleNamespace(
+                                strftime=lambda _: "2026-03-15 12:00:00"
+                            ),
+                            level=20,
+                            msg="parse failed",
+                        )
+                    ]
+                ),
+            }
+            context.update(context_overrides)
+            with app.test_request_context("/log/crawler?task_id=task-1"):
+                session["user"] = "tester"
+                session["role"] = "admin"
+                return render_template("log.html", **context)
+
+    def _render_task_doc_list(self, **context_overrides):
+        class Pagination:
+            def __init__(self, items):
+                self.items = items
+                self.page = 1
+                self.has_prev = False
+                self.has_next = False
+                self.prev_num = None
+                self.next_num = None
+
+            def iter_pages(self):
+                return [1]
+
+        with app.app_context():
+            context = {
+                "statuses": {1: "发布成功"},
+                "task": SimpleNamespace(id="task-1", name="失败任务"),
+                "task_id": "task-1",
+                "docs": Pagination(
+                    [
+                        SimpleNamespace(
+                            id="doc-1",
+                            title="标题A",
+                            url="https://example.com/a",
+                            task=SimpleNamespace(id="task-1", name="失败任务"),
+                            status=1,
+                            src_time="2026-03-15 11:59:00",
+                            save_time="2026-03-15 12:00:00",
+                        )
+                    ]
+                ),
+            }
+            context.update(context_overrides)
+            with app.test_request_context("/task/doc?task_id=task-1"):
+                session["user"] = "tester"
+                session["role"] = "admin"
+                return render_template("task/doc.html", **context)
+
     def _render_task_run_list(self, **context_overrides):
         class Pagination:
             def __init__(self, items):
@@ -27,8 +107,8 @@ class TestTaskTemplates(unittest.TestCase):
 
         with app.app_context():
             context = {
-                "task": None,
-                "task_id": "",
+                "task": SimpleNamespace(id="task-1", name="失败任务"),
+                "task_id": "task-1",
                 "status": "",
                 "error_code": "",
                 "statuses": {
@@ -68,6 +148,7 @@ class TestTaskTemplates(unittest.TestCase):
                             publish_ok_count=0,
                             publish_fail_count=0,
                             publish_skip_count=0,
+                            latest_url="https://example.com/a",
                             queued_at="2026-03-15 12:00:00",
                             finished_at="2026-03-15 12:01:00",
                         )
@@ -119,6 +200,14 @@ class TestTaskTemplates(unittest.TestCase):
                         "stage_class": "success",
                         "stage_hint": "重点查看最近结果和日志，确认抓取链路是否稳定。",
                         "is_active": True,
+                        "recent_run": {
+                            "status_label": "失败",
+                            "status_class": "danger",
+                            "detail": "解析失败 / 阶段：解析 / 结束：2026-03-15 12:01:00",
+                            "summary": "文章 2 / 入库 0 / 发布成功 0",
+                            "error_label": "解析失败",
+                            "error_message": "XPath 缺失",
+                        },
                     },
                     {
                         "id": "task-2",
@@ -135,6 +224,14 @@ class TestTaskTemplates(unittest.TestCase):
                         "stage_class": "warning",
                         "stage_hint": "建议先回到编辑页做索引/新闻测试，确认后再启动。",
                         "is_active": False,
+                        "recent_run": {
+                            "status_label": "暂无运行记录",
+                            "status_class": "default",
+                            "detail": "保存并启动任务后，这里会显示最近一次运行结果。",
+                            "summary": "建议先完成索引测试和文章测试。",
+                            "error_label": "",
+                            "error_message": "",
+                        },
                     },
                 ],
             }
@@ -245,6 +342,8 @@ class TestTaskTemplates(unittest.TestCase):
         self.assertIn("最近日志", html)
         self.assertIn("运行中", html)
         self.assertIn("待启动", html)
+        self.assertIn("暂无运行记录", html)
+        self.assertIn("XPath 缺失", html)
 
     def test_task_list_template_marks_subscription_state(self):
         html = self._render_task_list()
@@ -261,3 +360,23 @@ class TestTaskTemplates(unittest.TestCase):
         self.assertIn("全部失败类型", html)
         self.assertIn("解析失败", html)
         self.assertIn("XPath 缺失", html)
+        self.assertIn("查看最近结果", html)
+        self.assertIn("查看 crawler 日志", html)
+
+    def test_task_doc_template_surfaces_linked_navigation(self):
+        html = self._render_task_doc_list()
+
+        self.assertIn("当前任务：失败任务", html)
+        self.assertIn("查看运行历史", html)
+        self.assertIn("查看 crawler 日志", html)
+        self.assertIn(
+            "/log/crawler?task_id=task-1&amp;url=https%3A%2F%2Fexample.com%2Fa", html
+        )
+
+    def test_log_template_surfaces_linked_navigation(self):
+        html = self._render_log_list()
+
+        self.assertIn("当前任务：失败任务", html)
+        self.assertIn("查看运行历史", html)
+        self.assertIn("查看最近结果", html)
+        self.assertIn("按 url 过滤", html)

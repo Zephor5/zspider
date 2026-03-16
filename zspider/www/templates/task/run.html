@@ -15,6 +15,25 @@
     display: inline-block;
     min-width: 72px;
 }
+.task-context-card{
+    border: 1px solid #dce8f1;
+    border-radius: 4px;
+    background: #f7fbff;
+    margin-bottom: 16px;
+    padding: 14px 16px;
+}
+.task-context-card h4{
+    margin-top: 0;
+    margin-bottom: 8px;
+}
+.task-context-card .btn{
+    margin-right: 8px;
+    margin-bottom: 8px;
+}
+.task-context-card p{
+    color: #666;
+    margin-bottom: 10px;
+}
 </style>
 {% endblock %}
 {% block main_content %}
@@ -46,6 +65,15 @@
     </div>
     <div class="row">
         <div class="col-md-12">
+            {% if task %}
+            <div class="task-context-card">
+                <h4>当前任务：{{ task.name }}</h4>
+                <p>这里适合先判断最近一次运行停在哪个阶段、属于哪类失败，再进入结果页和 crawler 日志页继续排查。</p>
+                <a class="btn btn-sm btn-primary" href="{{ url_for('task_edit', task_id=task.id) }}">继续配置</a>
+                <a class="btn btn-sm btn-default" href="{{ url_for('task_doc', task_id=task.id) }}">查看最近结果</a>
+                <a class="btn btn-sm btn-default" href="{{ url_for('log_list', part='crawler', task_id=task.id) }}">查看 crawler 日志</a>
+            </div>
+            {% endif %}
             <div id="q_form" class="row">
                 <div class="col-md-3 input-group">
                     <input placeholder="按 task_id 过滤" class="form-control" name="task_id" value="{{ task_id if task_id else '' }}">
@@ -86,6 +114,11 @@
                         <td>
                             <a href="{{ url_for('task_edit', task_id=run.task.id) }}">{{ run.task_name }}</a>
                             <div class="text-muted">Spider：{{ run.spider }} / Parser：{{ run.parser }}</div>
+                            <div class="text-muted">
+                                <a href="{{ url_for('task_doc', task_id=run.task.id) }}">结果</a>
+                                /
+                                <a href="{{ url_for('log_list', part='crawler', task_id=run.task.id, url=run.latest_url) if run.latest_url else url_for('log_list', part='crawler', task_id=run.task.id) }}">日志</a>
+                            </div>
                         </td>
                         <td><span class="label label-{% if run.status == 'success' %}success{% elif run.status == 'partial' %}warning{% elif run.status == 'failed' %}danger{% elif run.status == 'running' %}info{% else %}default{% endif %} run-status">{{ statuses[run.status] }}</span></td>
                         <td>{{ stages[run.stage] }}</td>

@@ -30,9 +30,11 @@ def get_log_model_or_404(part):
 def build_log_list_context(part, page, ip, level, task_id, url):
     cls = get_log_model_or_404(part)
     q_params = {}
+    task = None
     if level > 0:
         q_params["level__gte"] = level
     if task_id:
+        task = Task.objects.get_or_404(id=task_id)
         q_params["task_id"] = task_id
     if url:
         q_params["url"] = url
@@ -46,6 +48,7 @@ def build_log_list_context(part, page, ip, level, task_id, url):
 
     return {
         "part": part,
+        "task": task,
         "levels": LEVELS,
         "level": level,
         "ips": ips,

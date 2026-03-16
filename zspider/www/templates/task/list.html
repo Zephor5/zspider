@@ -63,6 +63,22 @@
     color: #666;
     margin-bottom: 0;
 }
+.task-run-summary{
+    min-width: 280px;
+}
+.task-run-summary .label{
+    margin-bottom: 8px;
+    display: inline-block;
+}
+.task-run-summary .task-run-detail,
+.task-run-summary .task-run-summary-text,
+.task-run-summary .task-run-error{
+    color: #666;
+    margin-bottom: 6px;
+}
+.task-run-summary .task-run-error{
+    color: #b94a48;
+}
 .task-actions .btn,
 .task-actions a{
     margin-right: 8px;
@@ -183,6 +199,7 @@
                                     最近修改
                                 </th>
                                 <th>当前阶段</th>
+                                <th>最近运行</th>
                                 <th>操作入口</th>
                             </tr></thead>
                             <tbody>
@@ -209,6 +226,14 @@
                                     <span class="label label-{{ task.stage_class }}">{{ task.stage_label }}</span>
                                     <p class="task-hint">{{ task.stage_hint }}</p>
                                     <input type="button" data-rel="tooltip" title="点击切换状态" data-placement="top" class="status_toggle btn btn-xs {% if task.is_active %}btn-warning" value="停止">{% else %}btn-success" value="启动">{% endif %}
+                                </td>
+                                <td class="task-run-summary">
+                                    <span class="label label-{{ task.recent_run.status_class }}">{{ task.recent_run.status_label }}</span>
+                                    <div class="task-run-detail">{{ task.recent_run.detail }}</div>
+                                    <div class="task-run-summary-text">{{ task.recent_run.summary }}</div>
+                                    {% if task.recent_run.error_label %}
+                                    <div class="task-run-error">{{ task.recent_run.error_label }}{% if task.recent_run.error_message %}：{{ task.recent_run.error_message }}{% endif %}</div>
+                                    {% endif %}
                                 </td>
                                 <td class="task-actions">
                                     <a class="btn btn-xs btn-primary" href="{{ url_for('task_edit', task_id=task.id) }}">
