@@ -9,3 +9,4 @@
    developer_guide
    operations
    modernization_plan
+   strategy_direction_checklist
