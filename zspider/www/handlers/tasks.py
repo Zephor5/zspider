@@ -25,6 +25,10 @@ from ..utils import is_xhr
 from ..utils import test_crawler
 from zspider.confs.dispatcher_conf import STATE_DISPATCH
 from zspider.models import PubSubscribeForm
+from zspider.services.page_explorer import build_index_test_rows
+from zspider.services.page_explorer import explore_article_page
+from zspider.services.page_explorer import explore_index_page
+from zspider.services.page_explorer import infer_index_xpath
 from zspider.services.task_service import build_task_list_context
 from zspider.services.task_service import delete_task_subscription
 from zspider.services.task_service import get_task_or_404
@@ -57,8 +61,12 @@ def task_add():
 
     # conf part #
     parser = task_form.parser.data
+    if not parser and "IndexParser" in PARSER_CONF_FORM_REF:
+        parser = "IndexParser"
+        task_form.parser.data = parser
     if parser not in PARSER_CONF_FORM_REF:
         parser = task_form.parser.choices[0][0]
+        task_form.parser.data = parser
     if is_xhr():
         parser = request.args.get("parser")
 
@@ -85,6 +93,7 @@ def task_add():
 
     if (
         request.method == "POST"
+        and not _is_return_edit_post()
         and validate_forms([task_form, conf_form] + article_field_forms)
         and _verify_fields(article_field_forms)
     ):
@@ -119,6 +128,12 @@ def task_add():
         "task": None,
         "fields_len": fields_len,
         "base_fields_len": len(ArticleField.base_names()),
+        "explore_url": _resolve_explore_url(conf_form),
+        "explore_result": None,
+        "explore_error": "",
+        "article_explore_url": "",
+        "article_explore_result": None,
+        "article_explore_error": "",
     }
 
     return render_template("task/add.html", **context)
@@ -170,6 +185,7 @@ def task_edit(task_id):
 
     if (
         request.method == "POST"
+        and not _is_return_edit_post()
         and validate_forms([task_form, conf_form] + article_field_forms)
         and _verify_fields(article_field_forms)
     ):
@@ -186,6 +202,12 @@ def task_edit(task_id):
         "is_add": False,
         "fields_len": fields_len,
         "base_fields_len": len(ArticleField.base_names()),
+        "explore_url": _resolve_explore_url(conf_form),
+        "explore_result": None,
+        "explore_error": "",
+        "article_explore_url": "",
+        "article_explore_result": None,
+        "article_explore_error": "",
     }
 
     return render_template("task/add.html", **context)
@@ -258,6 +280,7 @@ def task_test(target):
     # article fields #
     done = False
     res = []
+    index_result_rows = []
     if (
         request.method == "POST"
         and validate_forms([task_form, conf_form])
@@ -286,6 +309,12 @@ def task_test(target):
         )
         res = test_crawler.res_q.get()
         done = True
+        if target == "index":
+            index_result_rows = build_index_test_rows(
+                getattr(conf, "front_url", ""),
+                getattr(conf, "url_xpath", ""),
+                [_extract_result_url(item) for item in res or []],
+            )
 
     context = {
         "form": task_form,
@@ -294,15 +323,74 @@ def task_test(target):
         "done": done,
         "target": target,
         "res": res,
+        "index_result_rows": index_result_rows,
         "submitted_items": list(request.form.items(multi=True)),
         "return_path": _resolve_return_path(),
         "save_draft_url": _with_active(_resolve_save_path(), 0),
         "save_start_url": _with_active(_resolve_save_path(), 1),
         "test_index_url": url_for("task_test", target="index"),
         "test_article_url": url_for("task_test", target="article"),
+        "modal_mode": is_xhr(),
     }
-
+    if is_xhr():
+        return render_template("task/test_result_panel.html", **context)
     return render_template("task/test.html", **context)
+
+
+@app.route("/task/explore/index", methods=["POST"])
+@acquire_admin
+def task_explore_index():
+    front_url = request.form.get("front_url", "").strip()
+    explore_result = None
+    explore_error = ""
+    if not front_url:
+        explore_error = "请先输入入口页地址。"
+    else:
+        try:
+            explore_result = explore_index_page(front_url)
+        except Exception as exc:
+            explore_error = "入口页探索失败：%s" % exc
+    return render_template(
+        "task/explore_panel.html",
+        explore_url=front_url,
+        explore_result=explore_result,
+        explore_error=explore_error,
+    )
+
+
+@app.route("/task/explore/article", methods=["POST"])
+@acquire_admin
+def task_explore_article():
+    article_url = request.form.get("article_url", "").strip()
+    article_explore_result = None
+    article_explore_error = ""
+    if not article_url:
+        article_explore_error = "请先输入文章地址。"
+    else:
+        try:
+            article_explore_result = explore_article_page(article_url)
+        except Exception as exc:
+            article_explore_error = "文章探索失败：%s" % exc
+    return render_template(
+        "task/explore_article_panel.html",
+        article_explore_url=article_url,
+        article_explore_result=article_explore_result,
+        article_explore_error=article_explore_error,
+    )
+
+
+@app.route("/task/explore/index/infer", methods=["POST"])
+@acquire_admin
+def task_explore_index_infer():
+    front_url = request.form.get("front_url", "").strip()
+    selected_urls = request.form.getlist("urls[]") or request.form.getlist("urls")
+    if not front_url:
+        return jsonify({"status": False, "message": "请先输入入口页地址。"})
+    try:
+        result = infer_index_xpath(front_url, selected_urls)
+    except Exception as exc:
+        return jsonify({"status": False, "message": "多点标注推断失败：%s" % exc})
+    return jsonify({"status": True, "data": result})
 
 
 def _parse_field_forms(article_field_forms, fields_len):
@@ -316,6 +404,23 @@ def _parse_field_forms(article_field_forms, fields_len):
             )
         )
         article_field_forms.append(ArticleFieldForm(form_data, meta={"csrf": False}))
+
+
+def _extract_result_url(item):
+    if isinstance(item, dict):
+        return item.get("url")
+    return getattr(item, "url", None)
+
+
+def _resolve_explore_url(conf_form):
+    field = getattr(conf_form, "front_url", None)
+    if field is None:
+        return ""
+    return field.data or ""
+
+
+def _is_return_edit_post():
+    return request.form.get("_return_edit") == "1"
 
 
 def _resolve_return_path():

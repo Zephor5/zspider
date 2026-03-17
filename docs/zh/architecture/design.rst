@@ -102,12 +102,12 @@ WechatSpider
 - 处理公众号场景的反爬差异
 - 提取正文与元数据
 
-SeleniumSpider
-~~~~~~~~~~~~~~
+BrowserSpider
+~~~~~~~~~~~~~
 
 适用于依赖 JavaScript 渲染的页面：
 
-- 使用 Selenium WebDriver
+- 使用浏览器渲染引擎
 - 处理动态内容
 
 解析系统

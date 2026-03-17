@@ -1,0 +1,101 @@
+{% if article_explore_error %}
+<div class="alert alert-warning">{{ article_explore_error }}</div>
+{% endif %}
+
+{% if article_explore_result %}
+<div class="row">
+    <div class="col-xs-12 col-lg-5">
+        <div class="alert alert-info">
+            <strong>文章标题：</strong>{{ article_explore_result.title }}<br>
+            <strong>实际地址：</strong><a href="{{ article_explore_result.final_url }}" target="_blank">{{ article_explore_result.final_url }}</a>
+        </div>
+        <div class="alert alert-success">
+            <strong>字段覆盖情况：</strong>
+            {% for field_name, coverage in article_explore_result.coverage.items() %}
+            <span class="label label-{% if coverage.status == 'ready' %}success{% else %}warning{% endif %}" style="margin-right: 6px;">
+                {{ coverage.label }}{% if coverage.count %} {{ coverage.count }} 组候选{% else %} 待补齐{% endif %}
+            </span>
+            {% endfor %}
+        </div>
+        <div style="margin-bottom: 12px;">
+            <button class="btn btn-primary btn-sm apply-all-article-candidates" type="button">
+                一键应用各字段首选候选
+            </button>
+        </div>
+        {% for field_name, field_label in (('title', '标题'), ('content', '正文'), ('src_time', '时间'), ('source', '来源')) %}
+        <div class="article-candidate-group" data-field="{{ field_name }}">
+        <h5>{{ field_label }}候选</h5>
+        {% set candidates = article_explore_result.field_candidates[field_name] %}
+        {% if candidates %}
+            {% for candidate in candidates %}
+            <div class="widget-box transparent">
+                <div class="widget-body">
+                    <div class="widget-main no-padding" style="padding: 10px 0;">
+                        <div><strong>候选值：</strong>{{ candidate.preview }}</div>
+                        {% if candidate.mode == 'xpath' %}
+                        <div style="margin-top: 6px;"><strong>建议 XPath：</strong><code>{{ candidate.rule }}</code></div>
+                        {% else %}
+                        <div style="margin-top: 6px;"><strong>建议指定值：</strong><code>{{ candidate.value }}</code></div>
+                        {% endif %}
+                        <div style="margin-top: 6px;">{{ candidate.reason }}</div>
+                        <button
+                            class="btn btn-sm btn-success apply-article-candidate"
+                            type="button"
+                            data-field="{{ field_name }}"
+                            data-mode="{{ candidate.mode }}"
+                            data-value="{{ candidate.rule if candidate.mode == 'xpath' else candidate.value }}"
+                        >
+                            应用到{{ field_label }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+        <div class="alert alert-warning">当前还没有识别到合适的{{ field_label }}候选。</div>
+        {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    <div class="col-xs-12 col-lg-7">
+        <h5>文章预览</h5>
+        <div class="task-note" style="margin-bottom: 10px;">
+            当前预览内容与建议获取方式保持一致，按“{{ article_explore_result.fetch_mode.label }}”得到的页面结果展示。
+        </div>
+        <div class="preview-stage">
+            <iframe
+                class="explore-preview-frame"
+                title="文章预览"
+                data-preview-kind="article"
+                sandbox="allow-scripts"
+                srcdoc="{{ article_explore_result.preview_html|e }}"
+            ></iframe>
+            <div class="preview-inspector" data-preview-kind="article">
+                <h6>点击文章节点，直接提取字段 XPath</h6>
+                <div class="preview-inspector-empty">当前还没有选中节点。</div>
+                <div class="preview-inspector-body" style="display: none;">
+                    <div class="preview-inspector-meta"></div>
+                    <div><strong>节点 XPath</strong><code class="preview-node-xpath"></code></div>
+                    <div style="margin-top: 8px;"><strong>文本 XPath</strong><code class="preview-text-xpath"></code></div>
+                    <div style="margin-top: 8px;"><strong>正文容器 XPath</strong><code class="preview-content-xpath"></code></div>
+                    <div style="margin-top: 8px;"><strong>属性 XPath</strong><code class="preview-value-xpath"></code></div>
+                    <div class="preview-inspector-actions">
+                        <button class="btn btn-sm btn-primary preview-apply-title" type="button">应用为标题</button>
+                        <button class="btn btn-sm btn-success preview-apply-content" type="button">应用为正文</button>
+                        <button class="btn btn-sm btn-warning preview-apply-time" type="button">应用为时间</button>
+                        <button class="btn btn-sm btn-info preview-apply-source-xpath" type="button">应用为来源 XPath</button>
+                        <button class="btn btn-sm btn-default preview-apply-source-specify" type="button">应用为来源指定值</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="task-note">
+            文章预览默认高亮标题、正文和时间的首选候选。你也可以直接点击文章里的节点，提取并回填字段 XPath。
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="alert alert-info">
+    先从入口页候选里选一篇文章，或手工输入文章地址。系统会在这里给出标题、正文、时间、来源的候选规则。
+</div>
+{% endif %}

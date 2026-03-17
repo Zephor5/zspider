@@ -1,0 +1,133 @@
+<div
+    class="explore-panel-root"
+    data-fetch-label="{{ explore_result.fetch_mode.label if explore_result else '' }}"
+    data-recommended-spider="{{ explore_result.fetch_mode.recommended_spider if explore_result else '' }}"
+    data-fetch-reason="{{ explore_result.fetch_mode.reason if explore_result else '' }}"
+    data-primary-article-url="{{ explore_result.primary_article_url if explore_result else '' }}"
+    data-suggested-task-name="{{ explore_result.suggested_task_name if explore_result else '' }}"
+>
+    {% if explore_error %}
+    <div class="alert alert-warning">{{ explore_error }}</div>
+    {% endif %}
+
+    {% if explore_result %}
+    <div class="row">
+        <div class="col-xs-12 col-lg-5">
+            <div class="alert alert-info">
+                <strong>页面标题：</strong>{{ explore_result.title }}<br>
+                <strong>实际地址：</strong><a href="{{ explore_result.final_url }}" target="_blank">{{ explore_result.final_url }}</a>
+            </div>
+            <div class="alert alert-success">
+                <strong>获取方式建议：</strong>{{ explore_result.fetch_mode.label }}<br>
+                {{ explore_result.fetch_mode.reason }}
+            </div>
+            <h5>候选链接区域</h5>
+            {% if explore_result.candidates %}
+                {% for candidate in explore_result.candidates %}
+                <div class="widget-box transparent">
+                    <div class="widget-header">
+                        <h5 class="widget-title lighter">候选 {{ loop.index }}：命中 {{ candidate.count }} 条链接</h5>
+                    </div>
+                    <div class="widget-body">
+                        <div class="widget-main no-padding">
+                            <div style="padding: 10px 0;">
+                                <div><strong>建议 XPath：</strong><code>{{ candidate.xpath }}</code></div>
+                                <div style="margin-top: 6px;">{{ candidate.reason }}</div>
+                                {% if candidate.sample_texts %}
+                                <div style="margin-top: 8px;"><strong>示例标题：</strong></div>
+                                <ul>
+                                    {% for text in candidate.sample_texts %}
+                                    <li>{{ text }}</li>
+                                    {% endfor %}
+                                </ul>
+                                {% endif %}
+                                <button
+                                    class="btn btn-sm btn-primary apply-index-candidate"
+                                    type="button"
+                                    data-xpath="{{ candidate.xpath }}"
+                                    data-spider="{{ explore_result.fetch_mode.recommended_spider }}"
+                                >
+                                    应用这组候选
+                                </button>
+                                {% if candidate.sample_urls %}
+                                <button
+                                    class="btn btn-sm btn-success use-sample-article"
+                                    type="button"
+                                    data-article-url="{{ candidate.sample_urls[0] }}"
+                                >
+                                    用第一篇文章继续探索
+                                </button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+            <div class="alert alert-warning">
+                当前页面没有识别到足够稳定的候选链接区域。可以先检查入口地址是否正确，或考虑切换到浏览器渲染方式。
+            </div>
+            {% endif %}
+        </div>
+        <div class="col-xs-12 col-lg-7">
+            <h5>页面预览</h5>
+            <div class="task-note" style="margin-bottom: 10px;">
+                当前预览内容与建议获取方式保持一致，按“{{ explore_result.fetch_mode.label }}”得到的页面结果展示。
+            </div>
+            <div class="preview-stage">
+                <iframe
+                    class="explore-preview-frame"
+                    title="页面预览"
+                    data-preview-kind="index"
+                    sandbox="allow-scripts"
+                    srcdoc="{{ explore_result.preview_html|e }}"
+                ></iframe>
+                <div class="preview-inspector" data-preview-kind="index">
+                    <h6>点击预览中的文章或区域，提取整块区域的链接 XPath</h6>
+                    <div class="preview-inspector-empty">当前还没有选中节点。</div>
+                    <div class="preview-inspector-body" style="display: none;">
+                        <div class="preview-inspector-meta"></div>
+                        <div><strong>节点 XPath</strong><code class="preview-node-xpath"></code></div>
+                        <div style="margin-top: 8px;"><strong>区域链接 XPath</strong><code class="preview-region-link-xpath"></code></div>
+                        <div class="preview-region-candidates" style="margin-top: 8px;"></div>
+                        <div style="margin-top: 8px;"><strong>单链接 XPath</strong><code class="preview-link-xpath"></code></div>
+                        <div class="preview-inspector-actions">
+                            <button class="btn btn-sm btn-primary preview-apply-index-region" type="button">应用首选区域 XPath</button>
+                            <button class="btn btn-sm btn-default preview-apply-index-link" type="button">应用单链接 XPath</button>
+                        </div>
+                    </div>
+                    <div class="preview-annotation-panel" style="margin-top: 14px;">
+                        <h6>多点标注模式</h6>
+                        <div class="task-note" style="margin-top: 0;">
+                            对索引页可先点选几个真正需要的文章链接，再根据这些标注反推更稳的 XPath。
+                        </div>
+                        <div class="preview-annotation-empty">当前还没有加入标注的目标链接。</div>
+                        <div class="preview-annotation-body" style="display: none;">
+                            <div class="preview-annotation-list"></div>
+                            <div class="preview-inspector-actions">
+                                <button class="btn btn-sm btn-info preview-add-index-marker" type="button">把当前链接加入标注</button>
+                                <button class="btn btn-sm btn-primary preview-infer-index-xpath" type="button">根据标注推断 XPath</button>
+                                <button class="btn btn-sm btn-default preview-clear-index-markers" type="button">清空标注</button>
+                            </div>
+                            <div class="preview-infer-result" style="display: none; margin-top: 10px;">
+                                <div><strong>推断 XPath</strong><code class="preview-infer-xpath"></code></div>
+                                <div class="task-note preview-infer-reason" style="margin-top: 6px;"></div>
+                                <div class="preview-inspector-actions" style="margin-top: 8px;">
+                                    <button class="btn btn-sm btn-success preview-apply-inferred-index" type="button">应用推断结果</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="task-note">
+                页面预览默认高亮第一组候选链接。点击真实文章或它所在区域时，系统会优先给出可用于整块链接提取的区域 XPath。
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        先输入入口页地址并点击“探索入口页”。系统会在这里展示页面获取方式建议、候选链接区域和页面预览。
+    </div>
+    {% endif %}
+</div>

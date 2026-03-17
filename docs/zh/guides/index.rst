@@ -8,6 +8,7 @@
 
    developer_guide
    operations
+   page_explorer_temp_notes
    roadmap_overview
    roadmap_strategy
    roadmap_execution

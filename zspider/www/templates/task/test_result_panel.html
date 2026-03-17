@@ -1,0 +1,134 @@
+<div class="test-result-layout{% if modal_mode %} test-result-layout-modal{% endif %}">
+    <div class="test-result-main">
+        <div class="test-result-card">
+            <h3>{% if target == 'index' %}测试索引结果{% else %}测试新闻结果{% endif %}</h3>
+            <div class="test-result-meta">
+                这一步只验证当前配置能否抓到入口或解析出字段；测试结果会保留整份表单，方便你继续测试或直接保存。
+            </div>
+            {% if done -%}
+                {% if target == 'index' %}
+                    <h4>抓取到的入口链接</h4>
+                    {% if index_result_rows %}
+                    <ol class="test-result-list">
+                        {% for row in index_result_rows %}
+                        <li>
+                            {% if row.title %}
+                            <strong>{{ row.title }}</strong><br>
+                            {% endif %}
+                            <a href="{{ row.url }}" target="_blank">{{ row.url }}</a>
+                        </li>
+                        {% endfor %}
+                    </ol>
+                    {% elif res %}
+                    <ol class="test-result-list">
+                        {% for r in res %}
+                        <li><a href="{{ r.url }}" target="_blank">{{ r.url }}</a></li>
+                        {% endfor %}
+                    </ol>
+                    {% else %}
+                    <div class="test-result-empty">没有抓到任何入口链接，请回到任务编辑页检查入口页配置。</div>
+                    {% endif %}
+                {% else %}
+                    <h4>字段预览</h4>
+                    {% if res %}
+                        {% for field in res.0 %}
+                        <div class="test-result-field">
+                            <strong>{{ field }}</strong>
+                            <pre>{{ res.0[field] }}</pre>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                    <div class="test-result-empty">没有解析出字段内容，请检查详情页 XPath、正则或指定值配置。</div>
+                    {% endif %}
+                {% endif %}
+            {% else %}
+                <h4>测试未通过</h4>
+                {% if form.error %}
+                <div class="alert alert-warning">{{ form.error }}</div>
+                {% endif %}
+                {% for field in form %}{% if field.errors %}<div class="alert alert-warning">{{ field.label.text }}：{{ field.errors[0] }}</div>{% endif %}{% endfor %}
+                {% for field in conf_form %}{% if field.errors %}<div class="alert alert-warning">{{ field.label.text }}：{{ field.errors[0] }}</div>{% endif %}{% endfor %}
+                {% for article_field_form in article_field_forms %}
+                    {% if article_field_form.error %}<div class="alert alert-warning">{{ article_field_form.error }}</div>{% endif %}
+                    {% for field in article_field_form %}{% if field.errors %}<div class="alert alert-warning">{{ field.label.text }}：{{ field.errors[0] }}</div>{% endif %}{% endfor %}
+                {% endfor %}
+            {%- endif %}
+        </div>
+    </div>
+    <div class="test-result-side">
+        <div class="test-result-card">
+            <h4>下一步怎么做</h4>
+            <ol class="test-action-list">
+                {% if target == 'index' %}
+                <li>先看入口列表是不是目标文章集合，确认标题、链接数量和范围都合理。</li>
+                <li>索引通过后，继续做新闻测试，确认字段解析是否正确。</li>
+                <li>新闻测试通过后，再决定保存为草稿还是保存并启动。</li>
+                {% else %}
+                <li>先看标题、正文、时间、来源是不是解析正确，尤其注意空字段和脏文本。</li>
+                <li>如果字段结果符合预期，这一页就可以直接进入保存动作。</li>
+                <li>如果结果不对，回到配置区修改 XPath、正则或指定值后重新测试。</li>
+                {% endif %}
+            </ol>
+        </div>
+        <div class="test-result-card">
+            <h4>基于这次测试继续操作</h4>
+            {% if not modal_mode %}
+            <div class="test-action-group">
+                <form method="post" action="{{ return_path }}">
+                    {% for name, value in submitted_items %}
+                    <input type="hidden" name="{{ name }}" value="{{ value }}">
+                    {% endfor %}
+                    <input type="hidden" name="_return_edit" value="1">
+                    <button class="btn btn-default" type="submit">返回继续编辑</button>
+                </form>
+            </div>
+            {% endif %}
+            {% if target == 'index' %}
+            <div class="test-action-group">
+                <form method="post" action="{{ test_article_url }}"{% if modal_mode %} class="modal-test-form"{% endif %}>
+                    {% for name, value in submitted_items %}
+                    <input type="hidden" name="{{ name }}" value="{{ value }}">
+                    {% endfor %}
+                    <button class="btn btn-primary" type="submit">继续测试新闻</button>
+                </form>
+            </div>
+            {% else %}
+            <div class="test-action-group">
+                <form method="post" action="{{ test_index_url }}"{% if modal_mode %} class="modal-test-form"{% endif %}>
+                    {% for name, value in submitted_items %}
+                    <input type="hidden" name="{{ name }}" value="{{ value }}">
+                    {% endfor %}
+                    <button class="btn btn-info" type="submit">回头重测索引</button>
+                </form>
+            </div>
+            {% endif %}
+            {% if done and target == 'article' %}
+            <div class="test-action-group">
+                <form method="post" action="{{ save_draft_url }}">
+                    {% for name, value in submitted_items %}
+                    <input type="hidden" name="{{ name }}" value="{{ value }}">
+                    {% endfor %}
+                    <button class="btn btn-success" type="submit">直接保存</button>
+                </form>
+                <form method="post" action="{{ save_start_url }}">
+                    {% for name, value in submitted_items %}
+                    <input type="hidden" name="{{ name }}" value="{{ value }}">
+                    {% endfor %}
+                    <button class="btn btn-warning" type="submit">保存并启动</button>
+                </form>
+            </div>
+            {% endif %}
+            {% if modal_mode %}
+            <div class="test-action-group">
+                <button class="btn btn-default" type="button" data-dismiss="modal">关闭测试结果</button>
+            </div>
+            {% endif %}
+        </div>
+        <div class="test-result-card">
+            <h4>测试与保存的分工</h4>
+            <div class="test-result-meta">
+                测试负责验证结果，保存负责把这份配置真正写入任务系统。现在你可以在结果层里直接衔接这两个动作，不需要重新填写表单。
+            </div>
+        </div>
+    </div>
+</div>

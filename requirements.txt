@@ -19,4 +19,4 @@ bcrypt~=5.0.0
 # locked in constraints/py39.txt so local development and CI resolve the same
 # stack.
 scrapy~=2.8.0
-selenium==4.8.3
+playwright==1.54.0

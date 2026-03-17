@@ -1,110 +1,239 @@
 {% extends "base.html" %}
+{% macro render_field_row(field, input_col='col-xs-12 col-sm-8') -%}
+{% if field.type == 'CSRFTokenField' %}
+{{ field }}
+{% else %}
+<div class="form-group{% if field.errors %} has-error{% endif %}">
+    {{ field.label(class_='col-sm-3 control-label no-padding-right') }}
+    <div class="{{ input_col }}">
+        {{ field(class='col-sm-12') }}
+        {% if field.description %}
+        <span class="help-button" data-rel="popover" data-trigger="hover" data-placement="left" data-content="{{ field.description }}" data-original-title="{{ field.label.text }}">?</span>
+        {% endif %}
+    </div>
+    {% if field.errors %}
+    <div class="help-block col-xs-12 col-sm-reset inline">{{ field.errors[0] }}</div>
+    {% endif %}
+</div>
+{% endif %}
+{%- endmacro %}
 {% block page_style %}
 <style>
-.task-page-grid{
+.task-builder-layout{
     display: flex;
     flex-wrap: wrap;
-    gap: 18px;
+    gap: 20px;
 }
-.task-main-column{
+.task-explorer-column{
     flex: 1 1 760px;
 }
-.task-side-column{
-    flex: 0 0 320px;
+.task-config-column{
+    flex: 0 0 420px;
 }
 .task-card{
     border: 1px solid #dce8f1;
-    border-radius: 4px;
-    background: #fff;
+    border-radius: 6px;
+    background: #ffffff;
     margin-bottom: 18px;
+    box-shadow: 0 2px 10px rgba(12, 68, 110, 0.05);
+}
+.task-card-head{
     padding: 16px 18px;
+    border-bottom: 1px solid #edf3f8;
 }
-.task-card h3,
-.task-card h4{
-    margin-top: 0;
-    margin-bottom: 8px;
+.task-card-head h3,
+.task-card-head h4,
+.task-card-head h5{
+    margin: 0 0 6px;
 }
-.task-card p:last-child{
-    margin-bottom: 0;
+.task-card-head p{
+    margin: 0;
+    color: #667788;
 }
-.task-workflow-card{
-    background: linear-gradient(180deg, #f8fbff 0%, #eef6ff 100%);
+.task-card-body{
+    padding: 16px 18px 18px;
 }
-.task-workflow-card ol{
-    margin-bottom: 8px;
-    padding-left: 18px;
+.task-hero-card{
+    background: linear-gradient(135deg, #f7fbff 0%, #eef8f3 100%);
 }
-.task-card .btn,
-.task-card a{
+.task-hero-steps{
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 12px;
+    margin-top: 14px;
+}
+.task-hero-step{
+    border: 1px solid #dce8f1;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.82);
+    padding: 12px 14px;
+}
+.task-hero-step strong{
+    display: block;
+    margin-bottom: 6px;
+    color: #0b5cad;
+}
+.task-explorer-toolbar{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 14px;
+}
+.task-explorer-toolbar input{
+    flex: 1 1 420px;
+}
+.task-note{
+    color: #667788;
+    margin-top: 10px;
+}
+.explorer-loading{
+    border: 1px solid #dce8f1;
+    border-radius: 6px;
+    background: linear-gradient(135deg, #f7fbff 0%, #eef8f3 100%);
+    padding: 18px 16px;
+    color: #365168;
+}
+.explorer-loading strong{
+    display: block;
+    margin-bottom: 6px;
+    color: #0b5cad;
+}
+.explorer-loading.is-error{
+    background: #fff8f2;
+    border-color: #f2dcc5;
+    color: #8a5d00;
+}
+.task-explorer-toolbar .btn[disabled]{
+    opacity: 0.7;
+}
+.preview-stage{
+    border: 1px solid #dce8f1;
+    border-radius: 6px;
+    overflow: hidden;
+    background: #f8fbfd;
+}
+.explore-preview-frame{
+    width: 100%;
+    height: 640px;
+    border: 0;
+    background: #eef3f8;
+}
+.preview-inspector{
+    border-top: 1px solid #e3edf5;
+    background: #ffffff;
+    padding: 14px 16px;
+}
+.preview-inspector h6{
+    margin: 0 0 8px;
+}
+.preview-inspector-meta{
+    color: #667788;
+    margin-bottom: 10px;
+}
+.preview-inspector code{
+    display: block;
+    white-space: pre-wrap;
+    word-break: break-all;
+    padding: 8px 10px;
+    border-radius: 4px;
+    background: #f4f7fa;
+    color: #1f3344;
+}
+.preview-inspector-actions{
+    margin-top: 10px;
+}
+.preview-inspector-actions .btn{
     margin-right: 8px;
     margin-bottom: 8px;
 }
-.task-action-note{
-    color: #666;
-    margin-top: 10px;
+.preview-inspector-empty{
+    color: #667788;
 }
-.task-stage-list{
-    margin: 0;
-    padding-left: 18px;
+.task-config-card{
+    position: sticky;
+    top: 18px;
 }
-.task-stage-list li{
-    margin-bottom: 8px;
+.task-config-status{
+    border: 1px solid #e5edf4;
+    border-radius: 6px;
+    background: #f8fbfd;
+    padding: 12px 14px;
+    margin-bottom: 14px;
 }
-.task-stage-list strong{
+.task-config-status strong{
     color: #0b5cad;
 }
-.task-section-card{
-    border: 1px solid #e7edf3;
-    border-radius: 4px;
-    background: #fff;
-    margin-bottom: 16px;
+.task-config-section{
+    border-top: 1px solid #edf3f8;
+    margin-top: 16px;
+    padding-top: 16px;
 }
-.task-section-head{
-    padding: 14px 18px;
-    border-bottom: 1px solid #eef3f7;
-    background: #fbfdff;
+.task-config-section:first-child{
+    border-top: 0;
+    margin-top: 0;
+    padding-top: 0;
 }
-.task-section-head h4{
-    margin: 0 0 6px;
+.task-config-section h5{
+    margin-top: 0;
+    margin-bottom: 6px;
 }
-.task-section-head p{
-    margin: 0;
-    color: #666;
+.task-config-section p{
+    color: #667788;
+    margin-bottom: 12px;
 }
-.task-section-body{
-    padding-top: 12px;
+.article-field-block{
+    border-top: 1px dashed #dce8f1;
+    padding-top: 14px;
+    margin-top: 14px;
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
 }
-.task-action-card{
-    background: #f9fbfc;
-}
-.task-action-group{
-    border-top: 1px solid #e7edf3;
-    padding-top: 12px;
-    margin-top: 12px;
-}
-.task-action-group:first-child{
+.article-field-block:first-child{
     border-top: 0;
     padding-top: 0;
     margin-top: 0;
 }
-.task-action-group h5{
-    margin-top: 0;
-    margin-bottom: 8px;
+.article-field-block-active{
+    background: #f7fbff;
+    box-shadow: inset 0 0 0 1px #b8d8f2;
 }
-.task-action-group p{
-    color: #666;
-    margin-bottom: 10px;
+.task-form-actions{
+    border-top: 1px solid #edf3f8;
+    padding-top: 16px;
+    margin-top: 16px;
+}
+.task-action-group{
+    border-top: 1px solid #edf3f8;
+    margin-top: 14px;
+    padding-top: 14px;
+}
+.task-action-group:first-child{
+    border-top: 0;
+    margin-top: 0;
+    padding-top: 0;
 }
 .task-action-group .btn{
-    min-width: 120px;
+    margin-right: 8px;
+    margin-bottom: 8px;
 }
-@media (max-width: 991px){
-    .task-side-column{
+.task-shortcuts .btn{
+    margin-right: 8px;
+    margin-bottom: 8px;
+}
+@media (max-width: 1199px){
+    .task-config-column{
         flex-basis: 100%;
     }
-    .task-main-column{
-        flex-basis: 100%;
+    .task-config-card{
+        position: static;
     }
+}
+.test-result-layout-modal{
+    gap: 14px;
+}
+.test-result-layout-modal .test-result-main,
+.test-result-layout-modal .test-result-side{
+    flex-basis: 100%;
 }
 </style>
 {% endblock %}
@@ -121,8 +250,8 @@
         <li>
             <a href="/task/list">任务管理</a>
         </li>
-        <li class="active">{% if is_add %}添加任务{% else %}编辑任务{%endif%}</li>
-    </ul><!-- /.breadcrumb -->
+        <li class="active">{% if is_add %}添加任务{% else %}编辑任务{% endif %}</li>
+    </ul>
 </div>
 <div class="page-content">
 {% include 'ace-settings.html' %}
@@ -131,251 +260,969 @@
             任务管理
             <small>
                 <i class="ace-icon fa fa-angle-double-right"></i>
-                {% if is_add %}添加任务{% else %}编辑任务{%endif%}
+                {% if is_add %}添加任务{% else %}编辑任务{% endif %}
             </small>
         </h1>
-    </div><!-- /.page-header -->
+    </div>
     <div class="row">
         <div class="col-xs-12">
-            <div class="task-page-grid">
-                <div class="task-main-column">
-                    <div class="task-card task-workflow-card">
-                        <h4>{% if is_add %}创建任务的完整流程{% else %}编辑任务的完整流程{% endif %}</h4>
-                        <ol class="task-stage-list">
-                            <li><strong>先配任务：</strong>填写任务基本信息、解析配置和字段规则。</li>
-                            <li><strong>先测索引：</strong>确认入口页能抓到预期链接，避免后续字段测试落空。</li>
-                            <li><strong>再测新闻：</strong>确认标题、正文、时间、来源等字段解析正确。</li>
-                            <li><strong>最后保存：</strong>配置确认无误后再保存，是否立即启动由你在最后一步决定。</li>
-                        </ol>
-                        <div class="task-action-note">
-                            测试页现在会保留整份表单内容，测完可以直接返回继续改，也可以在结果页直接保存或保存并启动。
+            <div class="task-builder-layout">
+                <div class="task-explorer-column">
+                    <div class="task-card task-hero-card">
+                        <div class="task-card-head">
+                            <h3>{% if is_add %}先看页面，再确认规则{% else %}先复核页面，再调整规则{% endif %}</h3>
+                            <p>任务创建主路径从入口页开始。先输入入口页地址，让系统判断页面获取方式并识别候选链接，再把确认结果写入右侧配置。</p>
+                        </div>
+                        <div class="task-card-body">
+                            <div class="task-hero-steps">
+                                <div class="task-hero-step">
+                                    <strong>1. 输入入口页</strong>
+                                    先让系统拿到真实页面，再决定后续配置方式。
+                                </div>
+                                <div class="task-hero-step">
+                                    <strong>2. 确认候选链接</strong>
+                                    在页面预览和候选链接列表里确认入口是否正确。
+                                </div>
+                                <div class="task-hero-step">
+                                    <strong>3. 回填任务配置</strong>
+                                    把候选 XPath 和抓取方式建议写入右侧表单。
+                                </div>
+                                <div class="task-hero-step">
+                                    <strong>4. 测试并保存</strong>
+                                    用索引测试、文章测试验证，再决定保存还是保存并启动。
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <form id='task_form' class="form-horizontal" role="form" method="POST">
-                {% if form.error %}
-                    <div class="alert alert-warning">
-                        <button type="button" class="close" data-dismiss="alert">
-                            <i class="ace-icon fa fa-times"></i>
-                        </button>{{ form.error }}
-                    </div>
-                {% endif %}
-                <input id="fields_len" name="fields_len" type="hidden" value="{{ fields_len }}">
-                <input id="return_path" name="return_path" type="hidden" value="{{ request.path }}">
-                <input id="save_path" name="save_path" type="hidden" value="{{ request.path }}">
-                <div class="task-section-card">
-                    <div class="task-section-head">
-                        <h4>第一步：任务基础信息</h4>
-                        <p>这部分定义任务身份、使用的抓取程序以及调度频率。</p>
-                    </div>
-                    <div class="task-section-body">
-                {% for field in form %}
-                {% if field.type == 'CSRFTokenField' %}{{ field }}{% else %}
-                <div class="form-group{% if field.errors %} has-error{% endif %}">{{ field.label(class_='col-sm-3 control-label no-padding-right') }}<div class="col-xs-12 col-sm-4">{{ field(class='col-sm-9') }}{% if field.description %}<span class="help-button" data-rel="popover" data-trigger="hover" data-placement="left" data-content="{{ field.description }}" title="" data-original-title="{{ field.label.text }}">?</span>{% endif %}</div>{% if field.errors %}<div class="help-block col-xs-12 col-sm-reset inline">{{ field.errors[0] }}</div>{% endif %}</div>{% endif %}
-                {% endfor %}
-                    </div>
-                </div>
-                <div class="task-section-card">
-                    <div class="task-section-head">
-                        <h4>第二步：入口与解析配置</h4>
-                        <p>这里决定任务从哪里取入口页，以及解析程序还需要哪些额外配置。</p>
-                    </div>
-                    <div class="task-section-body">
-                        <div id="task_form_conf">{% include 'task/form_conf.html' %}</div>
-                    </div>
-                </div>
-                <div class="task-section-card">
-                    <div class="task-section-head">
-                        <h4>第三步：文章字段规则</h4>
-                        <p>至少把标题、正文、时间、来源配置清楚。可以用 XPath、正则或指定值。</p>
-                    </div>
-                    <div class="task-section-body">
-                {% for article_field_form in article_field_forms -%}{% set i=loop.index-1 %}<div class="hr hr8 dotted"></div>{% for field in article_field_form %}
-                {% if field.type != 'CSRFTokenField' %}
-                <div class="form-group{% if field.errors %} has-error{% endif %} fields_div">{{ field.label(class_='col-sm-3 control-label no-padding-right') }}<div class="col-xs-12 col-sm-5">{{ field(id=field.name+'_'+i|string, class='col-sm-9') }}{% if field.description %}<span class="help-button" data-rel="popover" data-trigger="hover" data-placement="left" data-content="{{ field.description }}" title="" data-original-title="{{ field.label.text }}">?</span>{% endif %}</div>{% if field.errors %}<div class="help-block col-xs-12 col-sm-reset inline">{{ field.errors[0] }}</div>{% endif %}</div>{% endif %}
-                {% endfor %}
-                {% if article_field_form.error %}
-                    <div class="alert alert-warning">
-                        <button type="button" class="close" data-dismiss="alert">
-                            <i class="ace-icon fa fa-times"></i>
-                        </button>{{ article_field_form.error }}
-                    </div>
-                {% endif %}
-                {%- endfor %}
-                    </div>
-                </div>
-                <div class="task-section-card task-action-card">
-                    <div class="task-section-head">
-                        <h4>第四步：测试并保存</h4>
-                        <p>先验证抓取结果，再决定保存为草稿还是直接启动任务。</p>
-                    </div>
-                    <div class="task-section-body">
-                <div class="clearfix form-actions">
-                    <div class="col-md-offset-2 col-md-10">
-                        <button id="add_field" class="btn btn-info" type="button">
-                            <i class="ace-icon fa fa-plus bigger-110"></i>
-                            添加字段
-                        </button>
-                        <button id="del_field" class="btn" type="button">
-                            <i class="ace-icon fa fa-minus bigger-110"></i>
-                            删除字段
-                        </button>{% if not is_add %}
-                        <button id="force-save" class="btn btn-white" type="submit">
-                            <i class="ace-icon fa fa-check bigger-110"></i>
-                            另存为新任务
-                        </button>
-                        <button id="force-save-start" class="btn btn-white" type="submit">
-                            <i class="ace-icon fa fa-check bigger-110"></i>
-                            另存并启动
-                        </button>{% endif %}
-                    </div>
-                    <div class="col-md-12 hr hr8"></div>
-                    <div class="col-md-offset-2 col-md-10">
-                        <div class="task-action-group">
-                            <h5>先做测试</h5>
-                            <p>测试会打开结果页，并保留当前所有表单内容，方便你测试后直接继续后续动作。</p>
-                        <button id="test-index" class="btn btn-info" type="submit">
-                            <i class="ace-icon fa fa-plus bigger-110"></i>
-                            测试索引
-                        </button>
-                        <button id="test-article" class="btn btn-primary" type="submit">
-                            <i class="ace-icon fa fa-minus bigger-110"></i>
-                            测试新闻
-                        </button>
-                        </div>
-                        <div class="task-action-group">
-                            <h5>确认后保存</h5>
-                            <p>“保存”保留为草稿或已编辑配置；“保存并启动”会在保存后立刻启用任务。</p>
-                        <button id="normal_submit" class="btn btn-success" type="submit">
-                            <i class="ace-icon fa fa-check bigger-110"></i>
-                            保存
-                        </button>
-                        {% if is_add or not is_active %}
-                        <button id="submit_start" class="btn btn-warning" type="submit">
-                            <i class="ace-icon fa fa-check bigger-110"></i>
-                            保存并启动
-                        </button>{% endif %}
-                        </div>
-                    </div>
-                </div>
-                    </div>
-                </div>
-            </form>
-                </div>
-                <div class="task-side-column">
+
                     <div class="task-card">
-                        <h4>当前步骤提示</h4>
-                        <ol class="task-stage-list">
-                            <li><strong>基础信息：</strong>先把任务名、抓取程序、解析程序和定时策略定下来。</li>
-                            <li><strong>解析配置：</strong>根据解析程序补充入口页和详情页需要的配置项。</li>
-                            <li><strong>字段规则：</strong>优先把 `title`、`content`、`src_time`、`source` 配全。</li>
-                            <li><strong>测试回执：</strong>索引测试看链接列表，新闻测试看字段预览。</li>
-                        </ol>
+                        <div class="task-card-head">
+                            <h4>入口页探索面板</h4>
+                            <p>这里是当前任务创建的主要工作区。系统会先判断页面更适合直接抓取还是浏览器渲染，并给出候选链接区域。</p>
+                        </div>
+                        <div class="task-card-body">
+                            <div class="task-explorer-toolbar">
+                                <input id="explore-url" class="form-control" type="text" value="{{ explore_url }}" placeholder="先输入入口页地址，例如 https://example.com/news/" />
+                                <button id="load-index-explorer" class="btn btn-primary" type="button">
+                                    <i class="ace-icon fa fa-search bigger-110"></i>
+                                    探索入口页
+                                </button>
+                            </div>
+                            <div id="index-explorer-panel">
+                                {% include 'task/explore_panel.html' %}
+                            </div>
+                            <div class="task-note">
+                                系统建议只是起点。你可以先应用候选规则，再结合右侧表单和测试结果继续修正。
+                            </div>
+                        </div>
                     </div>
+
+                    <div class="task-card">
+                        <div class="task-card-head">
+                            <h4>文章页字段探索面板</h4>
+                            <p>入口页候选确认后，直接选一篇样例文章继续探索标题、正文、时间和来源，并把候选规则回填到右侧字段配置。</p>
+                        </div>
+                        <div class="task-card-body">
+                            <div class="task-explorer-toolbar">
+                                <input id="explore-article-url" class="form-control" type="text" value="{{ article_explore_url }}" placeholder="从左侧候选里带入文章地址，或手工输入一篇文章 URL" />
+                                <button id="load-article-explorer" class="btn btn-success" type="button">
+                                    <i class="ace-icon fa fa-file-text-o bigger-110"></i>
+                                    探索文章页
+                                </button>
+                            </div>
+                            <div id="article-explorer-panel">
+                                {% include 'task/explore_article_panel.html' %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="task-config-column">
+                    <div class="task-card task-config-card">
+                        <div class="task-card-head">
+                            <h4>任务配置承接区</h4>
+                            <p>左侧页面探索负责找候选、给建议；右侧表单负责把确认后的规则落到任务配置里。</p>
+                        </div>
+                        <div class="task-card-body">
+                            <form id="task_form" class="form-horizontal" role="form" method="POST">
+                                {% if form.error %}
+                                <div class="alert alert-warning">
+                                    <button type="button" class="close" data-dismiss="alert">
+                                        <i class="ace-icon fa fa-times"></i>
+                                    </button>{{ form.error }}
+                                </div>
+                                {% endif %}
+                                <input id="fields_len" name="fields_len" type="hidden" value="{{ fields_len }}">
+                                <input id="return_path" name="return_path" type="hidden" value="{{ request.path }}">
+                                <input id="save_path" name="save_path" type="hidden" value="{{ request.path }}">
+                                {{ form.csrf_token }}
+
+                                <div class="task-config-status">
+                                    <strong>当前页面获取建议：</strong>
+                                    <span id="fetch-mode-summary">等待左侧入口页探索结果</span>
+                                    <div id="fetch-mode-reason" class="task-note">系统会在你探索入口页后，自动更新抓取方式建议并同步到抓取程序字段。</div>
+                                </div>
+
+                                <div class="task-config-section">
+                                    <h5>任务基础信息</h5>
+                                    <p>先确定任务名与调度参数，抓取程序由左侧探索优先给出建议，必要时再手工调整。</p>
+                                    {{ render_field_row(form.name) }}
+                                    {{ render_field_row(form.spider) }}
+                                    {{ render_field_row(form.parser) }}
+                                    {{ render_field_row(form.cron) }}
+                                    {{ render_field_row(form.is_login) }}
+                                </div>
+
+                                <div class="task-config-section">
+                                    <h5>入口页与解析配置</h5>
+                                    <p>这里承接左侧探索结果。入口 URL 会和左侧输入保持同步，候选链接应用后会回填到这里。</p>
+                                    <div id="task_form_conf">
+                                        {% include 'task/form_conf.html' %}
+                                    </div>
+                                </div>
+
+                                <div class="task-config-section">
+                                    <h5>文章字段规则</h5>
+                                    <p>标题、正文、时间、来源沿用同一套“页面预览 -> 候选 -> 回填 -> 测试”的方式继续配置。</p>
+                                    <div id="article-fields-list">
+                                        {% for article_field_form in article_field_forms %}
+                                        {% set i = loop.index - 1 %}
+                                        <div class="article-field-block">
+                                            {% for field in article_field_form %}
+                                            {% if field.type != 'CSRFTokenField' %}
+                                            <div class="form-group{% if field.errors %} has-error{% endif %} fields_div">
+                                                {{ field.label(class_='col-sm-3 control-label no-padding-right') }}
+                                                <div class="col-xs-12 col-sm-8">
+                                                    {{ field(id=field.name+'_'+i|string, class='col-sm-12') }}
+                                                    {% if field.description %}
+                                                    <span class="help-button" data-rel="popover" data-trigger="hover" data-placement="left" data-content="{{ field.description }}" data-original-title="{{ field.label.text }}">?</span>
+                                                    {% endif %}
+                                                </div>
+                                                {% if field.errors %}
+                                                <div class="help-block col-xs-12 col-sm-reset inline">{{ field.errors[0] }}</div>
+                                                {% endif %}
+                                            </div>
+                                            {% endif %}
+                                            {% endfor %}
+                                            {% if article_field_form.error %}
+                                            <div class="alert alert-warning">
+                                                <button type="button" class="close" data-dismiss="alert">
+                                                    <i class="ace-icon fa fa-times"></i>
+                                                </button>{{ article_field_form.error }}
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                    <div class="task-note">
+                                        当前默认先围绕入口页做探索；文章页探索会沿同一套交互继续补齐。
+                                    </div>
+                                </div>
+
+                                <div class="task-form-actions">
+                                    <div class="task-action-group">
+                                        <h5>字段数量调整</h5>
+                                        <button id="add_field" class="btn btn-info" type="button">
+                                            <i class="ace-icon fa fa-plus bigger-110"></i>
+                                            添加字段
+                                        </button>
+                                        <button id="del_field" class="btn" type="button">
+                                            <i class="ace-icon fa fa-minus bigger-110"></i>
+                                            删除字段
+                                        </button>
+                                        {% if not is_add %}
+                                        <button id="force-save" class="btn btn-white" type="submit">
+                                            <i class="ace-icon fa fa-copy bigger-110"></i>
+                                            另存为新任务
+                                        </button>
+                                        <button id="force-save-start" class="btn btn-white" type="submit">
+                                            <i class="ace-icon fa fa-play bigger-110"></i>
+                                            另存并启动
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                    <div class="task-action-group">
+                                        <h5>测试当前配置</h5>
+                                        <button id="test-index" class="btn btn-info" type="submit">
+                                            <i class="ace-icon fa fa-list bigger-110"></i>
+                                            测试索引
+                                        </button>
+                                        <button id="test-article" class="btn btn-primary" type="submit">
+                                            <i class="ace-icon fa fa-file-text-o bigger-110"></i>
+                                            测试新闻
+                                        </button>
+                                    </div>
+                                    <div class="task-action-group">
+                                        <h5>保存任务</h5>
+                                        <button id="normal_submit" class="btn btn-success" type="submit">
+                                            <i class="ace-icon fa fa-check bigger-110"></i>
+                                            保存
+                                        </button>
+                                        {% if is_add or not is_active %}
+                                        <button id="submit_start" class="btn btn-warning" type="submit">
+                                            <i class="ace-icon fa fa-play bigger-110"></i>
+                                            保存并启动
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
                     {% if not is_add and task %}
-                    <div class="task-card">
-                        <h4>调试与观察</h4>
-                        <a class="btn btn-sm btn-info" href="{{ url_for('task_list') }}">
-                            <i class="ace-icon fa fa-list bigger-110"></i>
-                            返回任务列表
-                        </a>
-                        <a class="btn btn-sm btn-success" href="{{ url_for('task_doc', task_id=task.id) }}" target="_blank">
-                            <i class="ace-icon fa fa-database bigger-110"></i>
-                            查看最近结果
-                        </a>
-                        <a class="btn btn-sm btn-primary" href="{{ url_for('task_run_list', task_id=task.id) }}" target="_blank">
-                            <i class="ace-icon fa fa-history bigger-110"></i>
-                            查看运行历史
-                        </a>
-                        <a class="btn btn-sm btn-warning" href="{{ url_for('log_list', part='crawler', task_id=task.id) }}" target="_blank">
-                            <i class="ace-icon fa fa-file-text-o bigger-110"></i>
-                            查看最近日志
-                        </a>
-                        <div class="task-action-note">
-                            如果这是线上任务，建议先重新做索引和新闻测试，再决定是否保存并启动。
+                    <div class="task-card task-shortcuts">
+                        <div class="task-card-head">
+                            <h4>运行观察</h4>
+                            <p>当你完成本轮调整后，可以直接从这里继续看运行结果、历史和日志。</p>
+                        </div>
+                        <div class="task-card-body">
+                            <a class="btn btn-sm btn-info" href="{{ url_for('task_list') }}">
+                                <i class="ace-icon fa fa-list bigger-110"></i>
+                                返回任务列表
+                            </a>
+                            <a class="btn btn-sm btn-success" href="{{ url_for('task_doc', task_id=task.id) }}" target="_blank">
+                                <i class="ace-icon fa fa-database bigger-110"></i>
+                                查看最近结果
+                            </a>
+                            <a class="btn btn-sm btn-primary" href="{{ url_for('task_run_list', task_id=task.id) }}" target="_blank">
+                                <i class="ace-icon fa fa-history bigger-110"></i>
+                                查看运行历史
+                            </a>
+                            <a class="btn btn-sm btn-warning" href="{{ url_for('log_list', part='crawler', task_id=task.id) }}" target="_blank">
+                                <i class="ace-icon fa fa-file-text-o bigger-110"></i>
+                                查看最近日志
+                            </a>
                         </div>
                     </div>
                     {% endif %}
-                    <div class="task-card">
-                        <h4>测试与保存的关系</h4>
-                        <p>测试负责回答“当前配置能不能抓到、能不能解析对”；保存负责回答“这份配置要不要落到任务系统里”。</p>
-                        <p>最稳妥的顺序是：配置完成后先测索引，再测新闻，最后决定保存方式。</p>
-                    </div>
                 </div>
             </div>
         </div>
     </div>
-</div><!-- /.page-content -->
+</div>
+<div id="task-test-modal" class="modal fade" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document" style="width: 92%; max-width: 1180px;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+                <h4 class="modal-title">测试结果</h4>
+            </div>
+            <div class="modal-body" id="task-test-modal-body">
+                <div class="alert alert-info">正在准备测试结果...</div>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 {% block page_script %}
 <script>
 $('[data-rel=popover]').popover({container:'body'});
 $(function(){
-    $('.fields_div').find('label').each(function(){
-        var input = $(this.nextSibling).children('input')[0];
-        $(this).prop('for', input.id);
-        input.name = input.id;
-    });
-
-    var _html = '<div class="hr hr8 dotted"></div>{% for field in article_field_forms.0 %}{% if field.type != 'CSRFTokenField' %}<div class="form-group">{{ field.label(class_='col-sm-3 control-label no-padding-right') }}<div class="col-xs-12 col-sm-5">{{ field(id=field.name+'_'+fields_len|string, class='col-sm-9', value='') }}{% if field.description %}<span class="help-button" data-rel="popover" data-trigger="hover" data-placement="left" data-content="{{ field.description }}" title="" data-original-title="{{ field.label.text }}">?</span>{% endif %}</div></div>{% endif %}{% endfor %}',
-        ele_len = $(_html).length,
-        task_form = $('#task_form'),
-        fields_len = $('#fields_len'),
+    var taskForm = $('#task_form'),
+        articleFieldsList = $('#article-fields-list'),
+        fieldsLen = $('#fields_len'),
+        exploreUrl = $('#explore-url'),
+        articleExploreUrl = $('#explore-article-url'),
+        explorerPanel = $('#index-explorer-panel'),
+        articleExplorerPanel = $('#article-explorer-panel'),
+        testModal = $('#task-test-modal'),
+        testModalBody = $('#task-test-modal-body'),
+        indexExplorerButton = $('#load-index-explorer'),
+        articleExplorerButton = $('#load-article-explorer'),
         ourl = window.location.href,
         ps = ourl.split('?'),
-        url_arg_has = ps.length > 1 ? ps[1].includes('active=') : false;
+        urlArgHas = ps.length > 1 ? ps[1].includes('active=') : false,
+        loadingState = {
+            index: false,
+            article: false
+        },
+        indexMarkers = [],
+        inferredIndexCandidate = null;
 
-    function get_field_html(num){
-        var h = $(_html), _p;
-        h.find('input').each(function(){
-            _p = this.id.split('_');
-            _p[_p.length-1] = num;
-            this.id = _p.join('_');
-            this.name = this.id;
-            $(this).parent().prev().prop('for', this.id);
-        });
-        return h;
+    function initPopovers(){
+        $('[data-rel=popover]').popover({container:'body'});
     }
 
+    function syncFieldLabels(){
+        $('.fields_div').find('label').each(function(){
+            var input = $(this.nextSibling).children('input')[0];
+            if(!input){
+                input = $(this.nextSibling).find('textarea, select').get(0);
+            }
+            if(input){
+                $(this).prop('for', input.id);
+                input.name = input.id;
+            }
+        });
+    }
+
+    function syncExploreUrlFromForm(){
+        var frontUrl = $('#front_url');
+        if(frontUrl.length && !exploreUrl.val()){
+            exploreUrl.val(frontUrl.val());
+        }
+    }
+
+    function syncFormUrlFromExplore(){
+        var frontUrl = $('#front_url');
+        if(frontUrl.length){
+            frontUrl.val(exploreUrl.val());
+        }
+    }
+
+    function updateFetchModeSummary(panel){
+        panel = panel || explorerPanel.find('.explore-panel-root');
+        if(!panel.length){
+            return;
+        }
+        var label = panel.data('fetchLabel'),
+            spider = panel.data('recommendedSpider'),
+            reason = panel.data('fetchReason');
+        if(label){
+            $('#fetch-mode-summary').text(label + (spider ? '，建议抓取程序：' + spider : ''));
+        }
+        if(reason){
+            $('#fetch-mode-reason').text(reason);
+        }
+        if(spider && $('#spider').length){
+            $('#spider').val(spider);
+        }
+    }
+
+    function loadingMarkup(title, detail, isError){
+        return '' +
+            '<div class="explorer-loading' + (isError ? ' is-error' : '') + '">' +
+                '<strong>' + $('<div/>').text(title).html() + '</strong>' +
+                '<div>' + $('<div/>').text(detail).html() + '</div>' +
+            '</div>';
+    }
+
+    function setExplorerLoading(kind, isLoading, detail){
+        var panel = kind === 'index' ? explorerPanel : articleExplorerPanel,
+            button = kind === 'index' ? indexExplorerButton : articleExplorerButton,
+            input = kind === 'index' ? exploreUrl : articleExploreUrl,
+            label = kind === 'index' ? '入口页探索中' : '文章页探索中';
+
+        loadingState[kind] = isLoading;
+        button.prop('disabled', isLoading);
+        input.prop('disabled', isLoading);
+        if(isLoading){
+            panel.html(loadingMarkup(label, detail || '正在获取页面，请稍候，不要重复点击。'));
+        }
+    }
+
+    function setExplorerError(kind, title, detail){
+        var panel = kind === 'index' ? explorerPanel : articleExplorerPanel;
+        panel.html(loadingMarkup(title, detail, true));
+    }
+
+    function syncSuggestedTaskName(panel){
+        panel = panel || explorerPanel.find('.explore-panel-root');
+        if(!panel.length || !$('#name').length){
+            return;
+        }
+        var suggested = $.trim(panel.data('suggestedTaskName') || ''),
+            current = $.trim($('#name').val());
+        if(suggested && !current){
+            $('#name').val(suggested);
+        }
+    }
+
+    function reloadParserConf(parser, callback){
+        $.get(window.location.pathname + '?parser=' + parser, function(res){
+            $('#task_form_conf').html(res);
+            initPopovers();
+            syncFormUrlFromExplore();
+            if(typeof callback === 'function'){
+                callback();
+            }
+        });
+    }
+
+    function previewFrame(kind){
+        return $('.explore-preview-frame[data-preview-kind="' + kind + '"]');
+    }
+
+    function sendPreviewCommand(kind, action, items){
+        var frame = previewFrame(kind).get(0);
+        if(!frame || !frame.contentWindow){
+            return;
+        }
+        frame.contentWindow.postMessage({
+            source: 'zspider-preview-command',
+            action: action,
+            items: items || []
+        }, '*');
+    }
+
+    function refreshIndexPreviewHighlights(xpath){
+        if(!xpath){
+            return;
+        }
+        sendPreviewCommand('index', 'highlight-xpaths', [
+            {xpath: xpath, role: 'index'}
+        ]);
+    }
+
+    function collectArticlePreviewHighlights(){
+        var items = [];
+        articleFieldsList.children('.article-field-block').each(function(){
+            var block = $(this),
+                fieldName = $.trim(block.find('input[id^="name_"]').first().val()),
+                xpath = $.trim(block.find('input[id^="xpath_"]').first().val());
+            if(fieldName && xpath){
+                items.push({xpath: xpath, role: fieldName});
+            }
+        });
+        return items;
+    }
+
+    function refreshArticlePreviewHighlights(){
+        sendPreviewCommand(
+            'article',
+            'highlight-xpaths',
+            collectArticlePreviewHighlights()
+        );
+    }
+
+    function applyIndexCandidate(xpath, spider){
+        var finalize = function(){
+            syncFormUrlFromExplore();
+            if($('#url_xpath').length){
+                $('#url_xpath').val(xpath);
+            }
+            if(spider && $('#spider').length){
+                $('#spider').val(spider);
+                $('#fetch-mode-summary').text($('#fetch-mode-summary').text().replace(/建议抓取程序：.*/, '建议抓取程序：' + spider));
+            }
+            refreshIndexPreviewHighlights(xpath);
+        };
+        if($('#parser').length && $('#parser').val() !== 'IndexParser' && $('#parser option[value="IndexParser"]').length){
+            $('#parser').val('IndexParser');
+            reloadParserConf('IndexParser', finalize);
+            return;
+        }
+        finalize();
+    }
+
+    function updatePreviewInspector(kind, payload){
+        var inspector = $('.preview-inspector[data-preview-kind="' + kind + '"]');
+        if(!inspector.length){
+            return;
+        }
+        inspector.data('selection', payload);
+        inspector.find('.preview-inspector-empty').hide();
+        inspector.find('.preview-inspector-body').show();
+        inspector.find('.preview-inspector-meta').text(
+            '已选中 <' + payload.tag + '> 节点，文本预览：' + (payload.text || '无可读文本')
+        );
+        inspector.find('.preview-node-xpath').text(payload.node_xpath || '');
+        inspector.find('.preview-link-xpath').text(payload.link_xpath || '当前节点不是链接，无法直接提取链接 XPath');
+        inspector.find('.preview-region-link-xpath').text(
+            payload.region_link_xpath || '当前点击位置还没有提取到稳定的区域链接 XPath'
+        );
+        var regionWrap = inspector.find('.preview-region-candidates');
+        if(regionWrap.length){
+            regionWrap.empty();
+            $.each(payload.region_link_candidates || [], function(index, xpath){
+                var row = $('<div style="margin-bottom: 8px;"></div>'),
+                    title = $('<strong></strong>').text('候选区域 ' + (index + 1)),
+                    code = $('<code></code>').text(xpath),
+                    button = $('<button class="btn btn-xs btn-info preview-apply-index-region-candidate" type="button">应用这组区域</button>');
+                button.data('xpath', xpath);
+                row.append(title).append(code).append(button);
+                regionWrap.append(row);
+            });
+            if(!(payload.region_link_candidates || []).length){
+                regionWrap.html('<div class="preview-inspector-empty">当前点击位置还没有可用的区域候选。</div>');
+            }
+        }
+        inspector.find('.preview-text-xpath').text(payload.text_xpath || '');
+        inspector.find('.preview-content-xpath').text(payload.content_xpath || '');
+        inspector.find('.preview-value-xpath').text(payload.value_xpath || '当前节点没有合适的属性 XPath');
+        if(kind === 'index'){
+            renderIndexMarkers();
+        }
+    }
+
+    function currentIndexInspector(){
+        return $('.preview-inspector[data-preview-kind="index"]');
+    }
+
+    function markerSignature(marker){
+        return $.trim((marker && marker.href) || '');
+    }
+
+    function renderIndexMarkers(){
+        var inspector = currentIndexInspector(),
+            annotationBody = inspector.find('.preview-annotation-body'),
+            annotationEmpty = inspector.find('.preview-annotation-empty'),
+            list = inspector.find('.preview-annotation-list'),
+            currentPayload = inspector.data('selection') || {},
+            canAdd = !!$.trim(currentPayload.href || '');
+        if(!inspector.length){
+            return;
+        }
+        list.empty();
+        if(indexMarkers.length){
+            annotationEmpty.hide();
+            annotationBody.show();
+            $.each(indexMarkers, function(index, marker){
+                var row = $('<div style="margin-bottom: 8px;"></div>'),
+                    label = $('<strong></strong>').text('标注 ' + (index + 1) + '：'),
+                    text = $('<span></span>').text((marker.text || marker.href || '').slice(0, 60)),
+                    remove = $('<button class="btn btn-xs btn-link preview-remove-index-marker" type="button">移除</button>');
+                remove.data('href', marker.href);
+                row.append(label).append(text).append(remove);
+                list.append(row);
+            });
+        } else {
+            annotationBody.show();
+            annotationEmpty.show();
+        }
+        inspector.find('.preview-add-index-marker').prop('disabled', !canAdd);
+        if(!canAdd){
+            inspector.find('.preview-add-index-marker').attr('title', '当前选中的不是链接');
+        } else {
+            inspector.find('.preview-add-index-marker').attr('title', '');
+        }
+        if(inferredIndexCandidate && inferredIndexCandidate.xpath){
+            inspector.find('.preview-infer-result').show();
+            inspector.find('.preview-infer-xpath').text(inferredIndexCandidate.xpath);
+            inspector.find('.preview-infer-reason').text(inferredIndexCandidate.reason || '');
+        } else {
+            inspector.find('.preview-infer-result').hide();
+            inspector.find('.preview-infer-xpath').text('');
+            inspector.find('.preview-infer-reason').text('');
+        }
+        inspector.find('.preview-infer-index-xpath').prop('disabled', indexMarkers.length < 2);
+        inspector.find('.preview-clear-index-markers').prop('disabled', !indexMarkers.length);
+    }
+
+    function addIndexMarker(payload){
+        var href = $.trim((payload && payload.href) || '');
+        if(!href){
+            return;
+        }
+        var marker = {
+            href: href,
+            text: $.trim(payload.text || ''),
+            link_xpath: $.trim(payload.link_xpath || ''),
+            node_xpath: $.trim(payload.node_xpath || '')
+        };
+        var exists = false;
+        $.each(indexMarkers, function(_, item){
+            if(markerSignature(item) === href){
+                exists = true;
+                return false;
+            }
+        });
+        if(!exists){
+            indexMarkers.push(marker);
+        }
+        inferredIndexCandidate = null;
+        renderIndexMarkers();
+    }
+
+    function removeIndexMarker(href){
+        indexMarkers = $.grep(indexMarkers, function(item){
+            return markerSignature(item) !== href;
+        });
+        inferredIndexCandidate = null;
+        renderIndexMarkers();
+    }
+
+    function clearIndexMarkers(){
+        indexMarkers = [];
+        inferredIndexCandidate = null;
+        renderIndexMarkers();
+    }
+
+    function inferIndexXpathByMarkers(){
+        if(indexMarkers.length < 2 || loadingState.index){
+            return;
+        }
+        var urls = $.map(indexMarkers, function(item){
+            return item.href;
+        });
+        var inspector = currentIndexInspector();
+        inspector.find('.preview-infer-result').show();
+        inspector.find('.preview-infer-xpath').text('正在推断...');
+        inspector.find('.preview-infer-reason').text('系统正在根据你标注的目标链接反推公共 XPath。');
+        $.ajax({
+            url: '/task/explore/index/infer',
+            method: 'POST',
+            traditional: true,
+            data: {
+                front_url: $.trim(exploreUrl.val()),
+                urls: urls
+            }
+        }).done(function(res){
+            if(!res || !res.status || !res.data || !res.data.candidate){
+                inferredIndexCandidate = null;
+                inspector.find('.preview-infer-xpath').text('');
+                inspector.find('.preview-infer-reason').text((res && res.message) || '推断失败。');
+                return;
+            }
+            inferredIndexCandidate = res.data.candidate;
+            inspector.find('.preview-infer-xpath').text(inferredIndexCandidate.xpath || '');
+            inspector.find('.preview-infer-reason').text(inferredIndexCandidate.reason || '');
+            refreshIndexPreviewHighlights(inferredIndexCandidate.xpath);
+        }).fail(function(xhr){
+            inferredIndexCandidate = null;
+            inspector.find('.preview-infer-xpath').text('');
+            inspector.find('.preview-infer-reason').text(
+                xhr && xhr.responseText ? xhr.responseText : '推断请求失败。'
+            );
+        }).always(function(){
+            renderIndexMarkers();
+        });
+    }
+
+    function loadIndexExplorer(){
+        var url = $.trim(exploreUrl.val());
+        if(loadingState.index){
+            return;
+        }
+        clearIndexMarkers();
+        syncFormUrlFromExplore();
+        setExplorerLoading('index', true, '正在分别获取直接请求结果和浏览器渲染结果，并生成候选区域与预览。');
+        $.ajax({
+            url: '/task/explore/index',
+            method: 'POST',
+            data: {front_url: url}
+        }).done(function(res){
+            explorerPanel.html(res);
+            updateFetchModeSummary();
+            window.setTimeout(function(){
+                refreshIndexPreviewHighlights($.trim($('#url_xpath').val()));
+            }, 0);
+            var panel = explorerPanel.find('.explore-panel-root'),
+                primaryArticleUrl = panel.data('primaryArticleUrl');
+            syncSuggestedTaskName(panel);
+            if(primaryArticleUrl && !$.trim(articleExploreUrl.val())){
+                articleExploreUrl.val(primaryArticleUrl);
+                loadArticleExplorer();
+            }
+        }).fail(function(xhr){
+            setExplorerError(
+                'index',
+                '入口页探索失败',
+                xhr && xhr.responseText ? xhr.responseText : '请求未完成，请稍后重试。'
+            );
+        }).always(function(){
+            setExplorerLoading('index', false);
+        });
+    }
+
+    function loadArticleExplorer(){
+        var articleUrl = $.trim(articleExploreUrl.val());
+        if(loadingState.article){
+            return;
+        }
+        setExplorerLoading('article', true, '正在按推荐获取方式分析文章字段并生成预览。');
+        $.ajax({
+            url: '/task/explore/article',
+            method: 'POST',
+            data: {article_url: articleUrl}
+        }).done(function(res){
+            articleExplorerPanel.html(res);
+            window.setTimeout(function(){
+                refreshArticlePreviewHighlights();
+            }, 0);
+        }).fail(function(xhr){
+            setExplorerError(
+                'article',
+                '文章页探索失败',
+                xhr && xhr.responseText ? xhr.responseText : '请求未完成，请稍后重试。'
+            );
+        }).always(function(){
+            setExplorerLoading('article', false);
+        });
+    }
+
+    function openTestModal(action, serializedData){
+        testModalBody.html('<div class="alert alert-info">正在执行测试，请稍候...</div>');
+        testModal.modal('show');
+        $.ajax({
+            url: action,
+            method: 'POST',
+            data: serializedData || taskForm.serialize(),
+            headers: {'X-Requested-With': 'XMLHttpRequest'}
+        }).done(function(res){
+            testModalBody.html(res);
+        }).fail(function(xhr){
+            var message = '测试请求失败';
+            if(xhr && xhr.responseText){
+                message = xhr.responseText;
+            }
+            testModalBody.html('<div class="alert alert-warning">' + $('<div/>').text(message).html() + '</div>');
+        });
+    }
+
+    function findArticleFieldBlock(fieldName){
+        var matched = $();
+        articleFieldsList.children('.article-field-block').each(function(){
+            var block = $(this),
+                nameInput = block.find('input[id^="name_"]').first();
+            if($.trim(nameInput.val()) === fieldName){
+                matched = block;
+                return false;
+            }
+        });
+        return matched;
+    }
+
+    function ensureArticleFieldBlock(fieldName){
+        var block = findArticleFieldBlock(fieldName);
+        if(block.length){
+            return block;
+        }
+        var count = +fieldsLen.val();
+        block = getFieldBlockHtml(count);
+        block.find('input[id^="name_"]').first().val(fieldName);
+        articleFieldsList.append(block);
+        fieldsLen.val(count + 1);
+        initPopovers();
+        syncFieldLabels();
+        return block;
+    }
+
+    function applyArticleCandidate(fieldName, mode, value){
+        var block = ensureArticleFieldBlock(fieldName);
+        var xpathInput = block.find('input[id^="xpath_"]').first(),
+            specifyInput = block.find('input[id^="specify_"]').first();
+        if(mode === 'xpath' && xpathInput.length){
+            xpathInput.val(value);
+            if(specifyInput.length){
+                specifyInput.val('');
+            }
+        }
+        if(mode === 'specify' && specifyInput.length){
+            specifyInput.val(value);
+            if(xpathInput.length){
+                xpathInput.val('');
+            }
+        }
+        $('html, body').animate({scrollTop: block.offset().top - 120}, 200);
+        block.addClass('article-field-block-active');
+        window.setTimeout(function(){
+            block.removeClass('article-field-block-active');
+        }, 1200);
+        refreshArticlePreviewHighlights();
+    }
+
+    function applyPreviewSelectionToArticle(fieldName, extractor){
+        var inspector = $('.preview-inspector[data-preview-kind="article"]'),
+            payload = inspector.data('selection'),
+            value = payload ? extractor(payload) : '';
+        if(!value){
+            return;
+        }
+        if(fieldName === 'source' && extractor === previewSpecifyValue){
+            applyArticleCandidate(fieldName, 'specify', value);
+            return;
+        }
+        applyArticleCandidate(fieldName, 'xpath', value);
+    }
+
+    function previewSpecifyValue(payload){
+        return $.trim(payload.text || '');
+    }
+
+    var fieldHtml = '{% for field in article_field_forms.0 %}{% if field.type != "CSRFTokenField" %}<div class="form-group fields_div">{{ field.label(class_="col-sm-3 control-label no-padding-right") }}<div class="col-xs-12 col-sm-8">{{ field(id=field.name+"_"+fields_len|string, class="col-sm-12", value="") }}{% if field.description %}<span class="help-button" data-rel="popover" data-trigger="hover" data-placement="left" data-content="{{ field.description }}" data-original-title="{{ field.label.text }}">?</span>{% endif %}</div></div>{% endif %}{% endfor %}';
+
+    function getFieldBlockHtml(index){
+        var block = $('<div class="article-field-block">' + fieldHtml + '</div>');
+        block.find('input, textarea, select').each(function(){
+            var parts = this.id.split('_');
+            parts[parts.length-1] = index;
+            this.id = parts.join('_');
+            this.name = this.id;
+            $(this).closest('.form-group').find('label').prop('for', this.id);
+        });
+        return block;
+    }
+
+    syncFieldLabels();
+    initPopovers();
+    syncExploreUrlFromForm();
+    updateFetchModeSummary();
+    syncSuggestedTaskName();
+    renderIndexMarkers();
+    refreshIndexPreviewHighlights($.trim($('#url_xpath').val()));
+    refreshArticlePreviewHighlights();
+
+    window.addEventListener('message', function(event){
+        var payload = event.data,
+            kind = '';
+        if(!payload || payload.source !== 'zspider-preview-select'){
+            return;
+        }
+        $('.explore-preview-frame').each(function(){
+            if(this.contentWindow === event.source){
+                kind = $(this).data('previewKind');
+                return false;
+            }
+        });
+        if(kind){
+            updatePreviewInspector(kind, payload);
+        }
+    });
 
     $('#add_field').click(function(){
-        var fl = +fields_len.val();
-        task_form.children().last().before(get_field_html(fl));
-        fields_len.val(fl+1);
+        var count = +fieldsLen.val();
+        articleFieldsList.append(getFieldBlockHtml(count));
+        fieldsLen.val(count + 1);
+        initPopovers();
     });
+
     $('#del_field').click(function(){
-        var fl = +fields_len.val(), i = ele_len;
-        if(fl <= {{ base_fields_len }}){
+        var count = +fieldsLen.val();
+        if(count <= {{ base_fields_len }}){
             alert("can't del more");
             return;
         }
-        while(i--){
-            task_form.children().eq(-2).remove();
-        }
-        fields_len.val(fl-1);
+        articleFieldsList.children('.article-field-block').last().remove();
+        fieldsLen.val(count - 1);
     });
+
     $('#parser').change(function(){
-        $.get(window.location.href+'?parser='+this.value, function(res){
-            $('#task_form_conf').html(res);
-            $('[data-rel=popover]').popover({container:'body'});
+        reloadParserConf(this.value);
+    });
+
+    $(document).on('input change', '#front_url', function(){
+        exploreUrl.val(this.value);
+    });
+    $(document).on('input change', '#url_xpath', function(){
+        refreshIndexPreviewHighlights($.trim($(this).val()));
+    });
+    $(document).on('input change', 'input[id^="xpath_"]', function(){
+        refreshArticlePreviewHighlights();
+    });
+
+    $('#load-index-explorer').click(loadIndexExplorer);
+    $('#load-article-explorer').click(loadArticleExplorer);
+    exploreUrl.on('input change', syncFormUrlFromExplore);
+
+    $(document).on('click', '.apply-index-candidate', function(){
+        applyIndexCandidate($(this).data('xpath'), $(this).data('spider'));
+    });
+    $(document).on('click', '.preview-add-index-marker', function(){
+        var payload = currentIndexInspector().data('selection');
+        addIndexMarker(payload || {});
+    });
+    $(document).on('click', '.preview-remove-index-marker', function(){
+        removeIndexMarker($(this).data('href'));
+    });
+    $(document).on('click', '.preview-clear-index-markers', function(){
+        clearIndexMarkers();
+    });
+    $(document).on('click', '.preview-infer-index-xpath', function(){
+        inferIndexXpathByMarkers();
+    });
+    $(document).on('click', '.preview-apply-inferred-index', function(){
+        if(inferredIndexCandidate && inferredIndexCandidate.xpath){
+            applyIndexCandidate(inferredIndexCandidate.xpath, $('#spider').val());
+        }
+    });
+    $(document).on('click', '.use-sample-article', function(){
+        articleExploreUrl.val($(this).data('articleUrl'));
+        loadArticleExplorer();
+    });
+    $(document).on('click', '.apply-article-candidate', function(){
+        applyArticleCandidate(
+            $(this).data('field'),
+            $(this).data('mode'),
+            $(this).data('value')
+        );
+    });
+    $(document).on('click', '.apply-all-article-candidates', function(){
+        articleExplorerPanel.find('.article-candidate-group').each(function(){
+            var button = $(this).find('.apply-article-candidate').first();
+            if(button.length){
+                applyArticleCandidate(
+                    button.data('field'),
+                    button.data('mode'),
+                    button.data('value')
+                );
+            }
         });
     });
+    $(document).on('click', '.preview-apply-index-region', function(){
+        var inspector = $(this).closest('.preview-inspector'),
+            payload = inspector.data('selection');
+        if(payload && payload.region_link_xpath){
+            applyIndexCandidate(payload.region_link_xpath, $('#spider').val());
+        }
+    });
+    $(document).on('click', '.preview-apply-index-region-candidate', function(){
+        var xpath = $(this).data('xpath');
+        if(xpath){
+            applyIndexCandidate(xpath, $('#spider').val());
+        }
+    });
+    $(document).on('click', '.preview-apply-index-link', function(){
+        var inspector = $(this).closest('.preview-inspector'),
+            payload = inspector.data('selection');
+        if(payload && payload.link_xpath){
+            applyIndexCandidate(payload.link_xpath, $('#spider').val());
+        }
+    });
+    $(document).on('click', '.preview-apply-title', function(){
+        applyPreviewSelectionToArticle('title', function(payload){
+            return payload.text_xpath;
+        });
+    });
+    $(document).on('click', '.preview-apply-content', function(){
+        applyPreviewSelectionToArticle('content', function(payload){
+            return payload.content_xpath;
+        });
+    });
+    $(document).on('click', '.preview-apply-time', function(){
+        applyPreviewSelectionToArticle('src_time', function(payload){
+            return payload.value_xpath || payload.text_xpath;
+        });
+    });
+    $(document).on('click', '.preview-apply-source-xpath', function(){
+        applyPreviewSelectionToArticle('source', function(payload){
+            return payload.text_xpath;
+        });
+    });
+    $(document).on('click', '.preview-apply-source-specify', function(){
+        applyPreviewSelectionToArticle('source', previewSpecifyValue);
+    });
+    $(document).on('submit', '.modal-test-form', function(event){
+        event.preventDefault();
+        openTestModal($(this).attr('action'), $(this).serialize());
+    });
+
     $('#force-save').click(function(){
-        task_form.prop('action', '/task/add').prop('target', '_self');
+        taskForm.prop('action', '/task/add').prop('target', '_self');
     });
     $('#force-save-start').click(function(){
-        task_form.prop('action', url_arg_has ? '/task/add' : '/task/add?active=1').prop('target', '_self');
+        taskForm.prop('action', urlArgHas ? '/task/add' : '/task/add?active=1').prop('target', '_self');
     });
     $('#test-index').click(function(){
-        task_form.prop('action', '/task/test/index').prop('target', '_blank');
+        syncFormUrlFromExplore();
+        openTestModal('/task/test/index');
+        return false;
     });
     $('#test-article').click(function(){
-        task_form.prop('action', '/task/test/article').prop('target', '_blank');
+        syncFormUrlFromExplore();
+        openTestModal('/task/test/article');
+        return false;
     });
     $('#normal_submit').click(function(){
-        task_form.prop('action', ourl + (url_arg_has ? '' : '?active=0')).prop('target', '_self');
+        syncFormUrlFromExplore();
+        taskForm.prop('action', ourl + (urlArgHas ? '' : '?active=0')).prop('target', '_self');
     });
     $('#submit_start').click(function(){
-        task_form.prop('action', ourl + (url_arg_has ? '' : '?active=1')).prop('target', '_self');
+        syncFormUrlFromExplore();
+        taskForm.prop('action', ourl + (urlArgHas ? '' : '?active=1')).prop('target', '_self');
     });
 });
 </script>

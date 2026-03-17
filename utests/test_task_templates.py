@@ -258,6 +258,84 @@ class TestTaskTemplates(unittest.TestCase):
                 "is_add": False,
                 "is_active": False,
                 "task": SimpleNamespace(id="task-1", name="示例任务"),
+                "explore_url": "https://example.com/news/",
+                "explore_result": {
+                    "title": "示例入口页",
+                    "final_url": "https://example.com/news/",
+                    "suggested_task_name": "示例入口页",
+                    "fetch_mode": {
+                        "label": "直接抓取",
+                        "recommended_spider": "news",
+                        "reason": "静态页面中已识别到候选链接区域，建议先直接抓取。",
+                    },
+                    "candidates": [
+                        {
+                            "xpath": '//div[contains(concat(" ", normalize-space(@class), " "), " news-list ")]//a[@href]/@href',
+                            "count": 3,
+                            "reason": "命中 3 条链接，其中站内链接 3 条，链接文本可读。",
+                            "sample_texts": ["标题一", "标题二"],
+                            "sample_urls": [
+                                "https://example.com/1",
+                                "https://example.com/2",
+                            ],
+                        }
+                    ],
+                    "primary_article_url": "https://example.com/1",
+                    "preview_html": "<html><body><a data-explore-hit='1'>标题一</a></body></html>",
+                },
+                "explore_error": "",
+                "article_explore_url": "https://example.com/news/1",
+                "article_explore_result": {
+                    "title": "文章页示例",
+                    "final_url": "https://example.com/news/1",
+                    "fetch_mode": {
+                        "label": "直接抓取",
+                        "recommended_spider": "news",
+                        "reason": "页面结构基本一致，建议先直接抓取。",
+                    },
+                    "coverage": {
+                        "title": {"label": "标题", "count": 1, "status": "ready"},
+                        "content": {"label": "正文", "count": 1, "status": "ready"},
+                        "src_time": {"label": "时间", "count": 1, "status": "ready"},
+                        "source": {"label": "来源", "count": 1, "status": "ready"},
+                    },
+                    "field_candidates": {
+                        "title": [
+                            {
+                                "mode": "xpath",
+                                "rule": "//h1/text()",
+                                "preview": "标题一",
+                                "reason": "优先命中详情页主标题节点。",
+                            }
+                        ],
+                        "content": [
+                            {
+                                "mode": "xpath",
+                                "rule": "//article//*[self::p or self::li]//text()",
+                                "preview": "正文内容",
+                                "reason": "这块区域包含较长正文段落，适合作为正文主容器。",
+                            }
+                        ],
+                        "src_time": [
+                            {
+                                "mode": "xpath",
+                                "rule": "//time/@datetime",
+                                "preview": "2026-03-17 10:00:00",
+                                "reason": "优先使用 time 标签中的 datetime 属性。",
+                            }
+                        ],
+                        "source": [
+                            {
+                                "mode": "specify",
+                                "value": "Python Insider",
+                                "preview": "Python Insider",
+                                "reason": "优先使用页面声明的站点名称。",
+                            }
+                        ],
+                    },
+                    "preview_html": "<html><body><h1 data-explore-hit='1'>标题一</h1></body></html>",
+                },
+                "article_explore_error": "",
             }
             context.update(context_overrides)
             with app.test_request_context("/task/edit/task-1"):
@@ -268,26 +346,39 @@ class TestTaskTemplates(unittest.TestCase):
     def test_edit_task_template_exposes_debug_shortcuts(self):
         html = self._render_task_form()
 
-        self.assertIn("编辑任务的完整流程", html)
-        self.assertIn("调试与观察", html)
+        self.assertIn("入口页探索面板", html)
+        self.assertIn("文章页字段探索面板", html)
+        self.assertIn("任务配置承接区", html)
+        self.assertIn("运行观察", html)
         self.assertIn("另存为新任务", html)
         self.assertIn("/task/doc?task_id=task-1", html)
         self.assertIn("/task/run?task_id=task-1", html)
         self.assertIn("/log/crawler?task_id=task-1", html)
-        self.assertIn("第一步：任务基础信息", html)
-        self.assertIn("第二步：入口与解析配置", html)
-        self.assertIn("第三步：文章字段规则", html)
-        self.assertIn("第四步：测试并保存", html)
+        self.assertIn("先复核页面，再调整规则", html)
+        self.assertIn("应用这组候选", html)
+        self.assertIn("应用到标题", html)
+        self.assertIn("一键应用各字段首选候选", html)
+        self.assertIn("字段覆盖情况", html)
+        self.assertIn("点击预览中的文章或区域，提取整块区域的链接 XPath", html)
+        self.assertIn("多点标注模式", html)
+        self.assertIn("根据标注推断 XPath", html)
+        self.assertIn("点击文章节点，直接提取字段 XPath", html)
+        self.assertIn("正在分别获取直接请求结果和浏览器渲染结果", html)
+        self.assertIn("按“直接抓取”得到的页面结果展示", html)
+        self.assertIn("zspider-preview-command", html)
+        self.assertIn("inferIndexXpathByMarkers", html)
+        self.assertIn("refreshArticlePreviewHighlights", html)
+        self.assertIn('data-suggested-task-name="示例入口页"', html)
         self.assertIn('name="return_path"', html)
         self.assertIn('name="save_path"', html)
 
     def test_add_task_template_hides_edit_shortcuts(self):
         html = self._render_task_form(is_add=True, task=None)
 
-        self.assertIn("创建任务的完整流程", html)
-        self.assertNotIn("调试与观察", html)
+        self.assertIn("任务配置承接区", html)
+        self.assertNotIn("运行观察", html)
         self.assertNotIn("另存为新任务", html)
-        self.assertIn("测试与保存的关系", html)
+        self.assertIn("探索入口页", html)
 
     def test_test_result_template_formats_article_preview(self):
         with app.app_context():
@@ -303,6 +394,7 @@ class TestTaskTemplates(unittest.TestCase):
                     done=True,
                     target="article",
                     res=[{"title": "新闻标题", "content": "正文内容"}],
+                    index_result_rows=[],
                     form=task_form,
                     conf_form=conf_form,
                     article_field_forms=[],
@@ -312,6 +404,7 @@ class TestTaskTemplates(unittest.TestCase):
                     save_start_url="/task/add?active=1",
                     test_index_url="/task/test/index",
                     test_article_url="/task/test/article",
+                    modal_mode=False,
                 )
 
         self.assertIn("测试新闻结果", html)
@@ -321,6 +414,8 @@ class TestTaskTemplates(unittest.TestCase):
         self.assertIn("返回继续编辑", html)
         self.assertIn("直接保存", html)
         self.assertIn("保存并启动", html)
+        self.assertIn('form method="post" action="/task/add"', html)
+        self.assertIn('name="_return_edit" value="1"', html)
 
     def test_test_result_template_formats_index_preview(self):
         with app.app_context():
@@ -336,6 +431,9 @@ class TestTaskTemplates(unittest.TestCase):
                     done=True,
                     target="index",
                     res=[SimpleNamespace(url="https://example.com/a")],
+                    index_result_rows=[
+                        {"url": "https://example.com/a", "title": "标题一"}
+                    ],
                     form=task_form,
                     conf_form=conf_form,
                     article_field_forms=[],
@@ -345,13 +443,16 @@ class TestTaskTemplates(unittest.TestCase):
                     save_start_url="/task/add?active=1",
                     test_index_url="/task/test/index",
                     test_article_url="/task/test/article",
+                    modal_mode=False,
                 )
 
         self.assertIn("测试索引结果", html)
         self.assertIn("抓取到的入口链接", html)
+        self.assertIn("标题一", html)
         self.assertIn("https://example.com/a", html)
         self.assertIn("继续测试新闻", html)
-        self.assertNotIn("直接保存", html)
+        self.assertNotIn('btn btn-success" type="submit">直接保存', html)
+        self.assertIn('name="_return_edit" value="1"', html)
 
     def test_task_list_template_surfaces_workflow_and_status(self):
         html = self._render_task_list()
