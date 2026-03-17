@@ -1,5 +1,9 @@
 # coding=utf-8
 from datetime import datetime
+from urllib.parse import parse_qsl
+from urllib.parse import urlencode
+from urllib.parse import urlsplit
+from urllib.parse import urlunsplit
 
 from flask import abort
 from flask import flash
@@ -290,6 +294,12 @@ def task_test(target):
         "done": done,
         "target": target,
         "res": res,
+        "submitted_items": list(request.form.items(multi=True)),
+        "return_path": _resolve_return_path(),
+        "save_draft_url": _with_active(_resolve_save_path(), 0),
+        "save_start_url": _with_active(_resolve_save_path(), 1),
+        "test_index_url": url_for("task_test", target="index"),
+        "test_article_url": url_for("task_test", target="article"),
     }
 
     return render_template("task/test.html", **context)
@@ -306,6 +316,23 @@ def _parse_field_forms(article_field_forms, fields_len):
             )
         )
         article_field_forms.append(ArticleFieldForm(form_data, meta={"csrf": False}))
+
+
+def _resolve_return_path():
+    return request.form.get("return_path") or request.referrer or url_for("task_add")
+
+
+def _resolve_save_path():
+    return request.form.get("save_path") or _resolve_return_path()
+
+
+def _with_active(url, active):
+    parts = urlsplit(url)
+    query = dict(parse_qsl(parts.query, keep_blank_values=True))
+    query["active"] = str(active)
+    return urlunsplit(
+        (parts.scheme, parts.netloc, parts.path, urlencode(query), parts.fragment)
+    )
 
 
 @app.route("/task/subscribe", methods=["GET", "POST"])

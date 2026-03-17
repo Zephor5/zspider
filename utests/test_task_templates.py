@@ -268,19 +268,26 @@ class TestTaskTemplates(unittest.TestCase):
     def test_edit_task_template_exposes_debug_shortcuts(self):
         html = self._render_task_form()
 
-        self.assertIn("当前任务操作建议", html)
+        self.assertIn("编辑任务的完整流程", html)
         self.assertIn("调试与观察", html)
         self.assertIn("另存为新任务", html)
         self.assertIn("/task/doc?task_id=task-1", html)
         self.assertIn("/task/run?task_id=task-1", html)
         self.assertIn("/log/crawler?task_id=task-1", html)
+        self.assertIn("第一步：任务基础信息", html)
+        self.assertIn("第二步：入口与解析配置", html)
+        self.assertIn("第三步：文章字段规则", html)
+        self.assertIn("第四步：测试并保存", html)
+        self.assertIn('name="return_path"', html)
+        self.assertIn('name="save_path"', html)
 
     def test_add_task_template_hides_edit_shortcuts(self):
         html = self._render_task_form(is_add=True, task=None)
 
-        self.assertIn("推荐操作顺序", html)
+        self.assertIn("创建任务的完整流程", html)
         self.assertNotIn("调试与观察", html)
         self.assertNotIn("另存为新任务", html)
+        self.assertIn("测试与保存的关系", html)
 
     def test_test_result_template_formats_article_preview(self):
         with app.app_context():
@@ -299,12 +306,21 @@ class TestTaskTemplates(unittest.TestCase):
                     form=task_form,
                     conf_form=conf_form,
                     article_field_forms=[],
+                    submitted_items=[("name", "示例任务"), ("return_path", "/task/add")],
+                    return_path="/task/add",
+                    save_draft_url="/task/add?active=0",
+                    save_start_url="/task/add?active=1",
+                    test_index_url="/task/test/index",
+                    test_article_url="/task/test/article",
                 )
 
         self.assertIn("测试新闻结果", html)
         self.assertIn("字段预览", html)
         self.assertIn("新闻标题", html)
         self.assertIn("正文内容", html)
+        self.assertIn("返回继续编辑", html)
+        self.assertIn("直接保存", html)
+        self.assertIn("保存并启动", html)
 
     def test_test_result_template_formats_index_preview(self):
         with app.app_context():
@@ -323,11 +339,19 @@ class TestTaskTemplates(unittest.TestCase):
                     form=task_form,
                     conf_form=conf_form,
                     article_field_forms=[],
+                    submitted_items=[("name", "示例任务"), ("return_path", "/task/add")],
+                    return_path="/task/add",
+                    save_draft_url="/task/add?active=0",
+                    save_start_url="/task/add?active=1",
+                    test_index_url="/task/test/index",
+                    test_article_url="/task/test/article",
                 )
 
         self.assertIn("测试索引结果", html)
         self.assertIn("抓取到的入口链接", html)
         self.assertIn("https://example.com/a", html)
+        self.assertIn("继续测试新闻", html)
+        self.assertNotIn("直接保存", html)
 
     def test_task_list_template_surfaces_workflow_and_status(self):
         html = self._render_task_list()

@@ -35,3 +35,10 @@ class TestTaskHandlers(unittest.TestCase):
         ]
 
         self.assertTrue(tasks._verify_fields(forms))
+
+    def test_with_active_replaces_existing_active_query(self):
+        url = "/task/edit/task-1?active=0&page=2"
+
+        result = tasks._with_active(url, 1)
+
+        self.assertEqual("/task/edit/task-1?active=1&page=2", result)

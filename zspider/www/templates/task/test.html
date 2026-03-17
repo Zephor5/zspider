@@ -4,6 +4,17 @@
 .test-result-page{
     padding: 18px 15px 30px;
 }
+.test-result-layout{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px;
+}
+.test-result-main{
+    flex: 1 1 760px;
+}
+.test-result-side{
+    flex: 0 0 320px;
+}
 .test-result-card{
     border: 1px solid #dce8f1;
     border-radius: 4px;
@@ -39,52 +50,150 @@
 .test-result-empty{
     color: #999;
 }
+.test-action-list{
+    margin-bottom: 0;
+    padding-left: 18px;
+}
+.test-action-list li{
+    margin-bottom: 8px;
+}
+.test-action-group{
+    border-top: 1px solid #eef3f7;
+    margin-top: 12px;
+    padding-top: 12px;
+}
+.test-action-group:first-child{
+    border-top: 0;
+    margin-top: 0;
+    padding-top: 0;
+}
+.test-action-group .btn,
+.test-action-group form{
+    display: inline-block;
+    margin-right: 8px;
+    margin-bottom: 8px;
+}
+@media (max-width: 991px){
+    .test-result-main,
+    .test-result-side{
+        flex-basis: 100%;
+    }
+}
 </style>
 {% endblock %}
 {% block main_content %}
 <div class="page-content test-result-page">
-    <div class="test-result-card">
-        <h3>{% if target == 'index' %}测试索引结果{% else %}测试新闻结果{% endif %}</h3>
-        <div class="test-result-meta">
-            这个页面只展示本次测试抓取到的预览结果，方便判断入口链接或字段解析是否符合预期。
+    <div class="test-result-layout">
+        <div class="test-result-main">
+            <div class="test-result-card">
+                <h3>{% if target == 'index' %}测试索引结果{% else %}测试新闻结果{% endif %}</h3>
+                <div class="test-result-meta">
+                    这一步只验证当前配置能否抓到入口或解析出字段；测试页会保留整份表单，方便你直接继续后续动作。
+                </div>
+                {% if done -%}
+                    {% if target == 'index' %}
+                        <h4>抓取到的入口链接</h4>
+                        {% if res %}
+                        <ol class="test-result-list">
+                            {% for r in res %}
+                            <li><a href="{{ r.url }}" target="_blank">{{ r.url }}</a></li>
+                            {% endfor %}
+                        </ol>
+                        {% else %}
+                        <div class="test-result-empty">没有抓到任何入口链接，请回到任务编辑页检查入口页配置。</div>
+                        {% endif %}
+                    {% else %}
+                        <h4>字段预览</h4>
+                        {% if res %}
+                            {% for field in res.0 %}
+                            <div class="test-result-field">
+                                <strong>{{ field }}</strong>
+                                <pre>{{ res.0[field] }}</pre>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                        <div class="test-result-empty">没有解析出字段内容，请检查详情页 XPath、正则或指定值配置。</div>
+                        {% endif %}
+                    {% endif %}
+                {% else %}
+                    <h4>测试未通过</h4>
+                    {% if form.error %}
+                    <div class="alert alert-warning">{{ form.error }}</div>
+                    {% endif %}
+                    {% for field in form %}{% if field.errors %}<div class="alert alert-warning">{{ field.label.text }}：{{ field.errors[0] }}</div>{% endif %}{% endfor %}
+                    {% for field in conf_form %}{% if field.errors %}<div class="alert alert-warning">{{ field.label.text }}：{{ field.errors[0] }}</div>{% endif %}{% endfor %}
+                    {% for article_field_form in article_field_forms %}
+                        {% if article_field_form.error %}<div class="alert alert-warning">{{ article_field_form.error }}</div>{% endif %}
+                        {% for field in article_field_form %}{% if field.errors %}<div class="alert alert-warning">{{ field.label.text }}：{{ field.errors[0] }}</div>{% endif %}{% endfor %}
+                    {% endfor %}
+                {%- endif %}
+            </div>
         </div>
-        {% if done -%}
-            {% if target == 'index' %}
-                <h4>抓取到的入口链接</h4>
-                {% if res %}
-                <ol class="test-result-list">
-                    {% for r in res %}
-                    <li><a href="{{ r.url }}" target="_blank">{{ r.url }}</a></li>
-                    {% endfor %}
+        <div class="test-result-side">
+            <div class="test-result-card">
+                <h4>下一步怎么做</h4>
+                <ol class="test-action-list">
+                    {% if target == 'index' %}
+                    <li>先看入口链接是不是目标文章列表，确认链接数量和范围都合理。</li>
+                    <li>索引通过后，继续做新闻测试，确认字段解析是否正确。</li>
+                    <li>新闻测试通过后，再决定保存为草稿还是保存并启动。</li>
+                    {% else %}
+                    <li>先看标题、正文、时间、来源是不是解析正确，尤其注意空字段和脏文本。</li>
+                    <li>如果字段结果符合预期，这一页就可以直接进入保存动作。</li>
+                    <li>如果结果不对，回到编辑页修改 XPath、正则或指定值后重新测试。</li>
+                    {% endif %}
                 </ol>
+            </div>
+            <div class="test-result-card">
+                <h4>基于这次测试继续操作</h4>
+                <div class="test-action-group">
+                    <form method="get" action="{{ return_path }}">
+                        <button class="btn btn-default" type="submit">返回继续编辑</button>
+                    </form>
+                </div>
+                {% if target == 'index' %}
+                <div class="test-action-group">
+                    <form method="post" action="{{ test_article_url }}">
+                        {% for name, value in submitted_items %}
+                        <input type="hidden" name="{{ name }}" value="{{ value }}">
+                        {% endfor %}
+                        <button class="btn btn-primary" type="submit">继续测试新闻</button>
+                    </form>
+                </div>
                 {% else %}
-                <div class="test-result-empty">没有抓到任何入口链接，请回到任务编辑页检查入口页配置。</div>
+                <div class="test-action-group">
+                    <form method="post" action="{{ test_index_url }}">
+                        {% for name, value in submitted_items %}
+                        <input type="hidden" name="{{ name }}" value="{{ value }}">
+                        {% endfor %}
+                        <button class="btn btn-info" type="submit">回头重测索引</button>
+                    </form>
+                </div>
                 {% endif %}
-            {% else %}
-                <h4>字段预览</h4>
-                {% if res %}
-                    {% for field in res.0 %}
-                    <div class="test-result-field">
-                        <strong>{{ field }}</strong>
-                        <pre>{{ res.0[field] }}</pre>
-                    </div>
-                    {% endfor %}
-                {% else %}
-                <div class="test-result-empty">没有解析出字段内容，请检查详情页 XPath、正则或指定值配置。</div>
+                {% if done and target == 'article' %}
+                <div class="test-action-group">
+                    <form method="post" action="{{ save_draft_url }}">
+                        {% for name, value in submitted_items %}
+                        <input type="hidden" name="{{ name }}" value="{{ value }}">
+                        {% endfor %}
+                        <button class="btn btn-success" type="submit">直接保存</button>
+                    </form>
+                    <form method="post" action="{{ save_start_url }}">
+                        {% for name, value in submitted_items %}
+                        <input type="hidden" name="{{ name }}" value="{{ value }}">
+                        {% endfor %}
+                        <button class="btn btn-warning" type="submit">保存并启动</button>
+                    </form>
+                </div>
                 {% endif %}
-            {% endif %}
-        {% else %}
-            <h4>测试未通过</h4>
-            {% if form.error %}
-            <div class="alert alert-warning">{{ form.error }}</div>
-            {% endif %}
-            {% for field in form %}{% if field.errors %}<div class="alert alert-warning">{{ field.label.text }}：{{ field.errors[0] }}</div>{% endif %}{% endfor %}
-            {% for field in conf_form %}{% if field.errors %}<div class="alert alert-warning">{{ field.label.text }}：{{ field.errors[0] }}</div>{% endif %}{% endfor %}
-            {% for article_field_form in article_field_forms %}
-                {% if article_field_form.error %}<div class="alert alert-warning">{{ article_field_form.error }}</div>{% endif %}
-                {% for field in article_field_form %}{% if field.errors %}<div class="alert alert-warning">{{ field.label.text }}：{{ field.errors[0] }}</div>{% endif %}{% endfor %}
-            {% endfor %}
-        {%- endif %}
+            </div>
+            <div class="test-result-card">
+                <h4>测试与保存的分工</h4>
+                <div class="test-result-meta">
+                    测试负责验证结果，保存负责把这份配置真正写入任务系统。现在你可以在结果页直接衔接这两个动作，不需要重新填写表单。
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}

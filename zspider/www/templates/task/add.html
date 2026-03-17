@@ -1,31 +1,110 @@
 {% extends "base.html" %}
 {% block page_style %}
 <style>
-.task-workflow-card,
-.task-shortcuts-card{
+.task-page-grid{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px;
+}
+.task-main-column{
+    flex: 1 1 760px;
+}
+.task-side-column{
+    flex: 0 0 320px;
+}
+.task-card{
     border: 1px solid #dce8f1;
     border-radius: 4px;
-    background: #f7fbff;
+    background: #fff;
     margin-bottom: 18px;
     padding: 16px 18px;
 }
-.task-workflow-card h4,
-.task-shortcuts-card h4{
+.task-card h3,
+.task-card h4{
     margin-top: 0;
     margin-bottom: 8px;
+}
+.task-card p:last-child{
+    margin-bottom: 0;
+}
+.task-workflow-card{
+    background: linear-gradient(180deg, #f8fbff 0%, #eef6ff 100%);
 }
 .task-workflow-card ol{
     margin-bottom: 8px;
     padding-left: 18px;
 }
-.task-shortcuts-card .btn,
-.task-shortcuts-card a{
+.task-card .btn,
+.task-card a{
     margin-right: 8px;
     margin-bottom: 8px;
 }
 .task-action-note{
     color: #666;
     margin-top: 10px;
+}
+.task-stage-list{
+    margin: 0;
+    padding-left: 18px;
+}
+.task-stage-list li{
+    margin-bottom: 8px;
+}
+.task-stage-list strong{
+    color: #0b5cad;
+}
+.task-section-card{
+    border: 1px solid #e7edf3;
+    border-radius: 4px;
+    background: #fff;
+    margin-bottom: 16px;
+}
+.task-section-head{
+    padding: 14px 18px;
+    border-bottom: 1px solid #eef3f7;
+    background: #fbfdff;
+}
+.task-section-head h4{
+    margin: 0 0 6px;
+}
+.task-section-head p{
+    margin: 0;
+    color: #666;
+}
+.task-section-body{
+    padding-top: 12px;
+}
+.task-action-card{
+    background: #f9fbfc;
+}
+.task-action-group{
+    border-top: 1px solid #e7edf3;
+    padding-top: 12px;
+    margin-top: 12px;
+}
+.task-action-group:first-child{
+    border-top: 0;
+    padding-top: 0;
+    margin-top: 0;
+}
+.task-action-group h5{
+    margin-top: 0;
+    margin-bottom: 8px;
+}
+.task-action-group p{
+    color: #666;
+    margin-bottom: 10px;
+}
+.task-action-group .btn{
+    min-width: 120px;
+}
+@media (max-width: 991px){
+    .task-side-column{
+        flex-basis: 100%;
+    }
+    .task-main-column{
+        flex-basis: 100%;
+    }
 }
 </style>
 {% endblock %}
@@ -58,43 +137,21 @@
     </div><!-- /.page-header -->
     <div class="row">
         <div class="col-xs-12">
-            <div class="task-workflow-card">
-                <h4>{% if is_add %}推荐操作顺序{% else %}当前任务操作建议{% endif %}</h4>
-                <ol>
-                    <li>先填写任务基本信息、解析配置和字段规则。</li>
-                    <li>用“测试索引”确认入口列表是否能抓到目标链接。</li>
-                    <li>用“测试新闻”确认字段解析结果是否符合预期。</li>
-                    <li>确认无误后再“保存”或“保存并启动”。</li>
-                </ol>
-                <div class="task-action-note">
-                    “测试”只用于预览抓取与解析结果，不会替代保存；“保存并启动”会在保存后把任务切到运行状态。
-                </div>
-            </div>
-            {% if not is_add and task %}
-            <div class="task-shortcuts-card">
-                <h4>调试与观察</h4>
-                <a class="btn btn-sm btn-info" href="{{ url_for('task_list') }}">
-                    <i class="ace-icon fa fa-list bigger-110"></i>
-                    返回任务列表
-                </a>
-                <a class="btn btn-sm btn-success" href="{{ url_for('task_doc', task_id=task.id) }}" target="_blank">
-                    <i class="ace-icon fa fa-database bigger-110"></i>
-                    查看最近结果
-                </a>
-                <a class="btn btn-sm btn-primary" href="{{ url_for('task_run_list', task_id=task.id) }}" target="_blank">
-                    <i class="ace-icon fa fa-history bigger-110"></i>
-                    查看运行历史
-                </a>
-                <a class="btn btn-sm btn-warning" href="{{ url_for('log_list', part='crawler', task_id=task.id) }}" target="_blank">
-                    <i class="ace-icon fa fa-file-text-o bigger-110"></i>
-                    查看最近日志
-                </a>
-                <div class="task-action-note">
-                    如果你正在修改线上任务，建议按“测试索引 -> 测试新闻 -> 保存 -> 看结果/日志”的顺序排查。
-                </div>
-            </div>
-            {% endif %}
-            <form id='task_form' class="form-horizontal" role="form" method="POST">
+            <div class="task-page-grid">
+                <div class="task-main-column">
+                    <div class="task-card task-workflow-card">
+                        <h4>{% if is_add %}创建任务的完整流程{% else %}编辑任务的完整流程{% endif %}</h4>
+                        <ol class="task-stage-list">
+                            <li><strong>先配任务：</strong>填写任务基本信息、解析配置和字段规则。</li>
+                            <li><strong>先测索引：</strong>确认入口页能抓到预期链接，避免后续字段测试落空。</li>
+                            <li><strong>再测新闻：</strong>确认标题、正文、时间、来源等字段解析正确。</li>
+                            <li><strong>最后保存：</strong>配置确认无误后再保存，是否立即启动由你在最后一步决定。</li>
+                        </ol>
+                        <div class="task-action-note">
+                            测试页现在会保留整份表单内容，测完可以直接返回继续改，也可以在结果页直接保存或保存并启动。
+                        </div>
+                    </div>
+                    <form id='task_form' class="form-horizontal" role="form" method="POST">
                 {% if form.error %}
                     <div class="alert alert-warning">
                         <button type="button" class="close" data-dismiss="alert">
@@ -103,11 +160,35 @@
                     </div>
                 {% endif %}
                 <input id="fields_len" name="fields_len" type="hidden" value="{{ fields_len }}">
+                <input id="return_path" name="return_path" type="hidden" value="{{ request.path }}">
+                <input id="save_path" name="save_path" type="hidden" value="{{ request.path }}">
+                <div class="task-section-card">
+                    <div class="task-section-head">
+                        <h4>第一步：任务基础信息</h4>
+                        <p>这部分定义任务身份、使用的抓取程序以及调度频率。</p>
+                    </div>
+                    <div class="task-section-body">
                 {% for field in form %}
                 {% if field.type == 'CSRFTokenField' %}{{ field }}{% else %}
                 <div class="form-group{% if field.errors %} has-error{% endif %}">{{ field.label(class_='col-sm-3 control-label no-padding-right') }}<div class="col-xs-12 col-sm-4">{{ field(class='col-sm-9') }}{% if field.description %}<span class="help-button" data-rel="popover" data-trigger="hover" data-placement="left" data-content="{{ field.description }}" title="" data-original-title="{{ field.label.text }}">?</span>{% endif %}</div>{% if field.errors %}<div class="help-block col-xs-12 col-sm-reset inline">{{ field.errors[0] }}</div>{% endif %}</div>{% endif %}
-                {% endfor %}<div class="hr hr12 dotted"></div>
-                <div id="task_form_conf">{% include 'task/form_conf.html' %}</div>
+                {% endfor %}
+                    </div>
+                </div>
+                <div class="task-section-card">
+                    <div class="task-section-head">
+                        <h4>第二步：入口与解析配置</h4>
+                        <p>这里决定任务从哪里取入口页，以及解析程序还需要哪些额外配置。</p>
+                    </div>
+                    <div class="task-section-body">
+                        <div id="task_form_conf">{% include 'task/form_conf.html' %}</div>
+                    </div>
+                </div>
+                <div class="task-section-card">
+                    <div class="task-section-head">
+                        <h4>第三步：文章字段规则</h4>
+                        <p>至少把标题、正文、时间、来源配置清楚。可以用 XPath、正则或指定值。</p>
+                    </div>
+                    <div class="task-section-body">
                 {% for article_field_form in article_field_forms -%}{% set i=loop.index-1 %}<div class="hr hr8 dotted"></div>{% for field in article_field_form %}
                 {% if field.type != 'CSRFTokenField' %}
                 <div class="form-group{% if field.errors %} has-error{% endif %} fields_div">{{ field.label(class_='col-sm-3 control-label no-padding-right') }}<div class="col-xs-12 col-sm-5">{{ field(id=field.name+'_'+i|string, class='col-sm-9') }}{% if field.description %}<span class="help-button" data-rel="popover" data-trigger="hover" data-placement="left" data-content="{{ field.description }}" title="" data-original-title="{{ field.label.text }}">?</span>{% endif %}</div>{% if field.errors %}<div class="help-block col-xs-12 col-sm-reset inline">{{ field.errors[0] }}</div>{% endif %}</div>{% endif %}
@@ -120,6 +201,14 @@
                     </div>
                 {% endif %}
                 {%- endfor %}
+                    </div>
+                </div>
+                <div class="task-section-card task-action-card">
+                    <div class="task-section-head">
+                        <h4>第四步：测试并保存</h4>
+                        <p>先验证抓取结果，再决定保存为草稿还是直接启动任务。</p>
+                    </div>
+                    <div class="task-section-body">
                 <div class="clearfix form-actions">
                     <div class="col-md-offset-2 col-md-10">
                         <button id="add_field" class="btn btn-info" type="button">
@@ -130,37 +219,89 @@
                             <i class="ace-icon fa fa-minus bigger-110"></i>
                             删除字段
                         </button>{% if not is_add %}
-                        <button id="force-save" class="btn btn-info" type="submit">
+                        <button id="force-save" class="btn btn-white" type="submit">
                             <i class="ace-icon fa fa-check bigger-110"></i>
                             另存为新任务
                         </button>
-                        <button id="force-save-start" class="btn btn-info" type="submit">
+                        <button id="force-save-start" class="btn btn-white" type="submit">
                             <i class="ace-icon fa fa-check bigger-110"></i>
                             另存并启动
                         </button>{% endif %}
                     </div>
                     <div class="col-md-12 hr hr8"></div>
                     <div class="col-md-offset-2 col-md-10">
+                        <div class="task-action-group">
+                            <h5>先做测试</h5>
+                            <p>测试会打开结果页，并保留当前所有表单内容，方便你测试后直接继续后续动作。</p>
                         <button id="test-index" class="btn btn-info" type="submit">
                             <i class="ace-icon fa fa-plus bigger-110"></i>
                             测试索引
                         </button>
-                        <button id="test-article" class="btn" type="submit">
+                        <button id="test-article" class="btn btn-primary" type="submit">
                             <i class="ace-icon fa fa-minus bigger-110"></i>
                             测试新闻
                         </button>
-                        <button id="normal_submit" class="btn btn-info" type="submit">
+                        </div>
+                        <div class="task-action-group">
+                            <h5>确认后保存</h5>
+                            <p>“保存”保留为草稿或已编辑配置；“保存并启动”会在保存后立刻启用任务。</p>
+                        <button id="normal_submit" class="btn btn-success" type="submit">
                             <i class="ace-icon fa fa-check bigger-110"></i>
                             保存
                         </button>
                         {% if is_add or not is_active %}
-                        <button id="submit_start" class="btn btn-info" type="submit">
+                        <button id="submit_start" class="btn btn-warning" type="submit">
                             <i class="ace-icon fa fa-check bigger-110"></i>
                             保存并启动
                         </button>{% endif %}
+                        </div>
+                    </div>
+                </div>
                     </div>
                 </div>
             </form>
+                </div>
+                <div class="task-side-column">
+                    <div class="task-card">
+                        <h4>当前步骤提示</h4>
+                        <ol class="task-stage-list">
+                            <li><strong>基础信息：</strong>先把任务名、抓取程序、解析程序和定时策略定下来。</li>
+                            <li><strong>解析配置：</strong>根据解析程序补充入口页和详情页需要的配置项。</li>
+                            <li><strong>字段规则：</strong>优先把 `title`、`content`、`src_time`、`source` 配全。</li>
+                            <li><strong>测试回执：</strong>索引测试看链接列表，新闻测试看字段预览。</li>
+                        </ol>
+                    </div>
+                    {% if not is_add and task %}
+                    <div class="task-card">
+                        <h4>调试与观察</h4>
+                        <a class="btn btn-sm btn-info" href="{{ url_for('task_list') }}">
+                            <i class="ace-icon fa fa-list bigger-110"></i>
+                            返回任务列表
+                        </a>
+                        <a class="btn btn-sm btn-success" href="{{ url_for('task_doc', task_id=task.id) }}" target="_blank">
+                            <i class="ace-icon fa fa-database bigger-110"></i>
+                            查看最近结果
+                        </a>
+                        <a class="btn btn-sm btn-primary" href="{{ url_for('task_run_list', task_id=task.id) }}" target="_blank">
+                            <i class="ace-icon fa fa-history bigger-110"></i>
+                            查看运行历史
+                        </a>
+                        <a class="btn btn-sm btn-warning" href="{{ url_for('log_list', part='crawler', task_id=task.id) }}" target="_blank">
+                            <i class="ace-icon fa fa-file-text-o bigger-110"></i>
+                            查看最近日志
+                        </a>
+                        <div class="task-action-note">
+                            如果这是线上任务，建议先重新做索引和新闻测试，再决定是否保存并启动。
+                        </div>
+                    </div>
+                    {% endif %}
+                    <div class="task-card">
+                        <h4>测试与保存的关系</h4>
+                        <p>测试负责回答“当前配置能不能抓到、能不能解析对”；保存负责回答“这份配置要不要落到任务系统里”。</p>
+                        <p>最稳妥的顺序是：配置完成后先测索引，再测新闻，最后决定保存方式。</p>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div><!-- /.page-content -->
