@@ -1266,6 +1266,75 @@ def _build_preview_html(doc, base_url, candidates, highlight_xpaths=None):
             return node;
         }}
 
+        function normalizedNodeText(node) {{
+            if (!node || node.nodeType !== 1) {{
+                return '';
+            }}
+            return (node.textContent || '').replace(/\\s+/g, ' ').trim();
+        }}
+
+        function directTextLength(node) {{
+            var text = '';
+            if (!node || node.nodeType !== 1) {{
+                return 0;
+            }}
+            Array.prototype.forEach.call(node.childNodes || [], function(child) {{
+                if (child.nodeType === 3) {{
+                    text += child.nodeValue || '';
+                }}
+            }});
+            return text.replace(/\\s+/g, ' ').trim().length;
+        }}
+
+        function narrowTextCandidate(node) {{
+            var candidates = [];
+            var tags = ['time', 'a', 'span', 'strong', 'em', 'b', 'small', 'i'];
+
+            function pushCandidate(element) {{
+                var text = normalizedNodeText(element);
+                var score = 0;
+                if (!text || text.length > 48) {{
+                    return;
+                }}
+                score += text.length;
+                if (element.tagName.toLowerCase() === 'time') {{
+                    score -= 30;
+                }}
+                if (element.getAttribute && element.getAttribute('datetime')) {{
+                    score -= 20;
+                }}
+                if (directTextLength(element) > 0) {{
+                    score -= 12;
+                }}
+                if (element.children.length === 0) {{
+                    score -= 8;
+                }}
+                if (tags.indexOf(element.tagName.toLowerCase()) !== -1) {{
+                    score -= 6;
+                }}
+                if (text.length <= 24) {{
+                    score -= 4;
+                }}
+                candidates.push({{
+                    node: element,
+                    text: text,
+                    score: score
+                }});
+            }}
+
+            if (!node || node.nodeType !== 1) {{
+                return null;
+            }}
+            pushCandidate(node);
+            Array.prototype.forEach.call(node.querySelectorAll(tags.join(',')), function(element) {{
+                pushCandidate(element);
+            }});
+            candidates.sort(function(left, right) {{
+                return left.score - right.score;
+            }});
+            return candidates.length ? candidates[0] : null;
+        }}
+
         function closestSelectable(node) {{
             var element = node && node.nodeType === 1 ? node : node.parentElement;
             if (!element) {{
@@ -1302,12 +1371,33 @@ def _build_preview_html(doc, base_url, candidates, highlight_xpaths=None):
             var linkXpath = anchor ? xpathFor(anchor) + '/@href' : '';
             var regionCandidates = regionLinkCandidates(anchor ? anchor.parentElement || anchor : element);
             var valueXpath = '';
+            var focusedCandidate = narrowTextCandidate(element);
+            var focusedNode = focusedCandidate ? focusedCandidate.node : null;
+            var focusedXpath = focusedNode ? xpathFor(focusedNode) : '';
+            var focusedValueXpath = '';
             if (element.tagName.toLowerCase() === 'time' && element.getAttribute('datetime')) {{
                 valueXpath = xpathFor(element) + '/@datetime';
+            }}
+            if (
+                focusedNode &&
+                focusedNode.tagName &&
+                focusedNode.tagName.toLowerCase() === 'time' &&
+                focusedNode.getAttribute('datetime')
+            ) {{
+                focusedValueXpath = focusedXpath + '/@datetime';
             }}
             var text = (element.textContent || '').replace(/\\s+/g, ' ').trim();
             var selectedXpath = xpathFor(element);
             var contentNode = contentRoot(element);
+            var focusedText = focusedCandidate ? focusedCandidate.text : '';
+            var selectionLooksBroad = !!(
+                focusedNode &&
+                focusedXpath &&
+                focusedXpath !== selectedXpath &&
+                focusedText &&
+                text &&
+                focusedText.length < text.length
+            );
             return {{
                 source: 'zspider-preview-select',
                 tag: element.tagName.toLowerCase(),
@@ -1317,6 +1407,11 @@ def _build_preview_html(doc, base_url, candidates, highlight_xpaths=None):
                 text_xpath: selectedXpath + '//text()',
                 content_xpath: xpathFor(contentNode) + '//*[self::p or self::li]//text()',
                 value_xpath: valueXpath,
+                focused_text: focusedText.slice(0, 160),
+                focused_node_xpath: focusedXpath,
+                focused_text_xpath: focusedXpath ? focusedXpath + '//text()' : '',
+                focused_value_xpath: focusedValueXpath,
+                selection_quality: selectionLooksBroad ? 'broad' : 'direct',
                 link_xpath: linkXpath,
                 region_link_xpath: regionCandidates[0] || '',
                 region_link_candidates: regionCandidates

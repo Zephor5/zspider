@@ -8,7 +8,6 @@
 
    developer_guide
    operations
-   task_creation_sina_trial
    page_explorer_temp_notes
    roadmap_overview
    roadmap_strategy

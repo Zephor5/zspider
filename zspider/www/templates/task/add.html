@@ -1011,6 +1011,14 @@ $(function(){
         inspector.find('.preview-inspector-meta').text(
             '已选中 <' + payload.tag + '> 节点，文本预览：' + (payload.text || '无可读文本')
         );
+        var guidance = inspector.find('.preview-inspector-guidance');
+        if(kind === 'article' && guidance.length){
+            if(payload.selection_quality === 'broad' && $.trim(payload.focused_text || '')){
+                guidance.text('当前点到的是一块较大的区域。标记时间或来源时，会优先收紧到更短文本：' + payload.focused_text).show();
+            } else {
+                guidance.hide().text('');
+            }
+        }
         if(kind === 'index'){
             if($.trim(payload.href || '')){
                 addIndexMarker(payload, false);
@@ -1347,13 +1355,19 @@ $(function(){
         if(!payload || !payload.node_xpath){
             return;
         }
+        var useFocused = (
+            (fieldName === 'src_time' || fieldName === 'source') &&
+            $.trim(payload.focused_text_xpath || '')
+        );
         articlePoints[fieldName] = {
             type: fieldName,
-            text: $.trim(payload.text || ''),
-            node_xpath: $.trim(payload.node_xpath || ''),
-            text_xpath: $.trim(payload.text_xpath || ''),
+            text: $.trim(useFocused ? payload.focused_text : payload.text || ''),
+            node_xpath: $.trim(useFocused ? payload.focused_node_xpath : payload.node_xpath || ''),
+            text_xpath: $.trim(useFocused ? payload.focused_text_xpath : payload.text_xpath || ''),
             content_xpath: $.trim(payload.content_xpath || ''),
-            value_xpath: $.trim(payload.value_xpath || '')
+            value_xpath: $.trim(useFocused ? payload.focused_value_xpath : payload.value_xpath || ''),
+            selection_quality: $.trim(useFocused && payload.selection_quality === 'broad' ? 'narrowed' : (payload.selection_quality || '')),
+            selection_hint: $.trim(useFocused && payload.selection_quality === 'broad' ? '已自动收紧到更短文本节点。' : '')
         };
         renderArticlePoints();
     }
@@ -1378,6 +1392,9 @@ $(function(){
                 remove = $('<button class="btn btn-xs btn-link preview-remove-article-point" type="button">移除</button>');
             remove.data('field', fieldName);
             row.append(title).append(text).append(remove);
+            if($.trim(point.selection_hint || '')){
+                row.append($('<div class="task-note" style="margin-top: 4px;"></div>').text(point.selection_hint));
+            }
             list.append(row);
         });
         $('.preview-generate-article-fields').prop('disabled', $.isEmptyObject(articlePoints));

@@ -177,6 +177,7 @@ class TestTaskHandlers(unittest.TestCase):
         self.assertIn("生成文章字段", html)
         self.assertIn("标成标题", html)
         self.assertIn("点击节点后，指定它属于哪个字段", html)
+        self.assertIn("系统会优先收紧到更短节点", html)
         self.assertIn("按“直接抓取”得到的页面结果展示", html)
 
     @mock.patch("zspider.www.handlers.tasks.generate_index_rule")

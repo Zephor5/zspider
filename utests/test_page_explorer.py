@@ -184,6 +184,8 @@ class TestPageExplorer(unittest.TestCase):
         self.assertIn("data-explore-hit", result["preview_html"])
         self.assertIn("data-explore-selected", result["preview_html"])
         self.assertIn("highlight-xpaths", result["preview_html"])
+        self.assertIn("focused_text_xpath", result["preview_html"])
+        self.assertIn("selection_quality", result["preview_html"])
         self.assertEqual("直接抓取", result["fetch_mode"]["label"])
         cached = page_explorer.get_cached_article_context("https://example.com/news/1")
         self.assertEqual("https://example.com/news/1", cached["final_url"])

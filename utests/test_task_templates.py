@@ -364,6 +364,7 @@ class TestTaskTemplates(unittest.TestCase):
         self.assertIn("点样本直接生成规则", html)
         self.assertIn("生成索引规则", html)
         self.assertIn("点击节点后，指定它属于哪个字段", html)
+        self.assertIn("系统会优先收紧到更短节点", html)
         self.assertIn("正在获取页面并准备点选预览", html)
         self.assertIn("按“直接抓取”得到的页面结果展示", html)
         self.assertIn("zspider-preview-command", html)
