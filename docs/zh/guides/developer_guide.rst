@@ -87,12 +87,20 @@ Python 版本
 配置
 ----
 
-核心配置文件位于 ``zspider/confs/``：
+当前运行配置以环境变量为准，``zspider/settings.py`` 会在启动时自动加载仓库根目录的 ``.env``。
+
+``zspider/confs/`` 中仍保留 Web、Crawler、Dispatcher 的运行配置模块，但这些模块当前主要消费 ``settings`` 层已经解析好的参数。
+
+当前最常用的本地配置入口包括：
 
 +------------------------+----------------------------------------+
 | 文件                   | 作用                                   |
 +========================+========================================+
-| ``conf.py``            | 核心配置，如 MQ、缓存、日志            |
+| ``.env``               | 本地环境变量配置                       |
++------------------------+----------------------------------------+
+| ``zspider/settings.py``| 环境变量读取、默认值与运行时配置汇总   |
++------------------------+----------------------------------------+
+| ``conf.py``            | 运行配置适配层                         |
 +------------------------+----------------------------------------+
 | ``crawl_conf.py``      | Scrapy 抓取配置                        |
 +------------------------+----------------------------------------+
@@ -103,24 +111,20 @@ Python 版本
 
 本地开发常见配置示例：
 
-.. code-block:: python
+.. code-block:: dotenv
 
-   # conf.py
-   DEBUG = True
-   AMQP_PARAM = URLParameters("amqp://guest:guest@127.0.0.1")
-   MC_SERVERS = "127.0.0.1:11211"
-
-.. code-block:: python
-
-   # web_conf.py
-   FLASK_CONF = {
-       "SECRET_KEY": "your-secret-key",
-       "MONGODB_SETTINGS": {
-           "db": "spider",
-           "host": "localhost",
-       "port": 27017,
-       },
-   }
+   ZSPIDER_ENV=development
+   ZSPIDER_DEBUG=1
+   ZSPIDER_AMQP_URL=amqp://guest:guest@127.0.0.1/
+   ZSPIDER_MEMCACHED_SERVERS=127.0.0.1:11211
+   ZSPIDER_MONGODB_HOST=127.0.0.1
+   ZSPIDER_MONGODB_PORT=27017
+   ZSPIDER_WEB_HOST=127.0.0.1
+   ZSPIDER_WEB_PORT=5000
+   ZSPIDER_SECRET_KEY=change-me
+   ZSPIDER_LLM_API_BASE=https://api.openai.com/v1
+   ZSPIDER_LLM_API_KEY=your-key
+   ZSPIDER_LLM_MODEL=gpt-4.1-mini
 
 生产模式
 ~~~~~~~~
@@ -217,7 +221,12 @@ Spider 类型
 解析配置
 --------
 
-ZSpider 支持通过 XPath + 正则进行配置化提取。
+ZSpider 支持通过 XPath、正则和指定值进行配置化提取。当前推荐的任务创建方式不是直接从空白表单手写规则，而是：
+
+- 先输入入口页地址
+- 在页面预览中确认真实文章链接
+- 生成入口规则后再补齐文章字段
+- 用“测试索引”“测试新闻”验证结果
 
 .. code-block:: python
 

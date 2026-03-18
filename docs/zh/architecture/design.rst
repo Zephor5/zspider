@@ -82,6 +82,8 @@ Web 管理后台
    5. Spider 使用 Parser 解析内容
    6. Pipeline 处理结果并写入 MongoDB
 
+当前 Web 后台中的任务创建主线已经围绕“页面预览 -> 点样本 -> 生成规则 -> 测试 -> 保存”组织，页面探索负责把入口规则和文章字段规则写回任务配置，而不是要求用户先手工编写 XPath。
+
 Spider 类型
 -----------
 
@@ -161,7 +163,9 @@ URL 去重基于 Memcached：
 配置
 ----
 
-核心配置文件包括：
+运行配置当前由 ``zspider/settings.py`` 统一汇总，优先读取环境变量，并自动加载仓库根目录的 ``.env``。
+
+核心配置来源包括：
 
 - ``conf.py``：MQ、缓存、日志等核心配置
 - ``crawl_conf.py``：Scrapy 配置
@@ -172,6 +176,10 @@ URL 去重基于 Memcached：
 ~~~~~~~~
 
 - ``ZSPIDER_PRODUCT=1``：开启生产模式
+- ``ZSPIDER_AMQP_URL``：RabbitMQ 连接地址
+- ``ZSPIDER_MEMCACHED_SERVERS``：Memcached 地址列表
+- ``ZSPIDER_MONGODB_URI``：MongoDB URI 覆盖
+- ``ZSPIDER_LLM_API_BASE`` / ``ZSPIDER_LLM_API_KEY`` / ``ZSPIDER_LLM_MODEL``：页面探索模型配置
 
 开发扩展
 --------
