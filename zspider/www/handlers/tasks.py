@@ -25,10 +25,11 @@ from ..utils import is_xhr
 from ..utils import test_crawler
 from zspider.confs.dispatcher_conf import STATE_DISPATCH
 from zspider.models import PubSubscribeForm
+from zspider.services.explorer_ai import generate_article_fields
+from zspider.services.explorer_ai import generate_index_rule
 from zspider.services.page_explorer import build_index_test_rows
 from zspider.services.page_explorer import explore_article_page
 from zspider.services.page_explorer import explore_index_page
-from zspider.services.page_explorer import infer_index_xpath
 from zspider.services.task_service import build_task_list_context
 from zspider.services.task_service import delete_task_subscription
 from zspider.services.task_service import get_task_or_404
@@ -379,17 +380,45 @@ def task_explore_article():
     )
 
 
-@app.route("/task/explore/index/infer", methods=["POST"])
+@app.route("/task/explore/index/generate", methods=["POST"])
 @acquire_admin
-def task_explore_index_infer():
+def task_explore_index_generate():
     front_url = request.form.get("front_url", "").strip()
-    selected_urls = request.form.getlist("urls[]") or request.form.getlist("urls")
+    selected_urls = request.form.getlist("selected_urls[]") or request.form.getlist(
+        "selected_urls"
+    )
+    excluded_urls = request.form.getlist("excluded_urls[]") or request.form.getlist(
+        "excluded_urls"
+    )
     if not front_url:
         return jsonify({"status": False, "message": "请先输入入口页地址。"})
     try:
-        result = infer_index_xpath(front_url, selected_urls)
+        result = generate_index_rule(front_url, selected_urls, excluded_urls)
     except Exception as exc:
-        return jsonify({"status": False, "message": "多点标注推断失败：%s" % exc})
+        return jsonify({"status": False, "message": "生成索引规则失败：%s" % exc})
+    return jsonify({"status": True, "data": result})
+
+
+@app.route("/task/explore/article/generate", methods=["POST"])
+@acquire_admin
+def task_explore_article_generate():
+    article_url = request.form.get("article_url", "").strip()
+    field_points = {}
+    for field in ("title", "content", "src_time", "source"):
+        field_points[field] = {
+            "type": request.form.get("%s_type" % field, ""),
+            "text": request.form.get("%s_text" % field, ""),
+            "node_xpath": request.form.get("%s_node_xpath" % field, ""),
+            "text_xpath": request.form.get("%s_text_xpath" % field, ""),
+            "content_xpath": request.form.get("%s_content_xpath" % field, ""),
+            "value_xpath": request.form.get("%s_value_xpath" % field, ""),
+        }
+    if not article_url:
+        return jsonify({"status": False, "message": "请先输入文章地址。"})
+    try:
+        result = generate_article_fields(article_url, field_points)
+    except Exception as exc:
+        return jsonify({"status": False, "message": "生成文章字段失败：%s" % exc})
     return jsonify({"status": True, "data": result})
 
 

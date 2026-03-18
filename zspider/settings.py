@@ -82,6 +82,14 @@ TRANSFORM_URL = _get_env(
     "http://image.server.com/totranslate/images",
 )
 
+EXPLORER_LLM_API_BASE = _get_env(
+    "ZSPIDER_EXPLORER_LLM_API_BASE",
+    "https://api.openai.com/v1",
+)
+EXPLORER_LLM_API_KEY = _get_env("ZSPIDER_EXPLORER_LLM_API_KEY", "")
+EXPLORER_LLM_MODEL = _get_env("ZSPIDER_EXPLORER_LLM_MODEL", "")
+EXPLORER_LLM_MAX_TOKENS = _get_int("ZSPIDER_EXPLORER_LLM_MAX_TOKENS", 1200)
+
 
 def mongodb_settings():
     if MONGODB_URI:

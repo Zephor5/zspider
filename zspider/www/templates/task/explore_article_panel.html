@@ -9,53 +9,20 @@
             <strong>文章标题：</strong>{{ article_explore_result.title }}<br>
             <strong>实际地址：</strong><a href="{{ article_explore_result.final_url }}" target="_blank">{{ article_explore_result.final_url }}</a>
         </div>
-        <div class="alert alert-success">
-            <strong>字段覆盖情况：</strong>
-            {% for field_name, coverage in article_explore_result.coverage.items() %}
-            <span class="label label-{% if coverage.status == 'ready' %}success{% else %}warning{% endif %}" style="margin-right: 6px;">
-                {{ coverage.label }}{% if coverage.count %} {{ coverage.count }} 组候选{% else %} 待补齐{% endif %}
-            </span>
-            {% endfor %}
+        <div class="task-note" style="margin-top: 0;">
+            直接在右侧预览里分别点标题、正文、时间、来源。点完后一次生成字段，再看真实预览效果。
         </div>
-        <div style="margin-bottom: 12px;">
-            <button class="btn btn-primary btn-sm apply-all-article-candidates" type="button">
-                一键应用各字段首选候选
-            </button>
-        </div>
-        {% for field_name, field_label in (('title', '标题'), ('content', '正文'), ('src_time', '时间'), ('source', '来源')) %}
-        <div class="article-candidate-group" data-field="{{ field_name }}">
-        <h5>{{ field_label }}候选</h5>
-        {% set candidates = article_explore_result.field_candidates[field_name] %}
-        {% if candidates %}
-            {% for candidate in candidates %}
-            <div class="widget-box transparent">
-                <div class="widget-body">
-                    <div class="widget-main no-padding" style="padding: 10px 0;">
-                        <div><strong>候选值：</strong>{{ candidate.preview }}</div>
-                        {% if candidate.mode == 'xpath' %}
-                        <div style="margin-top: 6px;"><strong>建议 XPath：</strong><code>{{ candidate.rule }}</code></div>
-                        {% else %}
-                        <div style="margin-top: 6px;"><strong>建议指定值：</strong><code>{{ candidate.value }}</code></div>
-                        {% endif %}
-                        <div style="margin-top: 6px;">{{ candidate.reason }}</div>
-                        <button
-                            class="btn btn-sm btn-success apply-article-candidate"
-                            type="button"
-                            data-field="{{ field_name }}"
-                            data-mode="{{ candidate.mode }}"
-                            data-value="{{ candidate.rule if candidate.mode == 'xpath' else candidate.value }}"
-                        >
-                            应用到{{ field_label }}
-                        </button>
-                    </div>
-                </div>
+        <div class="preview-annotation-panel" style="margin-top: 14px;">
+            <h6>点样本直接生成字段</h6>
+            <div class="preview-annotation-list article-selection-list"></div>
+            <div class="preview-inspector-actions" style="margin-top: 10px;">
+                <button class="btn btn-sm btn-primary preview-generate-article-fields" type="button">生成文章字段</button>
+                <button class="btn btn-sm btn-default preview-clear-article-points" type="button">清空点选</button>
             </div>
-            {% endfor %}
-        {% else %}
-        <div class="alert alert-warning">当前还没有识别到合适的{{ field_label }}候选。</div>
-        {% endif %}
+            <div class="preview-infer-result article-generate-result" style="display: none; margin-top: 10px;">
+                <div><strong>生成完成</strong><code class="article-generate-summary"></code></div>
+            </div>
         </div>
-        {% endfor %}
     </div>
     <div class="col-xs-12 col-lg-7">
         <h5>文章预览</h5>
@@ -71,7 +38,7 @@
                 srcdoc="{{ article_explore_result.preview_html|e }}"
             ></iframe>
             <div class="preview-inspector" data-preview-kind="article">
-                <h6>点击文章节点，直接提取字段 XPath</h6>
+                <h6>点击节点后，指定它属于哪个字段</h6>
                 <div class="preview-inspector-empty">当前还没有选中节点。</div>
                 <div class="preview-inspector-body" style="display: none;">
                     <div class="preview-inspector-meta"></div>
@@ -80,22 +47,18 @@
                     <div style="margin-top: 8px;"><strong>正文容器 XPath</strong><code class="preview-content-xpath"></code></div>
                     <div style="margin-top: 8px;"><strong>属性 XPath</strong><code class="preview-value-xpath"></code></div>
                     <div class="preview-inspector-actions">
-                        <button class="btn btn-sm btn-primary preview-apply-title" type="button">应用为标题</button>
-                        <button class="btn btn-sm btn-success preview-apply-content" type="button">应用为正文</button>
-                        <button class="btn btn-sm btn-warning preview-apply-time" type="button">应用为时间</button>
-                        <button class="btn btn-sm btn-info preview-apply-source-xpath" type="button">应用为来源 XPath</button>
-                        <button class="btn btn-sm btn-default preview-apply-source-specify" type="button">应用为来源指定值</button>
+                        <button class="btn btn-sm btn-primary preview-mark-title" type="button">标成标题</button>
+                        <button class="btn btn-sm btn-success preview-mark-content" type="button">标成正文</button>
+                        <button class="btn btn-sm btn-warning preview-mark-time" type="button">标成时间</button>
+                        <button class="btn btn-sm btn-info preview-mark-source" type="button">标成来源</button>
                     </div>
                 </div>
             </div>
-        </div>
-        <div class="task-note">
-            文章预览默认高亮标题、正文和时间的首选候选。你也可以直接点击文章里的节点，提取并回填字段 XPath。
         </div>
     </div>
 </div>
 {% else %}
 <div class="alert alert-info">
-    先从入口页候选里选一篇文章，或手工输入文章地址。系统会在这里给出标题、正文、时间、来源的候选规则。
+    先从入口页选一篇文章，或手工输入文章地址。然后直接点标题、正文、时间、来源，系统再生成字段。
 </div>
 {% endif %}

@@ -21,51 +21,18 @@
                 <strong>获取方式建议：</strong>{{ explore_result.fetch_mode.label }}<br>
                 {{ explore_result.fetch_mode.reason }}
             </div>
-            <h5>候选链接区域</h5>
-            {% if explore_result.candidates %}
-                {% for candidate in explore_result.candidates %}
-                <div class="widget-box transparent">
-                    <div class="widget-header">
-                        <h5 class="widget-title lighter">候选 {{ loop.index }}：命中 {{ candidate.count }} 条链接</h5>
-                    </div>
-                    <div class="widget-body">
-                        <div class="widget-main no-padding">
-                            <div style="padding: 10px 0;">
-                                <div><strong>建议 XPath：</strong><code>{{ candidate.xpath }}</code></div>
-                                <div style="margin-top: 6px;">{{ candidate.reason }}</div>
-                                {% if candidate.sample_texts %}
-                                <div style="margin-top: 8px;"><strong>示例标题：</strong></div>
-                                <ul>
-                                    {% for text in candidate.sample_texts %}
-                                    <li>{{ text }}</li>
-                                    {% endfor %}
-                                </ul>
-                                {% endif %}
-                                <button
-                                    class="btn btn-sm btn-primary apply-index-candidate"
-                                    type="button"
-                                    data-xpath="{{ candidate.xpath }}"
-                                    data-spider="{{ explore_result.fetch_mode.recommended_spider }}"
-                                >
-                                    应用这组候选
-                                </button>
-                                {% if candidate.sample_urls %}
-                                <button
-                                    class="btn btn-sm btn-success use-sample-article"
-                                    type="button"
-                                    data-article-url="{{ candidate.sample_urls[0] }}"
-                                >
-                                    用第一篇文章继续探索
-                                </button>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                {% endfor %}
-            {% else %}
-            <div class="alert alert-warning">
-                当前页面没有识别到足够稳定的候选链接区域。可以先检查入口地址是否正确，或考虑切换到浏览器渲染方式。
+            <div class="task-note" style="margin-top: 0;">
+                直接在右侧预览里点真实文章链接即可，不用先看一堆候选规则。
+            </div>
+            {% if explore_result.primary_article_url %}
+            <div style="margin-top: 12px;">
+                <button
+                    class="btn btn-sm btn-success use-sample-article"
+                    type="button"
+                    data-article-url="{{ explore_result.primary_article_url }}"
+                >
+                    用一篇样例文章继续探索
+                </button>
             </div>
             {% endif %}
         </div>
@@ -97,23 +64,24 @@
                         </div>
                     </div>
                     <div class="preview-annotation-panel" style="margin-top: 14px;">
-                        <h6>多点标注模式</h6>
+                        <h6>点样本直接生成规则</h6>
                         <div class="task-note" style="margin-top: 0;">
-                            对索引页可先点选几个真正需要的文章链接，再根据这些标注反推更稳的 XPath。
+                            先点至少 2 个真实文章链接作为正样本。生成后如果还有误命中，再把误命中的链接加入反例并重新生成。
                         </div>
-                        <div class="preview-annotation-empty">当前还没有加入标注的目标链接。</div>
+                        <div class="preview-annotation-empty">当前还没有加入正样本。</div>
                         <div class="preview-annotation-body" style="display: none;">
                             <div class="preview-annotation-list"></div>
+                            <div class="preview-negative-list" style="margin-top: 10px;"></div>
                             <div class="preview-inspector-actions">
-                                <button class="btn btn-sm btn-info preview-add-index-marker" type="button">把当前链接加入标注</button>
-                                <button class="btn btn-sm btn-primary preview-infer-index-xpath" type="button">根据标注推断 XPath</button>
-                                <button class="btn btn-sm btn-default preview-clear-index-markers" type="button">清空标注</button>
+                                <button class="btn btn-sm btn-info preview-add-index-marker" type="button">加入正样本</button>
+                                <button class="btn btn-sm btn-warning preview-add-index-negative" type="button">加入反例</button>
+                                <button class="btn btn-sm btn-primary preview-generate-index-rule" type="button">生成索引规则</button>
+                                <button class="btn btn-sm btn-default preview-clear-index-markers" type="button">清空</button>
                             </div>
                             <div class="preview-infer-result" style="display: none; margin-top: 10px;">
-                                <div><strong>推断 XPath</strong><code class="preview-infer-xpath"></code></div>
-                                <div class="task-note preview-infer-reason" style="margin-top: 6px;"></div>
+                                <div><strong>生成结果</strong><code class="preview-infer-xpath"></code></div>
                                 <div class="preview-inspector-actions" style="margin-top: 8px;">
-                                    <button class="btn btn-sm btn-success preview-apply-inferred-index" type="button">应用推断结果</button>
+                                    <button class="btn btn-sm btn-success preview-apply-inferred-index" type="button">应用到表单</button>
                                 </div>
                             </div>
                         </div>

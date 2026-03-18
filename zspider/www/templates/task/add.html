@@ -540,7 +540,9 @@ $(function(){
             article: false
         },
         indexMarkers = [],
-        inferredIndexCandidate = null;
+        indexNegativeMarkers = [],
+        generatedIndexRule = null,
+        articlePoints = {};
 
     function initPopovers(){
         $('[data-rel=popover]').popover({container:'body'});
@@ -688,17 +690,20 @@ $(function(){
         );
     }
 
-    function applyIndexCandidate(xpath, spider){
+    function applyIndexCandidate(xpath, spider, ruleRe){
         var finalize = function(){
             syncFormUrlFromExplore();
             if($('#url_xpath').length){
-                $('#url_xpath').val(xpath);
+                $('#url_xpath').val(xpath || '');
+            }
+            if($('#url_re').length){
+                $('#url_re').val(ruleRe || '');
             }
             if(spider && $('#spider').length){
                 $('#spider').val(spider);
                 $('#fetch-mode-summary').text($('#fetch-mode-summary').text().replace(/建议抓取程序：.*/, '建议抓取程序：' + spider));
             }
-            refreshIndexPreviewHighlights(xpath);
+            refreshIndexPreviewHighlights(xpath || '');
         };
         if($('#parser').length && $('#parser').val() !== 'IndexParser' && $('#parser option[value="IndexParser"]').length){
             $('#parser').val('IndexParser');
@@ -761,18 +766,20 @@ $(function(){
             annotationBody = inspector.find('.preview-annotation-body'),
             annotationEmpty = inspector.find('.preview-annotation-empty'),
             list = inspector.find('.preview-annotation-list'),
+            negativeList = inspector.find('.preview-negative-list'),
             currentPayload = inspector.data('selection') || {},
             canAdd = !!$.trim(currentPayload.href || '');
         if(!inspector.length){
             return;
         }
         list.empty();
+        negativeList.empty();
+        annotationBody.show();
         if(indexMarkers.length){
             annotationEmpty.hide();
-            annotationBody.show();
             $.each(indexMarkers, function(index, marker){
                 var row = $('<div style="margin-bottom: 8px;"></div>'),
-                    label = $('<strong></strong>').text('标注 ' + (index + 1) + '：'),
+                    label = $('<strong></strong>').text('正样本 ' + (index + 1) + '：'),
                     text = $('<span></span>').text((marker.text || marker.href || '').slice(0, 60)),
                     remove = $('<button class="btn btn-xs btn-link preview-remove-index-marker" type="button">移除</button>');
                 remove.data('href', marker.href);
@@ -780,29 +787,33 @@ $(function(){
                 list.append(row);
             });
         } else {
-            annotationBody.show();
             annotationEmpty.show();
         }
-        inspector.find('.preview-add-index-marker').prop('disabled', !canAdd);
-        if(!canAdd){
-            inspector.find('.preview-add-index-marker').attr('title', '当前选中的不是链接');
-        } else {
-            inspector.find('.preview-add-index-marker').attr('title', '');
+        if(indexNegativeMarkers.length){
+            negativeList.append('<div><strong>反例：</strong></div>');
+            $.each(indexNegativeMarkers, function(index, marker){
+                var row = $('<div style="margin-bottom: 8px;"></div>'),
+                    text = $('<span></span>').text((marker.text || marker.href || '').slice(0, 60)),
+                    remove = $('<button class="btn btn-xs btn-link preview-remove-index-negative" type="button">移除</button>');
+                remove.data('href', marker.href);
+                row.append(text).append(remove);
+                negativeList.append(row);
+            });
         }
-        if(inferredIndexCandidate && inferredIndexCandidate.xpath){
+        inspector.find('.preview-add-index-marker').prop('disabled', !canAdd);
+        inspector.find('.preview-add-index-negative').prop('disabled', !canAdd);
+        if(generatedIndexRule && generatedIndexRule.value){
             inspector.find('.preview-infer-result').show();
-            inspector.find('.preview-infer-xpath').text(inferredIndexCandidate.xpath);
-            inspector.find('.preview-infer-reason').text(inferredIndexCandidate.reason || '');
+            inspector.find('.preview-infer-xpath').text(generatedIndexRule.value);
         } else {
             inspector.find('.preview-infer-result').hide();
             inspector.find('.preview-infer-xpath').text('');
-            inspector.find('.preview-infer-reason').text('');
         }
-        inspector.find('.preview-infer-index-xpath').prop('disabled', indexMarkers.length < 2);
-        inspector.find('.preview-clear-index-markers').prop('disabled', !indexMarkers.length);
+        inspector.find('.preview-generate-index-rule').prop('disabled', indexMarkers.length < 2);
+        inspector.find('.preview-clear-index-markers').prop('disabled', !(indexMarkers.length || indexNegativeMarkers.length));
     }
 
-    function addIndexMarker(payload){
+    function addIndexMarker(payload, negative){
         var href = $.trim((payload && payload.href) || '');
         if(!href){
             return;
@@ -813,69 +824,95 @@ $(function(){
             link_xpath: $.trim(payload.link_xpath || ''),
             node_xpath: $.trim(payload.node_xpath || '')
         };
+        var targetList = negative ? indexNegativeMarkers : indexMarkers;
+        var otherList = negative ? indexMarkers : indexNegativeMarkers;
+        otherList = $.grep(otherList, function(item){
+            return markerSignature(item) !== href;
+        });
+        if(negative){
+            indexMarkers = otherList;
+        } else {
+            indexNegativeMarkers = otherList;
+        }
         var exists = false;
-        $.each(indexMarkers, function(_, item){
+        $.each(targetList, function(_, item){
             if(markerSignature(item) === href){
                 exists = true;
                 return false;
             }
         });
         if(!exists){
-            indexMarkers.push(marker);
+            targetList.push(marker);
         }
-        inferredIndexCandidate = null;
+        if(negative){
+            indexNegativeMarkers = targetList;
+        } else {
+            indexMarkers = targetList;
+        }
+        generatedIndexRule = null;
         renderIndexMarkers();
     }
 
-    function removeIndexMarker(href){
-        indexMarkers = $.grep(indexMarkers, function(item){
+    function removeIndexMarker(href, negative){
+        var list = negative ? indexNegativeMarkers : indexMarkers;
+        list = $.grep(list, function(item){
             return markerSignature(item) !== href;
         });
-        inferredIndexCandidate = null;
+        if(negative){
+            indexNegativeMarkers = list;
+        } else {
+            indexMarkers = list;
+        }
+        generatedIndexRule = null;
         renderIndexMarkers();
     }
 
     function clearIndexMarkers(){
         indexMarkers = [];
-        inferredIndexCandidate = null;
+        indexNegativeMarkers = [];
+        generatedIndexRule = null;
         renderIndexMarkers();
     }
 
-    function inferIndexXpathByMarkers(){
+    function generateIndexRuleByMarkers(){
         if(indexMarkers.length < 2 || loadingState.index){
             return;
         }
-        var urls = $.map(indexMarkers, function(item){
-            return item.href;
-        });
-        var inspector = currentIndexInspector();
+        var selectedUrls = $.map(indexMarkers, function(item){
+                return item.href;
+            }),
+            excludedUrls = $.map(indexNegativeMarkers, function(item){
+                return item.href;
+            }),
+            inspector = currentIndexInspector();
         inspector.find('.preview-infer-result').show();
-        inspector.find('.preview-infer-xpath').text('正在推断...');
-        inspector.find('.preview-infer-reason').text('系统正在根据你标注的目标链接反推公共 XPath。');
+        inspector.find('.preview-infer-xpath').text('正在生成...');
         $.ajax({
-            url: '/task/explore/index/infer',
+            url: '/task/explore/index/generate',
             method: 'POST',
             traditional: true,
             data: {
                 front_url: $.trim(exploreUrl.val()),
-                urls: urls
+                selected_urls: selectedUrls,
+                excluded_urls: excludedUrls
             }
         }).done(function(res){
-            if(!res || !res.status || !res.data || !res.data.candidate){
-                inferredIndexCandidate = null;
-                inspector.find('.preview-infer-xpath').text('');
-                inspector.find('.preview-infer-reason').text((res && res.message) || '推断失败。');
+            if(!res || !res.status || !res.data || !res.data.value){
+                generatedIndexRule = null;
+                inspector.find('.preview-infer-xpath').text((res && res.message) || '生成失败。');
                 return;
             }
-            inferredIndexCandidate = res.data.candidate;
-            inspector.find('.preview-infer-xpath').text(inferredIndexCandidate.xpath || '');
-            inspector.find('.preview-infer-reason').text(inferredIndexCandidate.reason || '');
-            refreshIndexPreviewHighlights(inferredIndexCandidate.xpath);
+            generatedIndexRule = res.data;
+            inspector.find('.preview-infer-xpath').text(generatedIndexRule.value || '');
+            applyIndexCandidate(
+                generatedIndexRule.rule_type === 're' ? '' : generatedIndexRule.value,
+                $('#spider').val(),
+                generatedIndexRule.rule_type === 're' ? generatedIndexRule.value : ''
+            );
         }).fail(function(xhr){
-            inferredIndexCandidate = null;
-            inspector.find('.preview-infer-xpath').text('');
-            inspector.find('.preview-infer-reason').text(
-                xhr && xhr.responseText ? xhr.responseText : '推断请求失败。'
+            generatedIndexRule = null;
+            inspector.find('.preview-infer-xpath').text(
+                xhr && xhr.responseText ? xhr.responseText : '生成请求失败。'
             );
         }).always(function(){
             renderIndexMarkers();
@@ -889,7 +926,7 @@ $(function(){
         }
         clearIndexMarkers();
         syncFormUrlFromExplore();
-        setExplorerLoading('index', true, '正在分别获取直接请求结果和浏览器渲染结果，并生成候选区域与预览。');
+        setExplorerLoading('index', true, '正在获取页面并准备点选预览。');
         $.ajax({
             url: '/task/explore/index',
             method: 'POST',
@@ -923,7 +960,8 @@ $(function(){
         if(loadingState.article){
             return;
         }
-        setExplorerLoading('article', true, '正在按推荐获取方式分析文章字段并生成预览。');
+        clearArticlePoints();
+        setExplorerLoading('article', true, '正在获取文章页面并准备点选字段。');
         $.ajax({
             url: '/task/explore/article',
             method: 'POST',
@@ -1015,22 +1053,90 @@ $(function(){
         refreshArticlePreviewHighlights();
     }
 
-    function applyPreviewSelectionToArticle(fieldName, extractor){
+    function rememberArticlePoint(fieldName){
         var inspector = $('.preview-inspector[data-preview-kind="article"]'),
-            payload = inspector.data('selection'),
-            value = payload ? extractor(payload) : '';
-        if(!value){
+            payload = inspector.data('selection') || {};
+        if(!payload || !payload.node_xpath){
             return;
         }
-        if(fieldName === 'source' && extractor === previewSpecifyValue){
-            applyArticleCandidate(fieldName, 'specify', value);
-            return;
-        }
-        applyArticleCandidate(fieldName, 'xpath', value);
+        articlePoints[fieldName] = {
+            type: fieldName,
+            text: $.trim(payload.text || ''),
+            node_xpath: $.trim(payload.node_xpath || ''),
+            text_xpath: $.trim(payload.text_xpath || ''),
+            content_xpath: $.trim(payload.content_xpath || ''),
+            value_xpath: $.trim(payload.value_xpath || '')
+        };
+        renderArticlePoints();
     }
 
-    function previewSpecifyValue(payload){
-        return $.trim(payload.text || '');
+    function renderArticlePoints(){
+        var list = $('.article-selection-list'),
+            result = $('.article-generate-result');
+        if(!list.length){
+            return;
+        }
+        list.empty();
+        $.each(articlePoints, function(fieldName, point){
+            var labelMap = {
+                    title: '标题',
+                    content: '正文',
+                    src_time: '时间',
+                    source: '来源'
+                },
+                row = $('<div style="margin-bottom: 8px;"></div>'),
+                title = $('<strong></strong>').text(labelMap[fieldName] + '：'),
+                text = $('<span></span>').text((point.text || point.node_xpath || '').slice(0, 80)),
+                remove = $('<button class="btn btn-xs btn-link preview-remove-article-point" type="button">移除</button>');
+            remove.data('field', fieldName);
+            row.append(title).append(text).append(remove);
+            list.append(row);
+        });
+        $('.preview-generate-article-fields').prop('disabled', $.isEmptyObject(articlePoints));
+        if($.isEmptyObject(articlePoints)){
+            result.hide();
+            $('.article-generate-summary').text('');
+        }
+    }
+
+    function clearArticlePoints(){
+        articlePoints = {};
+        renderArticlePoints();
+    }
+
+    function generateArticleFields(){
+        if($.isEmptyObject(articlePoints) || loadingState.article){
+            return;
+        }
+        $('.article-generate-result').show();
+        $('.article-generate-summary').text('正在生成...');
+        var data = {article_url: $.trim(articleExploreUrl.val())};
+        $.each(articlePoints, function(fieldName, point){
+            data[fieldName + '_type'] = point.type || '';
+            data[fieldName + '_text'] = point.text || '';
+            data[fieldName + '_node_xpath'] = point.node_xpath || '';
+            data[fieldName + '_text_xpath'] = point.text_xpath || '';
+            data[fieldName + '_content_xpath'] = point.content_xpath || '';
+            data[fieldName + '_value_xpath'] = point.value_xpath || '';
+        });
+        $.ajax({
+            url: '/task/explore/article/generate',
+            method: 'POST',
+            data: data
+        }).done(function(res){
+            if(!res || !res.status || !res.data){
+                $('.article-generate-summary').text((res && res.message) || '生成失败。');
+                return;
+            }
+            $.each(res.data, function(fieldName, item){
+                applyArticleCandidate(fieldName, item.mode, item.value);
+            });
+            $('.article-generate-summary').text('已回填字段并刷新预览');
+        }).fail(function(xhr){
+            $('.article-generate-summary').text(
+                xhr && xhr.responseText ? xhr.responseText : '生成请求失败。'
+            );
+        });
     }
 
     var fieldHtml = '{% for field in article_field_forms.0 %}{% if field.type != "CSRFTokenField" %}<div class="form-group fields_div">{{ field.label(class_="col-sm-3 control-label no-padding-right") }}<div class="col-xs-12 col-sm-8">{{ field(id=field.name+"_"+fields_len|string, class="col-sm-12", value="") }}{% if field.description %}<span class="help-button" data-rel="popover" data-trigger="hover" data-placement="left" data-content="{{ field.description }}" data-original-title="{{ field.label.text }}">?</span>{% endif %}</div></div>{% endif %}{% endfor %}';
@@ -1053,6 +1159,7 @@ $(function(){
     updateFetchModeSummary();
     syncSuggestedTaskName();
     renderIndexMarkers();
+    renderArticlePoints();
     refreshIndexPreviewHighlights($.trim($('#url_xpath').val()));
     refreshArticlePreviewHighlights();
 
@@ -1113,44 +1220,36 @@ $(function(){
     });
     $(document).on('click', '.preview-add-index-marker', function(){
         var payload = currentIndexInspector().data('selection');
-        addIndexMarker(payload || {});
+        addIndexMarker(payload || {}, false);
+    });
+    $(document).on('click', '.preview-add-index-negative', function(){
+        var payload = currentIndexInspector().data('selection');
+        addIndexMarker(payload || {}, true);
     });
     $(document).on('click', '.preview-remove-index-marker', function(){
-        removeIndexMarker($(this).data('href'));
+        removeIndexMarker($(this).data('href'), false);
+    });
+    $(document).on('click', '.preview-remove-index-negative', function(){
+        removeIndexMarker($(this).data('href'), true);
     });
     $(document).on('click', '.preview-clear-index-markers', function(){
         clearIndexMarkers();
     });
-    $(document).on('click', '.preview-infer-index-xpath', function(){
-        inferIndexXpathByMarkers();
+    $(document).on('click', '.preview-generate-index-rule', function(){
+        generateIndexRuleByMarkers();
     });
     $(document).on('click', '.preview-apply-inferred-index', function(){
-        if(inferredIndexCandidate && inferredIndexCandidate.xpath){
-            applyIndexCandidate(inferredIndexCandidate.xpath, $('#spider').val());
+        if(generatedIndexRule && generatedIndexRule.value){
+            applyIndexCandidate(
+                generatedIndexRule.rule_type === 're' ? '' : generatedIndexRule.value,
+                $('#spider').val(),
+                generatedIndexRule.rule_type === 're' ? generatedIndexRule.value : ''
+            );
         }
     });
     $(document).on('click', '.use-sample-article', function(){
         articleExploreUrl.val($(this).data('articleUrl'));
         loadArticleExplorer();
-    });
-    $(document).on('click', '.apply-article-candidate', function(){
-        applyArticleCandidate(
-            $(this).data('field'),
-            $(this).data('mode'),
-            $(this).data('value')
-        );
-    });
-    $(document).on('click', '.apply-all-article-candidates', function(){
-        articleExplorerPanel.find('.article-candidate-group').each(function(){
-            var button = $(this).find('.apply-article-candidate').first();
-            if(button.length){
-                applyArticleCandidate(
-                    button.data('field'),
-                    button.data('mode'),
-                    button.data('value')
-                );
-            }
-        });
     });
     $(document).on('click', '.preview-apply-index-region', function(){
         var inspector = $(this).closest('.preview-inspector'),
@@ -1172,28 +1271,27 @@ $(function(){
             applyIndexCandidate(payload.link_xpath, $('#spider').val());
         }
     });
-    $(document).on('click', '.preview-apply-title', function(){
-        applyPreviewSelectionToArticle('title', function(payload){
-            return payload.text_xpath;
-        });
+    $(document).on('click', '.preview-mark-title', function(){
+        rememberArticlePoint('title');
     });
-    $(document).on('click', '.preview-apply-content', function(){
-        applyPreviewSelectionToArticle('content', function(payload){
-            return payload.content_xpath;
-        });
+    $(document).on('click', '.preview-mark-content', function(){
+        rememberArticlePoint('content');
     });
-    $(document).on('click', '.preview-apply-time', function(){
-        applyPreviewSelectionToArticle('src_time', function(payload){
-            return payload.value_xpath || payload.text_xpath;
-        });
+    $(document).on('click', '.preview-mark-time', function(){
+        rememberArticlePoint('src_time');
     });
-    $(document).on('click', '.preview-apply-source-xpath', function(){
-        applyPreviewSelectionToArticle('source', function(payload){
-            return payload.text_xpath;
-        });
+    $(document).on('click', '.preview-mark-source', function(){
+        rememberArticlePoint('source');
     });
-    $(document).on('click', '.preview-apply-source-specify', function(){
-        applyPreviewSelectionToArticle('source', previewSpecifyValue);
+    $(document).on('click', '.preview-remove-article-point', function(){
+        delete articlePoints[$(this).data('field')];
+        renderArticlePoints();
+    });
+    $(document).on('click', '.preview-clear-article-points', function(){
+        clearArticlePoints();
+    });
+    $(document).on('click', '.preview-generate-article-fields', function(){
+        generateArticleFields();
     });
     $(document).on('submit', '.modal-test-form', function(event){
         event.preventDefault();
