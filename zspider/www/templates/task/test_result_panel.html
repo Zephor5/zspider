@@ -30,11 +30,18 @@
                     {% endif %}
                 {% else %}
                     <h4>字段预览</h4>
-                    {% if res %}
-                        {% for field in res.0 %}
-                        <div class="test-result-field">
-                            <strong>{{ field }}</strong>
-                            <pre>{{ res.0[field] }}</pre>
+                    {% if article_result_rows %}
+                        {% for row in article_result_rows %}
+                        <div class="test-result-field{% if row.missing %} test-result-field-missing{% endif %}">
+                            <strong>{{ row.label }}</strong>
+                            {% if row.value %}
+                            <pre>{{ row.value }}</pre>
+                            {% else %}
+                            <div class="test-result-empty">当前没有解析出 {{ row.label }}。</div>
+                            {% endif %}
+                            {% if row.field != 'url' and row.config_text %}
+                            <div class="test-result-meta">{{ row.config_text }}</div>
+                            {% endif %}
                         </div>
                         {% endfor %}
                     {% else %}

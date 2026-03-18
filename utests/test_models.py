@@ -90,6 +90,10 @@ class TestFieldsModels(unittest.TestCase):
         with self.assertRaises(AssertionError):
             fm.XPathField().validate("//div[")
 
+    def test_xpath_and_regexp_field_default_lengths_are_large_enough(self):
+        self.assertEqual(512, fm.XPathField().max_length)
+        self.assertEqual(512, fm.RegExpField().max_length)
+
 
 class TestPubSubscribe(unittest.TestCase):
     @mock.patch("mongoengine.document.Document.save")

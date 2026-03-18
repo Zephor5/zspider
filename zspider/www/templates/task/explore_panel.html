@@ -3,7 +3,6 @@
     data-fetch-label="{{ explore_result.fetch_mode.label if explore_result else '' }}"
     data-recommended-spider="{{ explore_result.fetch_mode.recommended_spider if explore_result else '' }}"
     data-fetch-reason="{{ explore_result.fetch_mode.reason if explore_result else '' }}"
-    data-primary-article-url="{{ explore_result.primary_article_url if explore_result else '' }}"
     data-suggested-task-name="{{ explore_result.suggested_task_name if explore_result else '' }}"
 >
     {% if explore_error %}
@@ -11,35 +10,10 @@
     {% endif %}
 
     {% if explore_result %}
-    <div class="row">
-        <div class="col-xs-12 col-lg-5">
-            <div class="alert alert-info">
-                <strong>页面标题：</strong>{{ explore_result.title }}<br>
-                <strong>实际地址：</strong><a href="{{ explore_result.final_url }}" target="_blank">{{ explore_result.final_url }}</a>
-            </div>
-            <div class="alert alert-success">
-                <strong>获取方式建议：</strong>{{ explore_result.fetch_mode.label }}<br>
-                {{ explore_result.fetch_mode.reason }}
-            </div>
-            <div class="task-note" style="margin-top: 0;">
-                直接在右侧预览里点真实文章链接即可，不用先看一堆候选规则。
-            </div>
-            {% if explore_result.primary_article_url %}
-            <div style="margin-top: 12px;">
-                <button
-                    class="btn btn-sm btn-success use-sample-article"
-                    type="button"
-                    data-article-url="{{ explore_result.primary_article_url }}"
-                >
-                    用一篇样例文章继续探索
-                </button>
-            </div>
-            {% endif %}
-        </div>
-        <div class="col-xs-12 col-lg-7">
-            <h5>页面预览</h5>
-            <div class="task-note" style="margin-bottom: 10px;">
-                当前预览内容与建议获取方式保持一致，按“{{ explore_result.fetch_mode.label }}”得到的页面结果展示。
+    <div class="explore-stage-layout">
+        <div class="explore-stage-preview">
+            <div class="task-note" style="margin: 0 0 10px;">
+                当前预览就是系统实际看到的入口页，按“{{ explore_result.fetch_mode.label }}”得到的页面结果展示。
             </div>
             <div class="preview-stage">
                 <iframe
@@ -49,53 +23,65 @@
                     sandbox="allow-scripts"
                     srcdoc="{{ explore_result.preview_html|e }}"
                 ></iframe>
-                <div class="preview-inspector" data-preview-kind="index">
-                    <h6>点击预览中的文章或区域，提取整块区域的链接 XPath</h6>
-                    <div class="preview-inspector-empty">当前还没有选中节点。</div>
-                    <div class="preview-inspector-body" style="display: none;">
-                        <div class="preview-inspector-meta"></div>
-                        <div><strong>节点 XPath</strong><code class="preview-node-xpath"></code></div>
-                        <div style="margin-top: 8px;"><strong>区域链接 XPath</strong><code class="preview-region-link-xpath"></code></div>
-                        <div class="preview-region-candidates" style="margin-top: 8px;"></div>
-                        <div style="margin-top: 8px;"><strong>单链接 XPath</strong><code class="preview-link-xpath"></code></div>
-                        <div class="preview-inspector-actions">
-                            <button class="btn btn-sm btn-primary preview-apply-index-region" type="button">应用首选区域 XPath</button>
-                            <button class="btn btn-sm btn-default preview-apply-index-link" type="button">应用单链接 XPath</button>
-                        </div>
+            </div>
+            <div class="task-note">
+                只要点对真实文章链接，系统就会据此生成入口规则，并把结果写到右侧配置。
+            </div>
+        </div>
+        <div class="explore-stage-aside">
+            <div class="explore-side-card">
+                <div class="alert alert-info">
+                <strong>页面标题：</strong>{{ explore_result.title }}<br>
+                <strong>实际地址：</strong><a href="{{ explore_result.final_url }}" target="_blank">{{ explore_result.final_url }}</a>
+                </div>
+                <div class="alert alert-success">
+                <strong>获取方式建议：</strong>{{ explore_result.fetch_mode.label }}<br>
+                {{ explore_result.fetch_mode.reason }}
+                </div>
+                <p>先看页面对不对，再点真实文章链接。这里不需要先理解 XPath 或正则。</p>
+            </div>
+            <div class="explore-side-card">
+                <h6>当前要做什么</h6>
+                <ol class="explore-step-list">
+                    <li>在左侧预览里点击至少 2 个真实文章链接。</li>
+                    <li>如果有误命中，把当前链接加入反例。</li>
+                    <li>点击“生成索引规则”，让系统写入入口配置。</li>
+                </ol>
+            </div>
+            <div class="preview-inspector" data-preview-kind="index">
+                <h6>当前结果</h6>
+                <div class="task-note" style="margin-top: 0;">
+                    点击预览中的真实文章链接，直接加入正样本。
+                </div>
+                <div class="preview-inspector-empty">当前还没有选中节点。</div>
+                <div class="preview-inspector-body" style="display: none;">
+                    <div class="preview-inspector-meta"></div>
+                </div>
+                <div class="preview-annotation-panel" style="margin-top: 14px;">
+                    <h6>点样本直接生成规则</h6>
+                    <div class="task-note" style="margin-top: 0;">
+                        先点真实文章链接作为正样本。生成后如果还有误命中，再把误命中的链接加入反例并重新生成。
                     </div>
-                    <div class="preview-annotation-panel" style="margin-top: 14px;">
-                        <h6>点样本直接生成规则</h6>
-                        <div class="task-note" style="margin-top: 0;">
-                            先点至少 2 个真实文章链接作为正样本。生成后如果还有误命中，再把误命中的链接加入反例并重新生成。
+                    <div class="preview-annotation-empty">当前还没有加入正样本。</div>
+                    <div class="preview-annotation-body" style="display: none;">
+                        <div class="preview-annotation-list"></div>
+                        <div class="preview-negative-list" style="margin-top: 10px;"></div>
+                        <div class="preview-inspector-actions">
+                            <button class="btn btn-sm btn-warning preview-add-index-negative" type="button">加入反例</button>
+                            <button class="btn btn-sm btn-primary preview-generate-index-rule" type="button">生成索引规则</button>
+                            <button class="btn btn-sm btn-default preview-clear-index-markers" type="button">清空</button>
                         </div>
-                        <div class="preview-annotation-empty">当前还没有加入正样本。</div>
-                        <div class="preview-annotation-body" style="display: none;">
-                            <div class="preview-annotation-list"></div>
-                            <div class="preview-negative-list" style="margin-top: 10px;"></div>
-                            <div class="preview-inspector-actions">
-                                <button class="btn btn-sm btn-info preview-add-index-marker" type="button">加入正样本</button>
-                                <button class="btn btn-sm btn-warning preview-add-index-negative" type="button">加入反例</button>
-                                <button class="btn btn-sm btn-primary preview-generate-index-rule" type="button">生成索引规则</button>
-                                <button class="btn btn-sm btn-default preview-clear-index-markers" type="button">清空</button>
-                            </div>
-                            <div class="preview-infer-result" style="display: none; margin-top: 10px;">
-                                <div><strong>生成结果</strong><code class="preview-infer-xpath"></code></div>
-                                <div class="preview-inspector-actions" style="margin-top: 8px;">
-                                    <button class="btn btn-sm btn-success preview-apply-inferred-index" type="button">应用到表单</button>
-                                </div>
-                            </div>
+                        <div class="preview-infer-result" style="display: none; margin-top: 10px;">
+                            <div><strong>生成结果</strong><code class="preview-infer-xpath"></code></div>
                         </div>
                     </div>
                 </div>
-            </div>
-            <div class="task-note">
-                页面预览默认高亮第一组候选链接。点击真实文章或它所在区域时，系统会优先给出可用于整块链接提取的区域 XPath。
             </div>
         </div>
     </div>
     {% else %}
     <div class="alert alert-info">
-        先输入入口页地址并点击“探索入口页”。系统会在这里展示页面获取方式建议、候选链接区域和页面预览。
+        先输入入口页地址并点击“探索入口页”。确认页面正确后，直接点真实文章链接并生成入口规则。
     </div>
     {% endif %}
 </div>

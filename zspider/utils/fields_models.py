@@ -43,7 +43,7 @@ class RegExpField(BaseValidateField):
         ), "group_names must be None or set"
         self.group_num = group_num
         self.group_names = group_names
-        kwargs.setdefault("max_length", 64)
+        kwargs.setdefault("max_length", 512)
         super(RegExpField, self).__init__(**kwargs)
 
     def validate(self, value):
@@ -64,7 +64,7 @@ class RegExpField(BaseValidateField):
 
 class XPathField(BaseValidateField):
     def __init__(self, **kwargs):
-        kwargs.setdefault("max_length", 64)
+        kwargs.setdefault("max_length", 512)
         super(XPathField, self).__init__(**kwargs)
 
     def validate(self, value):

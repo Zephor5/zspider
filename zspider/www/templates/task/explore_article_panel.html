@@ -3,31 +3,10 @@
 {% endif %}
 
 {% if article_explore_result %}
-<div class="row">
-    <div class="col-xs-12 col-lg-5">
-        <div class="alert alert-info">
-            <strong>文章标题：</strong>{{ article_explore_result.title }}<br>
-            <strong>实际地址：</strong><a href="{{ article_explore_result.final_url }}" target="_blank">{{ article_explore_result.final_url }}</a>
-        </div>
-        <div class="task-note" style="margin-top: 0;">
-            直接在右侧预览里分别点标题、正文、时间、来源。点完后一次生成字段，再看真实预览效果。
-        </div>
-        <div class="preview-annotation-panel" style="margin-top: 14px;">
-            <h6>点样本直接生成字段</h6>
-            <div class="preview-annotation-list article-selection-list"></div>
-            <div class="preview-inspector-actions" style="margin-top: 10px;">
-                <button class="btn btn-sm btn-primary preview-generate-article-fields" type="button">生成文章字段</button>
-                <button class="btn btn-sm btn-default preview-clear-article-points" type="button">清空点选</button>
-            </div>
-            <div class="preview-infer-result article-generate-result" style="display: none; margin-top: 10px;">
-                <div><strong>生成完成</strong><code class="article-generate-summary"></code></div>
-            </div>
-        </div>
-    </div>
-    <div class="col-xs-12 col-lg-7">
-        <h5>文章预览</h5>
-        <div class="task-note" style="margin-bottom: 10px;">
-            当前预览内容与建议获取方式保持一致，按“{{ article_explore_result.fetch_mode.label }}”得到的页面结果展示。
+<div class="explore-stage-layout">
+    <div class="explore-stage-preview">
+        <div class="task-note" style="margin: 0 0 10px;">
+            当前预览就是系统实际看到的文章页，按“{{ article_explore_result.fetch_mode.label }}”得到的页面结果展示。
         </div>
         <div class="preview-stage">
             <iframe
@@ -37,21 +16,54 @@
                 sandbox="allow-scripts"
                 srcdoc="{{ article_explore_result.preview_html|e }}"
             ></iframe>
-            <div class="preview-inspector" data-preview-kind="article">
-                <h6>点击节点后，指定它属于哪个字段</h6>
-                <div class="preview-inspector-empty">当前还没有选中节点。</div>
-                <div class="preview-inspector-body" style="display: none;">
-                    <div class="preview-inspector-meta"></div>
-                    <div><strong>节点 XPath</strong><code class="preview-node-xpath"></code></div>
-                    <div style="margin-top: 8px;"><strong>文本 XPath</strong><code class="preview-text-xpath"></code></div>
-                    <div style="margin-top: 8px;"><strong>正文容器 XPath</strong><code class="preview-content-xpath"></code></div>
-                    <div style="margin-top: 8px;"><strong>属性 XPath</strong><code class="preview-value-xpath"></code></div>
-                    <div class="preview-inspector-actions">
-                        <button class="btn btn-sm btn-primary preview-mark-title" type="button">标成标题</button>
-                        <button class="btn btn-sm btn-success preview-mark-content" type="button">标成正文</button>
-                        <button class="btn btn-sm btn-warning preview-mark-time" type="button">标成时间</button>
-                        <button class="btn btn-sm btn-info preview-mark-source" type="button">标成来源</button>
-                    </div>
+        </div>
+    </div>
+    <div class="explore-stage-aside">
+        <div class="explore-side-card">
+            <div class="alert alert-info">
+            <strong>文章标题：</strong>{{ article_explore_result.title }}<br>
+            <strong>实际地址：</strong><a href="{{ article_explore_result.final_url }}" target="_blank">{{ article_explore_result.final_url }}</a>
+            </div>
+            <p>直接点出标题、正文、时间和来源，再让系统回填字段，不需要手工拼规则。</p>
+        </div>
+        <div class="explore-side-card">
+            <h6>当前要做什么</h6>
+            <ol class="explore-step-list">
+                <li>在左侧预览里分别点标题、正文、时间、来源。</li>
+                <li>确认右侧点样本列表已经完整。</li>
+                <li>点击“生成文章字段”，让系统写入右侧配置。</li>
+            </ol>
+        </div>
+        <div class="explore-side-card">
+            <h6>点样本直接生成字段</h6>
+            <div class="task-note" style="margin-top: 0;">
+                直接在左侧预览里分别点标题、正文、时间、来源。点完后一次生成字段，再看真实预览效果。
+            </div>
+            <div class="preview-annotation-list article-selection-list"></div>
+            <div class="preview-inspector-actions" style="margin-top: 10px;">
+                <button class="btn btn-sm btn-primary preview-generate-article-fields" type="button">生成文章字段</button>
+                <button class="btn btn-sm btn-default preview-clear-article-points" type="button">清空点选</button>
+            </div>
+            <div class="preview-infer-result article-generate-result" style="display: none; margin-top: 10px;">
+                <div><strong>生成结果</strong><code class="article-generate-summary"></code></div>
+            </div>
+        </div>
+        <div class="preview-inspector" data-preview-kind="article">
+            <h6>这段内容是什么？</h6>
+            <div class="task-note" style="margin-top: 0;">
+                点击节点后，指定它属于哪个字段。
+            </div>
+            <div class="task-note" style="display: none;">
+                标成标题
+            </div>
+            <div class="preview-inspector-empty">当前还没有选中节点。</div>
+            <div class="preview-inspector-body" style="display: none;">
+                <div class="preview-inspector-meta"></div>
+                <div class="preview-inspector-actions">
+                    <button class="btn btn-sm btn-primary preview-mark-title" type="button">这是标题</button>
+                    <button class="btn btn-sm btn-success preview-mark-content" type="button">这是正文</button>
+                    <button class="btn btn-sm btn-warning preview-mark-time" type="button">这是时间</button>
+                    <button class="btn btn-sm btn-info preview-mark-source" type="button">这是来源</button>
                 </div>
             </div>
         </div>
@@ -59,6 +71,6 @@
 </div>
 {% else %}
 <div class="alert alert-info">
-    先从入口页选一篇文章，或手工输入文章地址。然后直接点标题、正文、时间、来源，系统再生成字段。
+    先从入口页选一篇文章，或手工输入文章地址。然后直接点标题、正文、时间、来源，系统会帮你写入字段配置。
 </div>
 {% endif %}

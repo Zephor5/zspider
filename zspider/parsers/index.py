@@ -12,7 +12,7 @@ class TaskConfIndexParser(fm.BaseTaskConf):
         max_length=128, verbose_name="新闻条目xpath", help_text="用以提取索引页内新闻url"
     )
     url_re = fm.RegExpField(
-        group_num=1, verbose_name="新闻条目正则", help_text="用以提取索引页内新闻url，可与xpath任选其一使用"
+        verbose_name="新闻条目正则", help_text="用以提取索引页内新闻url，可与xpath任选其一使用"
     )
 
 
@@ -29,9 +29,11 @@ class IndexParser(BaseNewsParser):
                 yield e.extract()
         elif self._conf.url_re:
             r = re.compile(self._conf.url_re, re.UNICODE)
-            i = r.groups
             for m in r.finditer(response.body_as_unicode()):
-                yield m.group(i)
+                if r.groups:
+                    yield m.group(1)
+                else:
+                    yield m.group(0)
 
     def parse_article(self, response):
         return self._parse_article_field(response)

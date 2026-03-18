@@ -3,7 +3,8 @@ import unittest
 from types import SimpleNamespace
 from unittest import mock
 
-from zspider.parsers import BaseParser, get_parser
+from zspider.parsers import BaseParser
+from zspider.parsers import get_parser
 from zspider.parsers.baseparser import BaseNewsParser
 from zspider.parsers.index import IndexParser
 from zspider.parsers.jsonparser import JSONParser
@@ -67,7 +68,9 @@ class TestParsers(unittest.TestCase):
                 self.article_fields = article_fields
 
         with mock.patch.dict("zspider.parsers.PARSERS", {"P": P}, clear=True):
-            parser = get_parser("P", "task-1", "task-name", task_conf="conf", article_fields=[1])
+            parser = get_parser(
+                "P", "task-1", "task-name", task_conf="conf", article_fields=[1]
+            )
 
         self.assertIsInstance(parser, P)
         self.assertEqual(parser.name, "task-name")
@@ -95,10 +98,17 @@ class TestParsers(unittest.TestCase):
         article_fields = [
             SimpleNamespace(name="title", specify="", xpath="//h1/text()", re=""),
             SimpleNamespace(name="source", specify="ZSpider", xpath="", re=""),
-            SimpleNamespace(name="src_time", specify="", xpath="//time/text()", re=r"(\d{4}-\d{2}-\d{2} \d{2}:\d{2})"),
+            SimpleNamespace(
+                name="src_time",
+                specify="",
+                xpath="//time/text()",
+                re=r"(\d{4}-\d{2}-\d{2} \d{2}:\d{2})",
+            ),
         ]
         conf = SimpleNamespace(front_url="https://example.com")
-        parser = DemoParser("test_parser", "demo", task_conf=conf, article_fields=article_fields)
+        parser = DemoParser(
+            "test_parser", "demo", task_conf=conf, article_fields=article_fields
+        )
         response = FakeResponse(
             "https://example.com/a1",
             xpath_map={
@@ -118,54 +128,105 @@ class TestParsers(unittest.TestCase):
             SimpleNamespace(name="content", specify="", xpath="", re=r"content=(\w+)"),
         ]
         conf = SimpleNamespace(front_url="https://example.com")
-        parser = DemoParser("test_parser", "demo", task_conf=conf, article_fields=article_fields)
+        parser = DemoParser(
+            "test_parser", "demo", task_conf=conf, article_fields=article_fields
+        )
         response = FakeResponse("https://example.com/a1", body="foo content=hello bar")
 
         item = parser.parse_article(response)
         self.assertEqual(item["content"], "hello")
 
     @mock.patch("zspider.parsers.baseparser.datetime")
-    def test_parse_article_field_time_falls_back_to_now_when_only_partial_date(self, mock_datetime):
-        mock_datetime.datetime.now.return_value.strftime.return_value = "2026-03-12 12:34:56"
+    def test_parse_article_field_time_falls_back_to_now_when_only_partial_date(
+        self, mock_datetime
+    ):
+        mock_datetime.datetime.now.return_value.strftime.return_value = (
+            "2026-03-12 12:34:56"
+        )
         article_fields = [
-            SimpleNamespace(name="publish_time", specify="", xpath="//time/text()", re=""),
+            SimpleNamespace(
+                name="publish_time", specify="", xpath="//time/text()", re=""
+            ),
         ]
         conf = SimpleNamespace(front_url="https://example.com")
-        parser = DemoParser("test_parser", "demo", task_conf=conf, article_fields=article_fields)
-        response = FakeResponse("https://example.com/a1", xpath_map={"//time/text()": ["2026-03"]})
+        parser = DemoParser(
+            "test_parser", "demo", task_conf=conf, article_fields=article_fields
+        )
+        response = FakeResponse(
+            "https://example.com/a1", xpath_map={"//time/text()": ["2026-03"]}
+        )
 
         item = parser.parse_article(response)
         self.assertEqual(item["publish_time"], "2026-03-12 12:34:56")
 
     @mock.patch("zspider.parsers.baseparser.datetime")
-    def test_parse_article_field_time_adds_current_clock_when_missing_seconds(self, mock_datetime):
+    def test_parse_article_field_time_adds_current_clock_when_missing_seconds(
+        self, mock_datetime
+    ):
         mock_datetime.datetime.now.return_value.strftime.return_value = "09:08:07"
         article_fields = [
-            SimpleNamespace(name="publish_time", specify="", xpath="//time/text()", re=""),
+            SimpleNamespace(
+                name="publish_time", specify="", xpath="//time/text()", re=""
+            ),
         ]
         conf = SimpleNamespace(front_url="https://example.com")
-        parser = DemoParser("test_parser", "demo", task_conf=conf, article_fields=article_fields)
-        response = FakeResponse("https://example.com/a1", xpath_map={"//time/text()": ["2026-03-11"]})
+        parser = DemoParser(
+            "test_parser", "demo", task_conf=conf, article_fields=article_fields
+        )
+        response = FakeResponse(
+            "https://example.com/a1", xpath_map={"//time/text()": ["2026-03-11"]}
+        )
 
         item = parser.parse_article(response)
         self.assertEqual(item["publish_time"], "2026-03-11 09:08:07")
 
     def test_index_parser_extracts_urls_from_xpath(self):
-        conf = SimpleNamespace(front_url="https://example.com", url_xpath="//a/@href", url_re="")
+        conf = SimpleNamespace(
+            front_url="https://example.com", url_xpath="//a/@href", url_re=""
+        )
         parser = IndexParser("test_parser", "demo", task_conf=conf, article_fields=[])
         response = FakeResponse(
             "https://example.com",
-            xpath_map={"//a/@href": [FakeXPathResult(["/a1"]), FakeXPathResult(["/a2"])]},
+            xpath_map={
+                "//a/@href": [FakeXPathResult(["/a1"]), FakeXPathResult(["/a2"])]
+            },
         )
 
         self.assertEqual(list(parser.parse_index(response)), [["/a1"], ["/a2"]])
 
     def test_index_parser_extracts_urls_from_regex(self):
-        conf = SimpleNamespace(front_url="https://example.com", url_xpath="", url_re=r'url="([^"]+)"')
+        conf = SimpleNamespace(
+            front_url="https://example.com", url_xpath="", url_re=r'url="([^"]+)"'
+        )
         parser = IndexParser("test_parser", "demo", task_conf=conf, article_fields=[])
-        response = FakeResponse("https://example.com", body='url="https://a" url="https://b"')
+        response = FakeResponse(
+            "https://example.com", body='url="https://a" url="https://b"'
+        )
 
         self.assertEqual(list(parser.parse_index(response)), ["https://a", "https://b"])
+
+    def test_index_parser_extracts_urls_from_regex_without_capture_group(self):
+        conf = SimpleNamespace(
+            front_url="https://example.com",
+            url_xpath="",
+            url_re=r"https://mil\.news\.sina\.com\.cn/zonghe/\d{4}-\d{2}-\d{2}/doc-[a-z0-9]+\.shtml",
+        )
+        parser = IndexParser("test_parser", "demo", task_conf=conf, article_fields=[])
+        response = FakeResponse(
+            "https://example.com",
+            body=(
+                "foo https://mil.news.sina.com.cn/zonghe/2026-03-18/doc-abc123.shtml "
+                "bar https://mil.news.sina.com.cn/zonghe/2026-03-19/doc-def456.shtml"
+            ),
+        )
+
+        self.assertEqual(
+            list(parser.parse_index(response)),
+            [
+                "https://mil.news.sina.com.cn/zonghe/2026-03-18/doc-abc123.shtml",
+                "https://mil.news.sina.com.cn/zonghe/2026-03-19/doc-def456.shtml",
+            ],
+        )
 
     def test_json_parser_extracts_nested_list_items(self):
         conf = SimpleNamespace(
@@ -175,7 +236,9 @@ class TestParsers(unittest.TestCase):
             json_struct="items->[]->url",
         )
         parser = JSONParser("test_parser", "demo", task_conf=conf, article_fields=[])
-        response = FakeResponse("https://example.com", body='{"items": [{"url": "u1"}, {"url": "u2"}]}')
+        response = FakeResponse(
+            "https://example.com", body='{"items": [{"url": "u1"}, {"url": "u2"}]}'
+        )
 
         self.assertEqual(list(parser.parse_index(response)), ["u1", "u2"])
 
@@ -187,6 +250,9 @@ class TestParsers(unittest.TestCase):
             json_struct="items->[0]->url",
         )
         parser = JSONParser("test_parser", "demo", task_conf=conf, article_fields=[])
-        response = FakeResponse("https://example.com", body='callback({"items": [{"url": "u1"}, {"url": "u2"}]})')
+        response = FakeResponse(
+            "https://example.com",
+            body='callback({"items": [{"url": "u1"}, {"url": "u2"}]})',
+        )
 
         self.assertEqual(list(parser.parse_index(response)), ["u1"])

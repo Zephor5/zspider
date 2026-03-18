@@ -111,7 +111,7 @@ crashlytics-build.properties
 .svn
 .D*
 logs/*
-.env/
+.env
 data/mongodb/
 .venv/
 .playwright-cli/

@@ -4,6 +4,40 @@ import os
 from zspider.utils import ip
 
 
+def _parse_env_line(line):
+    text = line.strip()
+    if not text or text.startswith("#") or "=" not in text:
+        return None, None
+    key, value = text.split("=", 1)
+    key = key.strip()
+    if not key:
+        return None, None
+    value = value.strip()
+    if value and value[0] == value[-1] and value[0] in {'"', "'"}:
+        value = value[1:-1]
+    return key, value
+
+
+def _load_dotenv():
+    package_path = os.path.abspath(os.path.dirname(__file__))
+    root_path = os.path.abspath(os.path.join(package_path, ".."))
+    dotenv_path = os.getenv("ZSPIDER_DOTENV_PATH", os.path.join(root_path, ".env"))
+    if not os.path.exists(dotenv_path):
+        return
+    try:
+        with open(dotenv_path, "r") as handler:
+            for raw_line in handler:
+                key, value = _parse_env_line(raw_line)
+                if not key or key in os.environ:
+                    continue
+                os.environ[key] = value
+    except Exception:
+        return
+
+
+_load_dotenv()
+
+
 def _get_env(name, default=None):
     value = os.getenv(name)
     if value in (None, ""):
@@ -82,13 +116,14 @@ TRANSFORM_URL = _get_env(
     "http://image.server.com/totranslate/images",
 )
 
-EXPLORER_LLM_API_BASE = _get_env(
-    "ZSPIDER_EXPLORER_LLM_API_BASE",
+LLM_API_BASE = _get_env(
+    "ZSPIDER_LLM_API_BASE",
     "https://api.openai.com/v1",
 )
-EXPLORER_LLM_API_KEY = _get_env("ZSPIDER_EXPLORER_LLM_API_KEY", "")
-EXPLORER_LLM_MODEL = _get_env("ZSPIDER_EXPLORER_LLM_MODEL", "")
-EXPLORER_LLM_MAX_TOKENS = _get_int("ZSPIDER_EXPLORER_LLM_MAX_TOKENS", 1200)
+LLM_API_KEY = _get_env("ZSPIDER_LLM_API_KEY", "")
+LLM_MODEL = _get_env("ZSPIDER_LLM_MODEL", "")
+LLM_MAX_TOKENS = _get_int("ZSPIDER_LLM_MAX_TOKENS", 1200)
+LLM_TIMEOUT = _get_int("ZSPIDER_LLM_TIMEOUT", 90)
 
 
 def mongodb_settings():

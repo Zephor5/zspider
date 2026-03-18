@@ -73,8 +73,8 @@ class Task(BaseDocument):
 class ArticleField(BaseDocument):
     task = fields.ReferenceField(Task)
     name = fields.StringField(required=True, max_length=32, verbose_name="字段名称")
-    xpath = XPathField(verbose_name="新闻字段xpath", max_length=128)
-    re = RegExpField(verbose_name="字段解析正则")
+    xpath = XPathField(verbose_name="新闻字段xpath", max_length=512)
+    re = RegExpField(verbose_name="字段解析正则", max_length=512)
     specify = fields.StringField(max_length=64, verbose_name="指定值")
 
     # boundaries =

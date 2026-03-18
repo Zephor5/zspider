@@ -124,9 +124,9 @@ class TestTaskHandlers(unittest.TestCase):
 
         html = response.get_data(as_text=True)
         self.assertEqual(200, response.status_code)
-        self.assertIn("候选链接区域", html)
-        self.assertIn("应用这组候选", html)
-        self.assertIn("点击预览中的文章或区域，提取整块区域的链接 XPath", html)
+        self.assertIn("点样本直接生成规则", html)
+        self.assertIn("生成索引规则", html)
+        self.assertIn("点击预览中的真实文章链接，直接加入正样本", html)
         self.assertIn("按“直接抓取”得到的页面结果展示", html)
 
     @mock.patch("zspider.www.handlers.tasks.explore_article_page")
@@ -173,28 +173,25 @@ class TestTaskHandlers(unittest.TestCase):
 
         html = response.get_data(as_text=True)
         self.assertEqual(200, response.status_code)
-        self.assertIn("标题候选", html)
-        self.assertIn("应用到标题", html)
-        self.assertIn("一键应用各字段首选候选", html)
-        self.assertIn("点击文章节点，直接提取字段 XPath", html)
+        self.assertIn("点样本直接生成字段", html)
+        self.assertIn("生成文章字段", html)
+        self.assertIn("标成标题", html)
+        self.assertIn("点击节点后，指定它属于哪个字段", html)
         self.assertIn("按“直接抓取”得到的页面结果展示", html)
 
-    @mock.patch("zspider.www.handlers.tasks.infer_index_xpath")
-    def test_task_explore_index_infer_returns_json(self, infer_index_xpath):
-        infer_index_xpath.return_value = {
+    @mock.patch("zspider.www.handlers.tasks.generate_index_rule")
+    def test_task_explore_index_generate_returns_json(self, generate_index_rule):
+        generate_index_rule.return_value = {
             "final_url": "https://example.com/news/",
             "fetch_mode": {
                 "label": "直接抓取",
                 "recommended_spider": "news",
                 "reason": "结构稳定。",
             },
-            "candidate": {
-                "xpath": "//article//h3//a/@href",
-                "count": 3,
-                "sample_urls": ["https://example.com/1"],
-                "sample_texts": ["标题一"],
-                "reason": "已覆盖你标注的 2 个目标链接，额外命中 1 条链接。",
-            },
+            "rule_type": "xpath",
+            "value": "//article//h3//a/@href",
+            "parser_rule": {"rule_type": "xpath", "value": "//article//h3//a/@href"},
+            "preview_rule": {"rule_type": "xpath", "value": "//article//h3//a"},
         }
 
         with app.test_client() as client:
@@ -203,16 +200,72 @@ class TestTaskHandlers(unittest.TestCase):
                 session["role"] = "admin"
 
             response = client.post(
-                "/task/explore/index/infer",
+                "/task/explore/index/generate",
                 data={
                     "front_url": "https://example.com/news/",
-                    "urls": ["https://example.com/1", "https://example.com/2"],
+                    "selected_urls": [
+                        "https://example.com/1",
+                        "https://example.com/2",
+                    ],
                 },
             )
 
         payload = response.get_json()
         self.assertEqual(200, response.status_code)
         self.assertTrue(payload["status"])
-        self.assertEqual(
-            "//article//h3//a/@href", payload["data"]["candidate"]["xpath"]
-        )
+        self.assertEqual("//article//h3//a/@href", payload["data"]["value"])
+        self.assertEqual("//article//h3//a", payload["data"]["preview_rule"]["value"])
+
+    @mock.patch("zspider.www.handlers.tasks.generate_index_rule")
+    def test_task_explore_index_generate_requires_llm(self, generate_index_rule):
+        generate_index_rule.side_effect = RuntimeError("未配置页面探索模型。")
+
+        with app.test_client() as client:
+            with client.session_transaction() as session:
+                session["user"] = "tester"
+                session["role"] = "admin"
+
+            response = client.post(
+                "/task/explore/index/generate",
+                data={
+                    "front_url": "https://example.com/news/",
+                    "selected_urls": [
+                        "https://example.com/1",
+                        "https://example.com/2",
+                    ],
+                },
+            )
+
+        payload = response.get_json()
+        self.assertEqual(200, response.status_code)
+        self.assertFalse(payload["status"])
+        self.assertIn("请先配置 ZSPIDER_LLM_API_KEY", payload["message"])
+
+    @mock.patch("zspider.www.handlers.tasks.generate_article_fields")
+    def test_task_explore_article_generate_returns_field_status(
+        self, generate_article_fields
+    ):
+        generate_article_fields.return_value = {
+            "fields": {
+                "title": {"mode": "xpath", "value": "//h1/text()", "preview": "标题一"}
+            },
+            "written_fields": ["title"],
+            "missing_fields": ["content", "src_time", "source"],
+            "message": "已写入：标题。仍缺少：正文、时间、来源。",
+        }
+
+        with app.test_client() as client:
+            with client.session_transaction() as session:
+                session["user"] = "tester"
+                session["role"] = "admin"
+
+            response = client.post(
+                "/task/explore/article/generate",
+                data={"article_url": "https://example.com/news/1"},
+            )
+
+        payload = response.get_json()
+        self.assertEqual(200, response.status_code)
+        self.assertTrue(payload["status"])
+        self.assertEqual(["title"], payload["data"]["written_fields"])
+        self.assertIn("仍缺少", payload["data"]["message"])

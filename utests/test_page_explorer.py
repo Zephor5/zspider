@@ -98,6 +98,9 @@ SINA_ARTICLE_HTML = """
 
 
 class TestPageExplorer(unittest.TestCase):
+    def tearDown(self):
+        page_explorer._ARTICLE_CONTEXT_CACHE.clear()
+
     @mock.patch("zspider.services.page_explorer._fetch_browser_html")
     @mock.patch("zspider.services.page_explorer._fetch_html")
     def test_explore_index_page_returns_static_candidate(
@@ -182,6 +185,9 @@ class TestPageExplorer(unittest.TestCase):
         self.assertIn("data-explore-selected", result["preview_html"])
         self.assertIn("highlight-xpaths", result["preview_html"])
         self.assertEqual("直接抓取", result["fetch_mode"]["label"])
+        cached = page_explorer.get_cached_article_context("https://example.com/news/1")
+        self.assertEqual("https://example.com/news/1", cached["final_url"])
+        self.assertIn("<article>", cached["rendered_html"])
 
     @mock.patch("zspider.services.page_explorer._fetch_browser_html")
     @mock.patch("zspider.services.page_explorer._fetch_html")
@@ -232,6 +238,7 @@ class TestPageExplorer(unittest.TestCase):
         result = page_explorer.explore_index_page("https://mil.news.sina.com.cn/")
 
         self.assertTrue(result["candidates"])
+        self.assertEqual("新浪军事", result["suggested_task_name"])
         self.assertIn(
             "self::h1 or self::h2 or self::h3 or self::h4",
             result["candidates"][0]["xpath"],
@@ -261,6 +268,16 @@ class TestPageExplorer(unittest.TestCase):
 
         self.assertEqual("真实标题", result["field_candidates"]["title"][0]["preview"])
         self.assertNotIn("新浪军事", result["field_candidates"]["title"][0]["preview"])
+
+    def test_suggest_task_name_prefers_site_channel_over_noisy_title(self):
+        doc = page_explorer._parse_html(
+            "<html><head><title>icon关闭</title></head><body></body></html>",
+            "https://mil.news.sina.com.cn/",
+        )
+
+        result = page_explorer._suggest_task_name(doc, "https://mil.news.sina.com.cn/")
+
+        self.assertEqual("新浪军事", result)
 
     @mock.patch("zspider.services.page_explorer._fetch_browser_html")
     @mock.patch("zspider.services.page_explorer._fetch_html")

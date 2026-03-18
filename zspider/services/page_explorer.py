@@ -2,6 +2,7 @@
 from collections import OrderedDict
 from difflib import SequenceMatcher
 from html import escape
+from time import monotonic
 from urllib.parse import urljoin
 from urllib.parse import urlparse
 from urllib.request import Request
@@ -20,6 +21,8 @@ __author__ = "zephor"
 STATIC_SPIDER = "news"
 DYNAMIC_SPIDER = "browser"
 _UNSET = object()
+_ARTICLE_CONTEXT_CACHE = {}
+_ARTICLE_CONTEXT_TTL = 300
 
 
 def explore_index_page(url, timeout=10):
@@ -69,6 +72,8 @@ def explore_article_page(url, timeout=10):
         browser_doc=page_variants["browser_doc"],
     )
     doc = _select_effective_doc(fetch_mode, page_variants)
+    rendered_html = html.tostring(doc, encoding="unicode", method="html")
+    _cache_article_context(url, final_url, fetch_mode, rendered_html)
     field_candidates = {
         "title": _extract_title_candidates(doc),
         "content": _extract_content_candidates(doc),
@@ -92,6 +97,36 @@ def explore_article_page(url, timeout=10):
             doc, final_url, [], highlight_xpaths=preview_xpaths
         ),
     }
+
+
+def get_cached_article_context(url):
+    key = (url or "").strip()
+    if not key:
+        return None
+    cached = _ARTICLE_CONTEXT_CACHE.get(key)
+    if not cached:
+        return None
+    if monotonic() - cached["saved_at"] > _ARTICLE_CONTEXT_TTL:
+        _ARTICLE_CONTEXT_CACHE.pop(key, None)
+        return None
+    return {
+        "final_url": cached["final_url"],
+        "fetch_mode": cached["fetch_mode"],
+        "rendered_html": cached["rendered_html"],
+    }
+
+
+def _cache_article_context(url, final_url, fetch_mode, rendered_html):
+    payload = {
+        "final_url": final_url,
+        "fetch_mode": fetch_mode,
+        "rendered_html": rendered_html,
+        "saved_at": monotonic(),
+    }
+    for key in _dedupe_preserve_order([url, final_url]):
+        normalized = (key or "").strip()
+        if normalized:
+            _ARTICLE_CONTEXT_CACHE[normalized] = payload
 
 
 def infer_index_xpath(url, selected_urls, timeout=10):
@@ -356,16 +391,53 @@ def _page_title(doc):
 
 
 def _suggest_task_name(doc, final_url):
-    title = _page_title(doc)
-    for marker in ("|", "-", "_"):
+    derived = _host_channel_task_name(final_url)
+    if derived:
+        return derived[:64]
+    title = _clean_task_title(_page_title(doc))
+    if title:
+        return title[:64]
+    host = urlparse(final_url).netloc
+    return host[:64]
+
+
+def _host_channel_task_name(final_url):
+    parsed = urlparse(final_url)
+    host = parsed.netloc.lower()
+    if not host:
+        return ""
+    sina_channel_map = {
+        "mil": "军事",
+        "news": "新闻",
+        "finance": "财经",
+        "tech": "科技",
+        "sports": "体育",
+        "ent": "娱乐",
+    }
+    if host.endswith("sina.com.cn"):
+        labels = [item for item in host.split(".") if item]
+        for label in labels:
+            if label in sina_channel_map:
+                return "新浪%s" % sina_channel_map[label]
+        return "新浪"
+    return ""
+
+
+def _clean_task_title(title):
+    title = (title or "").strip()
+    if not title or title == "未识别到页面标题":
+        return ""
+    for marker in ("|", "-", "_", "—"):
         if marker in title:
             title = title.split(marker)[0].strip()
             if title:
                 break
-    if title and title != "未识别到页面标题":
-        return title[:64]
-    host = urlparse(final_url).netloc
-    return host[:64]
+    lowered = title.lower()
+    if lowered in ("icon关闭", "icon close", "close", "loading"):
+        return ""
+    if any(marker in lowered for marker in ("登录", "注册", "关闭", "icon")):
+        return ""
+    return title
 
 
 def _primary_article_url(candidates):
@@ -1032,11 +1104,42 @@ def _build_preview_html(doc, base_url, candidates, highlight_xpaths=None):
         function applyHighlights(items) {{
             clearAppliedHighlights();
             Array.prototype.forEach.call(items || [], function(item) {{
-                if (!item || !item.xpath) {{
+                if (!item) {{
                     return;
                 }}
-                evaluateAndHighlight(item.xpath);
+                if (item.xpath) {{
+                    evaluateAndHighlight(item.xpath);
+                    return;
+                }}
+                if (item.regex) {{
+                    highlightAnchorsByRegex(item.regex);
+                }}
             }});
+        }}
+
+        function highlightAnchorsByRegex(pattern) {{
+            if (!pattern) {{
+                return 0;
+            }}
+            var regex = null;
+            var count = 0;
+            try {{
+                regex = new RegExp(pattern);
+            }} catch (error) {{
+                return 0;
+            }}
+            Array.prototype.forEach.call(document.querySelectorAll('a[href]'), function(anchor) {{
+                if (!anchor || !anchor.href) {{
+                    return;
+                }}
+                regex.lastIndex = 0;
+                if (!regex.test(anchor.href)) {{
+                    return;
+                }}
+                highlightNode(anchor);
+                count += 1;
+            }});
+            return count;
         }}
 
         function xpathFor(node) {{

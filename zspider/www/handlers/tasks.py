@@ -136,6 +136,7 @@ def task_add():
         "article_explore_result": None,
         "article_explore_error": "",
     }
+    context.update(_build_task_editor_state(task_form, conf_form, article_field_forms))
 
     return render_template("task/add.html", **context)
 
@@ -210,6 +211,7 @@ def task_edit(task_id):
         "article_explore_result": None,
         "article_explore_error": "",
     }
+    context.update(_build_task_editor_state(task_form, conf_form, article_field_forms))
 
     return render_template("task/add.html", **context)
 
@@ -282,6 +284,7 @@ def task_test(target):
     done = False
     res = []
     index_result_rows = []
+    article_result_rows = []
     if (
         request.method == "POST"
         and validate_forms([task_form, conf_form])
@@ -316,6 +319,8 @@ def task_test(target):
                 getattr(conf, "url_xpath", ""),
                 [_extract_result_url(item) for item in res or []],
             )
+        else:
+            article_result_rows = _build_article_test_rows(res, article_field_forms)
 
     context = {
         "form": task_form,
@@ -325,6 +330,7 @@ def task_test(target):
         "target": target,
         "res": res,
         "index_result_rows": index_result_rows,
+        "article_result_rows": article_result_rows,
         "submitted_items": list(request.form.items(multi=True)),
         "return_path": _resolve_return_path(),
         "save_draft_url": _with_active(_resolve_save_path(), 0),
@@ -395,6 +401,17 @@ def task_explore_index_generate():
     try:
         result = generate_index_rule(front_url, selected_urls, excluded_urls)
     except Exception as exc:
+        if "未配置页面探索模型" in str(exc):
+            return jsonify(
+                {
+                    "status": False,
+                    "message": (
+                        "生成索引规则失败：未配置页面探索模型。"
+                        "请先配置 ZSPIDER_LLM_API_KEY 和 "
+                        "ZSPIDER_LLM_MODEL。"
+                    ),
+                }
+            )
         return jsonify({"status": False, "message": "生成索引规则失败：%s" % exc})
     return jsonify({"status": True, "data": result})
 
@@ -435,10 +452,106 @@ def _parse_field_forms(article_field_forms, fields_len):
         article_field_forms.append(ArticleFieldForm(form_data, meta={"csrf": False}))
 
 
+def _build_task_editor_state(task_form, conf_form, article_field_forms):
+    spider_label_map = {
+        "news": "直接抓取",
+        "browser": "浏览器渲染",
+        "wechat": "微信抓取",
+    }
+    spider = getattr(task_form.spider, "data", "") or ""
+    fetch_summary = "等待左侧入口页探索结果"
+    fetch_reason = "系统会在你探索入口页后，自动更新抓取方式建议并同步到抓取程序字段。"
+    if spider:
+        fetch_summary = "%s，建议抓取程序：%s" % (
+            spider_label_map.get(spider, spider),
+            spider,
+        )
+        fetch_reason = "当前表单已选择抓取程序，重新探索入口页后会按最新页面结果更新建议。"
+
+    stage = _infer_editor_stage(conf_form, article_field_forms)
+    return {
+        "initial_fetch_mode_summary": fetch_summary,
+        "initial_fetch_mode_reason": fetch_reason,
+        "initial_task_stage": stage,
+    }
+
+
+def _infer_editor_stage(conf_form, article_field_forms):
+    has_index_rule = bool(
+        (getattr(getattr(conf_form, "url_xpath", None), "data", "") or "").strip()
+        or (getattr(getattr(conf_form, "url_re", None), "data", "") or "").strip()
+    )
+    core_fields = {"title": False, "content": False}
+    for article_field_form in article_field_forms:
+        name = (getattr(article_field_form.name, "data", "") or "").strip()
+        if name not in core_fields:
+            continue
+        has_value = bool(
+            (getattr(article_field_form.xpath, "data", "") or "").strip()
+            or (getattr(article_field_form.specify, "data", "") or "").strip()
+        )
+        if has_value:
+            core_fields[name] = True
+    if core_fields["title"] and core_fields["content"]:
+        return "save"
+    if has_index_rule:
+        return "article"
+    return "index"
+
+
 def _extract_result_url(item):
     if isinstance(item, dict):
         return item.get("url")
     return getattr(item, "url", None)
+
+
+def _build_article_test_rows(res, article_field_forms):
+    values = {}
+    if res:
+        values = res[0]
+    rows = []
+    label_map = {
+        "url": "文章地址",
+        "title": "标题",
+        "content": "正文",
+        "src_time": "时间",
+        "source": "来源",
+    }
+    conf_map = {}
+    for article_field_form in article_field_forms:
+        field_name = (getattr(article_field_form.name, "data", "") or "").strip()
+        conf_map[field_name] = {
+            "xpath": (getattr(article_field_form.xpath, "data", "") or "").strip(),
+            "re": (getattr(article_field_form.re, "data", "") or "").strip(),
+            "specify": (getattr(article_field_form.specify, "data", "") or "").strip(),
+        }
+    for field in ("url", "title", "content", "src_time", "source"):
+        value = ""
+        if isinstance(values, dict):
+            value = (values.get(field) or "").strip()
+        config = conf_map.get(field, {})
+        rows.append(
+            {
+                "field": field,
+                "label": label_map[field],
+                "value": value,
+                "missing": not bool(value),
+                "config_text": _article_field_config_text(config),
+            }
+        )
+    return rows
+
+
+def _article_field_config_text(config):
+    if not config:
+        return ""
+    if config.get("xpath"):
+        return "当前 XPath：%s" % config["xpath"]
+    if config.get("re"):
+        return "当前正则：%s" % config["re"]
+    if config.get("specify"):
+        return "当前指定值：%s" % config["specify"]
+    return "当前还没有配置值。"
 
 
 def _resolve_explore_url(conf_form):

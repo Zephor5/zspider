@@ -257,6 +257,9 @@ class TestTaskTemplates(unittest.TestCase):
                 "base_fields_len": 1,
                 "is_add": False,
                 "is_active": False,
+                "initial_fetch_mode_summary": "直接抓取，建议抓取程序：news",
+                "initial_fetch_mode_reason": "当前配置已保存抓取程序。",
+                "initial_task_stage": "article",
                 "task": SimpleNamespace(id="task-1", name="示例任务"),
                 "explore_url": "https://example.com/news/",
                 "explore_result": {
@@ -355,18 +358,22 @@ class TestTaskTemplates(unittest.TestCase):
         self.assertIn("/task/run?task_id=task-1", html)
         self.assertIn("/log/crawler?task_id=task-1", html)
         self.assertIn("先复核页面，再调整规则", html)
-        self.assertIn("应用这组候选", html)
-        self.assertIn("应用到标题", html)
-        self.assertIn("一键应用各字段首选候选", html)
-        self.assertIn("字段覆盖情况", html)
-        self.assertIn("点击预览中的文章或区域，提取整块区域的链接 XPath", html)
-        self.assertIn("多点标注模式", html)
-        self.assertIn("根据标注推断 XPath", html)
-        self.assertIn("点击文章节点，直接提取字段 XPath", html)
-        self.assertIn("正在分别获取直接请求结果和浏览器渲染结果", html)
+        self.assertIn("生成文章字段", html)
+        self.assertIn("标成标题", html)
+        self.assertIn("点击预览中的真实文章链接，直接加入正样本", html)
+        self.assertIn("点样本直接生成规则", html)
+        self.assertIn("生成索引规则", html)
+        self.assertIn("点击节点后，指定它属于哪个字段", html)
+        self.assertIn("正在获取页面并准备点选预览", html)
         self.assertIn("按“直接抓取”得到的页面结果展示", html)
         self.assertIn("zspider-preview-command", html)
-        self.assertIn("inferIndexXpathByMarkers", html)
+        self.assertIn("generateIndexRuleByMarkers", html)
+        self.assertNotIn("preview-add-index-marker", html)
+        self.assertNotIn("preview-apply-index-region", html)
+        self.assertNotIn("preview-apply-index-link", html)
+        self.assertNotIn("preview-apply-inferred-index", html)
+        self.assertNotIn("节点 XPath", html)
+        self.assertNotIn("文本 XPath", html)
         self.assertIn("refreshArticlePreviewHighlights", html)
         self.assertIn('data-suggested-task-name="示例入口页"', html)
         self.assertIn('name="return_path"', html)
@@ -395,6 +402,22 @@ class TestTaskTemplates(unittest.TestCase):
                     target="article",
                     res=[{"title": "新闻标题", "content": "正文内容"}],
                     index_result_rows=[],
+                    article_result_rows=[
+                        {
+                            "field": "title",
+                            "label": "标题",
+                            "value": "新闻标题",
+                            "missing": False,
+                            "config_text": "当前 XPath：//h1/text()",
+                        },
+                        {
+                            "field": "content",
+                            "label": "正文",
+                            "value": "正文内容",
+                            "missing": False,
+                            "config_text": "当前 XPath：//article//p//text()",
+                        },
+                    ],
                     form=task_form,
                     conf_form=conf_form,
                     article_field_forms=[],
@@ -411,6 +434,7 @@ class TestTaskTemplates(unittest.TestCase):
         self.assertIn("字段预览", html)
         self.assertIn("新闻标题", html)
         self.assertIn("正文内容", html)
+        self.assertIn("当前 XPath：//h1/text()", html)
         self.assertIn("返回继续编辑", html)
         self.assertIn("直接保存", html)
         self.assertIn("保存并启动", html)
