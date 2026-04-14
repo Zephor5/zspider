@@ -16,5 +16,5 @@ python-memcached==1.59
 # Scrapy/Twisted pull TLS dependencies transitively; the tested versions are
 # locked in constraints/py39.txt so local development and CI resolve the same
 # stack.
-scrapy~=2.8.0
+scrapy~=2.13.4
 selenium==4.8.3
